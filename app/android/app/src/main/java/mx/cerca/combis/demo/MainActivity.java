@@ -1,4 +1,4 @@
-package com.hackaton.app;
+package mx.cerca.combis.demo;
 
 import com.getcapacitor.BridgeActivity;
 

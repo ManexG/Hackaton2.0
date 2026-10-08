@@ -1,0 +1,11 @@
+import type { CSSProperties } from 'react';
+import { Icon } from './Icon';
+import { makeLeg } from './planner';
+import type { Network, Route } from './types';
+export function RouteExplorer({ network, selected, reversed, onSelect, onReverse }: { network: Network; selected: Route | null; reversed: boolean; onSelect: (id: string) => void; onReverse: () => void }) {
+  const ids = selected ? reversed ? [...selected.stops].reverse() : selected.stops : [];
+  const leg = selected ? makeLeg(selected, reversed ? selected.stops.length - 1 : 0, reversed ? 0 : selected.stops.length - 1) : null;
+  return <><div className="section-heading"><div><h2>Una ciudad, cuatro caminos</h2><p>Explora las rutas ficticias de la demo.</p></div></div><div id="route-list">{network.routes.map(route => <button className={`route-card ${selected?.id === route.id ? 'selected' : ''}`} style={{ '--route-color': route.color } as CSSProperties} key={route.id} onClick={() => onSelect(route.id)} aria-pressed={selected?.id === route.id}><span className="route-card-icon"><Icon name="bus-front" /><b>{route.id}</b></span><span><strong>{route.name}</strong><small>{network.stops.find(s => s.id === route.stops[0])!.name.replace(' · demo', '')}<br />↳ {network.stops.find(s => s.id === route.stops.at(-1))!.name.replace(' · demo', '')}</small></span><Icon name="chevron-right" /></button>)}</div>
+    {selected && <div id="route-detail" className="route-detail" style={{ '--route-color': selected.color } as CSSProperties}><div className="route-detail-title"><h3>De inicio a fin</h3><button className="direction-button" onClick={onReverse}><Icon name="arrow-right-left" />{reversed ? 'Regreso' : 'Ida'}</button></div><div className="route-facts"><span><Icon name="clock-3" />{leg!.rideMinutes} min</span><span>${selected.fare} MXN</span><span>{ids.length} paradas</span></div><ol className="stop-list">{ids.map((id, i) => <li key={id}><span>{i === 0 ? 'A' : i === ids.length - 1 ? 'B' : ''}</span><div>{network.stops.find(s => s.id === id)!.name.replace(' · demo', '')}{i === 0 ? <small>INICIO</small> : i === ids.length - 1 ? <small>TÉRMINO</small> : null}</div></li>)}</ol><p className="small-note">Ambos sentidos son simulados. El servicio real se incorporará después.</p></div>}
+  </>;
+}

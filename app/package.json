@@ -1,7 +1,7 @@
 {
   "name": "cerca-combis-demo",
   "private": true,
-  "version": "1.1.0",
+  "version": "1.2.0",
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
@@ -9,18 +9,23 @@
     "preview": "vite preview --host 127.0.0.1",
     "test": "tsx --test tests/*.test.ts",
     "test:ui": "playwright test",
+    "server": "tsx --env-file-if-exists=.env server/index.ts",
+    "driver:create": "tsx --env-file-if-exists=.env server/create-driver.ts",
     "android:sync": "npm run build && cap sync android",
     "android:open": "cap open android",
     "android:run": "npm run android:sync && cap run android"
   },
+  "engines": { "node": ">=24" },
   "dependencies": {
     "@capacitor/android": "^8.5.3",
     "@capacitor/app": "^8.0.0",
+    "@capacitor/barcode-scanner": "^3.1.3",
     "@capacitor/core": "^8.5.3",
     "@capacitor/geolocation": "^8.0.0",
     "@fontsource-variable/manrope": "^5.2.8",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.577.0",
+    "qrcode": "^1.5.4",
     "react": "^19.3.0",
     "react-dom": "^19.3.0"
   },
@@ -29,6 +34,7 @@
     "@playwright/test": "^1.58.2",
     "@types/leaflet": "^1.9.21",
     "@types/node": "^24.0.0",
+    "@types/qrcode": "^1.5.6",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^6.1.2",

@@ -1,111 +1,82 @@
-# Cerca 1.1 · React + Capacitor para Android
+# Cerca 1.2 · React + Capacitor + GPS
 
-Demo funcional en español de rutas de combis para el corredor indicado en Lázaro Cárdenas. Esta versión está hecha con **React 19, TypeScript, Vite 8, Leaflet y Capacitor 8**. Las pantallas usan componentes y estado de React; el mapa Leaflet se sincroniza mediante efectos con limpieza de eventos y capas.
+Aplicación Android y web de movilidad para el corredor indicado en Lázaro Cárdenas. Usa **React 19, TypeScript, Vite 8, Leaflet y Capacitor 8**. El servidor propio usa **Node.js 24, SQLite y SSE** para compartir disponibilidad y ubicación entre dispositivos.
 
-## Qué cambió
+## Pasajero
 
-- La app empieza con origen y destino vacíos, sin una ruta recomendada predeterminada.
-- El catálogo incluye **941 entradas de OpenStreetMap: 452 negocios y puntos de interés, 412 calles y 77 direcciones con número** dentro de la zona.
-- Al escribir se buscan nombres, direcciones, categorías y palabras en cualquier orden, con soporte para acentos y abreviaciones de avenida.
-- Al elegir el origen se sugieren lugares cercanos por categoría: comer, compras, salud, interés y calles. Las tarjetas muestran la combi sugerida cuando existe una conexión.
-- Elegir un destino calcula su propio viaje. Cambiar el texto elimina inmediatamente la recomendación anterior para no mostrar un camino hacia un lugar que ya no está seleccionado.
-- Existe una búsqueda en línea explícita para direcciones o negocios que no estén guardados. Cada resultado se filtra nuevamente por la cobertura.
-- Se incluyen trazos locales de calles para conservar una referencia del área cuando los mapas por internet tardan o no están disponibles.
-- Se conservan el buscador lateral Android, el panel inferior deslizable, la consulta de inicio y término, la intensidad de las combis seleccionadas y los trasbordos.
+No necesita registrarse. Puede buscar entre 941 entradas de OpenStreetMap —452 negocios y puntos de interés, 412 calles y 77 direcciones con número— y consultar lugares cercanos por categoría. El origen y el destino empiezan vacíos.
 
-## Probar
+El mapa muestra los recorridos de colores y las combis de choferes conectados. Seleccionar una ruta o un viaje aumenta su intensidad y atenúa las demás. Si el viaje necesita trasbordo se resaltan todas sus líneas.
 
-Para probar en un teléfono Android, genera el APK siguiendo la sección **Android** de este documento. El repositorio contiene el código fuente; los archivos compilados se generan localmente.
+La recomendación se calcula para los lugares elegidos y las combis activas, con espera estimada y trasbordos. Si no hay vehículos disponibles no se inventa un servicio ni se recomienda una ruta predeterminada; los trazados siguen disponibles en **Ver rutas**.
 
-En computadora, desde esta carpeta:
+En **Paradas**, el pasajero consulta las próximas llegadas, el sentido, la unidad y la antigüedad de la señal. Cada parada tiene un enlace y un QR que abre la web centrada en ella y la coloca como origen. La app también puede leer el QR con la cámara.
+
+Los botones de micrófono permiten dictar el origen o destino. El texto pasa al mismo buscador de calles y negocios y el pasajero elige la coincidencia correcta.
+
+## Chofer
+
+En **Soy chofer**, inicia sesión con una cuenta creada por el responsable. Cada cuenta tiene una unidad, una ruta y un horario asignados desde el servidor. No puede cambiar su asignación desde la app.
+
+El chofer elige el sentido de salida y pulsa **Activar mi servicio**. Se solicita una ubicación precisa y el servidor valida el horario y la cobertura. Al activarse, los pasajeros reciben su posición GPS. **Desactivar servicio** y **Cerrar sesión** detienen la publicación.
+
+Esta versión requiere mantener la app abierta para compartir GPS. El seguimiento con pantalla bloqueada está pendiente de definir. La señal se actualiza como máximo cada 5 segundos y la combi deja de aparecer si pasan 45 segundos sin señal, termina su horario o sale de la zona/ruta. Después de una pérdida prolongada debe activarse de nuevo.
+
+No se incluyen choferes ficticios ni horarios predeterminados. Las cuentas y asignaciones están listas para agregarse cuando se definan.
+
+## Ejecutar
+
+Requiere Node.js 24 o superior. Desde esta carpeta:
 
 ```sh
 npm ci
-npm run dev
+npm run build
+npm run server
 ```
 
-Abre la dirección local indicada por el servidor. No abras `index.html` directamente.
+Abre `http://127.0.0.1:8787/`. Para editar React deja abierto el servidor y ejecuta `npm run dev` en otra terminal. No abras `index.html` directamente.
 
-Ejemplos:
+**[SERVIDOR.md](SERVIDOR.md)** explica cómo alojar la web con HTTPS, crear cuentas, asignar horarios, configurar la dirección pública del APK y generar QR para otros teléfonos. Todavía no se ha configurado un dominio ni publicado un servidor externo. El APK compilado sin dirección pública permite explorar la interfaz y los datos locales; muestra que el servicio está pendiente de conexión.
 
-1. Busca **Jugos Acapulco** como origen y selecciona la coincidencia.
-2. Para una ruta directa, busca **Entronque av. Lázaro Cárdenas** como destino.
-3. Para probar trasbordos, cambia el destino a **Café del Puerto · demo**.
-4. Para comprobar que la recomendación cambia, elige **Mercado del Sol · demo**; se recomienda otra combi.
-5. Busca **Reforma**, **Avenida Reforma 534**, **Pollo Feliz**, **Oxxo** o **farmacias** para explorar datos del mapa.
-6. Prueba las categorías de lugares cercanos y toca un resultado para calcular cómo llegar.
+## Ejemplos de búsqueda
 
-Si hay varios negocios con el mismo nombre, se ordenan por proximidad al origen elegido. Selecciona la sucursal que buscas. Una calle sin número identifica un punto de referencia sobre esa calle; para un destino más preciso elige una dirección registrada o marca el lugar en el mapa.
+- **Jugos Acapulco** como origen y **Entronque av. Lázaro Cárdenas** como destino.
+- **Café del Puerto · demo** para explorar una conexión con trasbordo.
+- **Mercado del Sol · demo** para cambiar el destino y comparar caminos.
+- **Reforma**, **Avenida Reforma 534**, **Pollo Feliz**, **Oxxo** y **farmacias**.
 
-## Datos y cobertura
+Sin choferes activos se pueden consultar los trazados, pero no aparecen recomendaciones de servicio. Una calle sin número representa un punto de referencia sobre la calle. Para mayor precisión elige una dirección registrada o marca el lugar en el mapa.
 
-Se conservaron exactamente los puntos originales:
+## Cobertura y datos
 
 | Punto | Referencia | Coordenadas |
 | --- | --- | --- |
 | Inicio | Jugos Acapulco, frente al Pollo Feliz | `17.95424278298213, -102.19209866241583` |
 | Término | Entronque de la avenida Lázaro Cárdenas | `17.97270449633531, -102.20675286385264` |
 
-La cobertura de prueba usa latitud `17.951–17.977` y longitud `-102.214–-102.186`, con margen alrededor del corredor. **No es el límite oficial de la ciudad.** El mapa limita su desplazamiento y oculta el área exterior. Búsquedas, coordenadas GPS y viajes se validan contra este perímetro.
+La cobertura usa latitud `17.951–17.977` y longitud `-102.214–-102.186`, con margen alrededor del corredor. **No es el límite oficial de la ciudad.** Se limita el mapa y se validan búsquedas, GPS y viajes contra este perímetro.
 
-Las cuatro rutas de combis, paradas intermedias, tarifas, intervalos y tiempos siguen siendo ficticios. Los lugares con `source: "osm"` vienen de OpenStreetMap y pueden estar incompletos o desactualizados. Las entradas con `demo: true`, incluyendo direcciones interpoladas de ejemplo, se identifican como simuladas. No se inventan coordenadas de direcciones reales desconocidas.
+Las cuatro rutas, paradas intermedias y tarifas siguen siendo ficticias. Los lugares con `source: "osm"` proceden de OpenStreetMap y pueden estar incompletos o desactualizados. Las entradas `demo: true`, incluyendo números interpolados de ejemplo, se identifican como simuladas. No se inventan ubicaciones para direcciones reales desconocidas.
 
-## Archivos principales
+Para incorporar datos reales, edita `public/data/network.demo.json`: cobertura, paradas, rutas, colores, tarifas, sentidos y geometría entre paradas. Cada trasbordo comparte el mismo identificador de parada. Actualiza tanto el servidor como la app con el mismo archivo y retira las numeraciones simuladas antes del uso real.
 
-| Archivo | Función |
-| --- | --- |
-| `src/main.tsx` | Inicio de React y carga del catálogo y la red. |
-| `src/App.tsx` | Estado del origen, destino, búsqueda, viaje y paneles. |
-| `src/SearchFields.tsx` | Sugerencias, selección por teclado y búsqueda en línea. |
-| `src/ExplorePlaces.tsx` | Categorías, lugares cercanos y cómo llegar a cada uno. |
-| `src/MapView.tsx` | Mapa, calles locales, rutas, intensidad de las combis y trasbordos. |
-| `src/Journeys.tsx` | Recomendaciones y pasos hacia el destino elegido. |
-| `src/RouteExplorer.tsx` | Consulta de recorrido completo e ida/regreso. |
-| `src/planner.ts` | Búsqueda local, proximidad, cobertura y cálculo de viajes. |
-| `src/geocoding.ts` | Consulta en línea acotada, caché, límite de frecuencia y cancelación. |
-| `public/data/network.demo.json` | Red ficticia editable. |
-| `public/data/places.osm.json` | Catálogo del mapa y geometría local de calles. |
+El catálogo de lugares y las calles locales están separados en `public/data/places.osm.json`, con atribución a OpenStreetMap y licencia ODbL. Las calles guardadas mantienen visible la zona si los mapas externos no cargan.
 
-## Incorporar rutas reales
+## Cómo estima
 
-Edita **`public/data/network.demo.json`**:
+El motor considera caminatas de hasta 420 m hacia las paradas y hasta dos trasbordos. Cada tramo necesita una combi activa cuya llegada permita alcanzarla y finalizar antes del fin de su servicio. La posición se proyecta sobre el trazado para calcular la distancia recorrida, el sentido y la llegada.
 
-- `coverage.bounds` y `coverage.polygon`: cobertura exacta, siempre `[latitud, longitud]`.
-- `stops`: paradas con identificadores únicos y coordenadas.
-- `routes`: nombre, color, tarifa, frecuencia, sentidos y paradas en orden.
-- `routes[].segments`: un conjunto de coordenadas entre cada par de paradas consecutivas. Sus extremos deben coincidir con las paradas.
-- Una conexión entre líneas comparte el mismo identificador de parada.
-- `places` y `addressRanges`: ejemplos adicionales de la demo. Retira las numeraciones simuladas al preparar un catálogo real.
+Las estimaciones suponen continuidad del recorrido de ida y vuelta y usan velocidades, detenciones y giros aproximados. No incorporan tráfico en vivo ni aprendizaje automático. Las caminatas son distancias en línea recta, no indicaciones peatonales verificadas. Consulta los detalles en `SERVIDOR.md`.
 
-El catálogo de OpenStreetMap está separado. Puedes actualizar `public/data/places.osm.json` o agregar un catálogo propio con ubicaciones verificadas. Cada lugar incluye identificador, nombre, descripción, tipo, coordenadas, categoría, fuente y alias opcionales. Las calles pueden incluir `streetSegments` para su representación local.
+## Conexión y voz
 
-Después de cambiar datos:
+Las sugerencias mientras escribes son locales. La búsqueda en línea se ejecuta solo al solicitarla; usa Nominatim con cobertura obligatoria, país México, filtrado del polígono, caché y separación entre solicitudes. Puede fallar o tardar; los lugares guardados continúan disponibles. Para más volumen configura un proveedor adecuado de mapas y búsqueda.
 
-```sh
-npm test
-npm run android:sync
-npm run android:open
-```
-
-La validación rechaza referencias inválidas, paradas y geometrías fuera de cobertura y tramos desconectados.
-
-## Cómo recomienda los viajes
-
-El cálculo usa exclusivamente el origen y destino seleccionados. Busca paradas a un máximo de 420 m de cada extremo y compara recorridos de hasta tres combis, con hasta dos trasbordos. Considera caminata, tiempo de trayecto, espera media y una penalización por conexión. Omite alternativas excesivamente largas y resalta simultáneamente todas las líneas del viaje elegido.
-
-Si los puntos no tienen una conexión disponible, se informa al usuario; no se reutiliza una ruta predeterminada. Las caminatas son distancias aproximadas en línea recta, no instrucciones peatonales verificadas. Las combis son ilustrativas y la simulación no es rastreo en vivo.
-
-## Búsqueda en línea y conexión
-
-Las sugerencias mientras escribes funcionan **localmente**, sin consultas externas por tecla. **Buscar dirección o negocio en línea**, o enviar una búsqueda sin coincidencias locales, consulta Nominatim con un rectángulo de cobertura obligatorio, país México y filtrado adicional del polígono. Hay caché de resultados y una separación mínima de 1.1 segundos entre solicitudes. Editar la consulta cancela la petición anterior para evitar resultados atrasados.
-
-El servicio externo necesita internet y puede tardar o no estar disponible. En la comprobación en vivo de esta entrega agotó el tiempo de espera; los flujos de respuesta, cancelación y rechazo de ubicaciones externas se verificaron con respuestas controladas. El catálogo guardado y las calles locales siguen funcionando. No se garantiza encontrar todos los negocios ni todos los números de la zona.
-
-El mapa detallado por internet usa OpenStreetMap. La capa de calles incluida se dibuja de inmediato como respaldo y conserva la atribución. Para publicar la app a mayor escala se debe configurar un proveedor de búsqueda y mapas adecuado al volumen de uso.
+GPS compartido, sesiones y disponibilidad requieren el servidor e internet. Los QR para otros teléfonos requieren una dirección pública accesible. La voz necesita un navegador compatible o el servicio de reconocimiento de Android. No se grabó audio ni se probó el escaneo con una cámara física en esta entrega.
 
 ## Android
 
-El proyecto nativo está en **`android/`**. Requiere Node.js 22 o superior, Android Studio compatible con Capacitor 8, SDK 36 y un JDK compatible. Esta entrega se compiló con **JDK 21**.
+Requiere Android Studio, SDK 36 y JDK 21. Android mínimo: **8.0/API 26**, requerido por el lector QR.
 
 ```sh
 npm ci
@@ -113,15 +84,9 @@ npm run android:sync
 npm run android:open
 ```
 
-Para generar el APK desde PowerShell con `JAVA_HOME` y `ANDROID_HOME` configurados:
+Configura primero `VITE_PUBLIC_API_URL` y `VITE_PUBLIC_APP_URL` para conectar el APK al servidor publicado. El identificador es `mx.cerca.combis.demo`; versión **1.2**, código **3**. El APK de depuración se genera en `android/app/build/outputs/apk/debug/app-debug.apk`.
 
-```powershell
-.\android\gradlew.bat -p android :app:assembleDebug
-```
-
-El archivo queda en `android/app/build/outputs/apk/debug/app-debug.apk`. El identificador es `mx.cerca.combis.demo`; versión 1.1, código 2. El APK incluye React, la interfaz, tipografía, rutas, catálogo y calles locales; no depende del servidor de desarrollo.
-
-## Verificación
+## Verificar
 
 ```sh
 npm test
@@ -129,8 +94,22 @@ npm run test:ui
 npm run build
 ```
 
-La suite incluye **21 pruebas de datos, búsqueda, proximidad y cálculo**, y **16 pruebas de interfaz**, incluyendo inicio sin recomendaciones, cambio de destino, lugares del mapa, calles con número, categorías cercanas, búsqueda en línea acotada, cancelación de resultados atrasados, manejo de fallos de conexión, respaldo de calles sin mapas externos y buscador lateral móvil.
+Hay 30 pruebas de datos, búsqueda, planificación, autenticación, horarios, GPS, disponibilidad, SSE y enlaces QR; y 21 pruebas de interfaz, incluidas dos ventanas con servidor real y GPS controlado. Las cuentas y posiciones de prueba existen únicamente en pruebas aisladas, no en el servidor de la app.
 
-Se verificó la compilación del APK. No se instaló ni se probó en un teléfono físico. Las pruebas de interfaz usan Edge; puede cambiarse el navegador en `playwright.config.ts` para otros equipos.
+Las pruebas de interfaz usan Microsoft Edge y un puerto propio para evitar conflictos con otros proyectos. Se verificó la compilación Android. No se instaló ni se probó en un teléfono físico. El contenedor y HTTPS se comprobarán al alojarlos.
 
-Referencias: [React](https://react.dev/learn/add-react-to-an-existing-project), [Capacitor Android](https://capacitorjs.com/docs/android), [Leaflet](https://leafletjs.com/reference.html), [OpenStreetMap y ODbL](https://www.openstreetmap.org/copyright), [política de Nominatim](https://operations.osmfoundation.org/policies/nominatim/), [política de mapas](https://operations.osmfoundation.org/policies/tiles/).
+## Archivos
+
+| Archivo | Función |
+| --- | --- |
+| `src/App.tsx` | Origen, destino, roles, paradas y paneles. |
+| `src/MapView.tsx` | Rutas de colores, GPS de combis, paradas y trasbordos. |
+| `src/DriverPanel.tsx` | Sesión del chofer, activación y publicación GPS. |
+| `src/StopPanel.tsx` | Llegadas, lector QR y QR descargables. |
+| `src/VoiceButton.tsx` | Dictado en navegador o Android. |
+| `src/transit.ts` | Horarios, frescura de señal y predicciones según vehículos. |
+| `src/planner.ts` | Cobertura, catálogo y candidatos de viaje. |
+| `server/` | Cuentas, asignaciones, sesiones, GPS y eventos públicos. |
+| `SERVIDOR.md` | Preparación, alojamiento y configuración de Android. |
+
+Referencias: [React](https://react.dev/learn), [Capacitor](https://capacitorjs.com/docs/android), [lector QR](https://capacitorjs.com/docs/apis/barcode-scanner), [voz Android](https://developer.android.com/reference/android/speech/RecognizerIntent), [OpenStreetMap y ODbL](https://www.openstreetmap.org/copyright), [Nominatim](https://operations.osmfoundation.org/policies/nominatim/).

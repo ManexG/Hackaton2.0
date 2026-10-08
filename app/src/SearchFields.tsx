@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { distance, searchPlaces } from './planner';
 import { Icon } from './Icon';
+import { VoiceButton } from './VoiceButton';
 import type { Network, Place } from './types';
 export type FieldName = 'origin' | 'destination';
 interface Props {
@@ -16,6 +17,7 @@ interface Props {
   onClose: () => void;
   onOnline: (field: FieldName) => void;
   onSwap: () => void;
+  onMessage: (message: string) => void;
 }
 export function SearchFields(props: Props) {
   const [index, setIndex] = useState(-1);
@@ -34,7 +36,7 @@ export function SearchFields(props: Props) {
     <div className="field-icons"><span className="origin-dot" /><span className="vertical-dots" /><Icon name="map-pin" /></div>
     <div className="fields">{(['origin', 'destination'] as FieldName[]).map(field => <div className="field" key={field}>
       <label htmlFor={field}>{field === 'origin' ? 'TU PUNTO DE PARTIDA' : '¿A DÓNDE VAMOS?'}</label>
-      <input id={field} autoComplete="off" spellCheck={false} role="combobox" aria-autocomplete="list" aria-expanded={active === field} aria-controls="suggestions" aria-activedescendant={active === field && index >= 0 ? `suggestion-${selectedIndex}` : undefined} value={text[field]} placeholder={field === 'origin' ? 'Elige tu origen o usa tu ubicación' : 'Negocio, lugar, calle o número…'} onFocus={() => { setIndex(-1); props.onFocus(field); }} onChange={event => { setIndex(-1); props.onChange(field, event.target.value); }} onKeyDown={event => keyDown(event, field)} />
+      <div className="field-input"><input id={field} autoComplete="off" spellCheck={false} role="combobox" aria-autocomplete="list" aria-expanded={active === field} aria-controls="suggestions" aria-activedescendant={active === field && index >= 0 ? `suggestion-${selectedIndex}` : undefined} value={text[field]} placeholder={field === 'origin' ? 'Elige tu origen o usa tu ubicación' : 'Negocio, lugar, calle o número…'} onFocus={() => { setIndex(-1); props.onFocus(field); }} onChange={event => { setIndex(-1); props.onChange(field, event.target.value); }} onKeyDown={event => keyDown(event, field)} /><VoiceButton label={field === 'origin' ? 'origen' : 'destino'} onText={value => { setIndex(-1); props.onChange(field, value); props.onFocus(field); }} onMessage={props.onMessage} /></div>
     </div>)}</div>
     <button className="swap-button" type="button" aria-label="Intercambiar origen y destino" onClick={props.onSwap}><Icon name="arrow-up-down" /></button>
     {active && <div id="suggestions" role="listbox" aria-label="Lugares dentro de la zona"><div className="suggestion-heading">{query ? `${results.length} COINCIDENCIAS EN LA ZONA` : origin ? 'CERCA DE TU ORIGEN' : 'LUGARES Y CALLES DE LA ZONA'}</div>

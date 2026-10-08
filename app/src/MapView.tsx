@@ -1,7 +1,8 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import L from 'leaflet';
 import { distance, insideCoverage } from './planner';
-import type { Journey, Network, Place, Point, Route } from './types';
+import type { Journey, Network, Place, Point, Route, Stop } from './types';
+import type { Vehicle } from './transit';
 
 export interface MapHandle {
   fit: (points?: Point[]) => void;
@@ -11,6 +12,9 @@ export interface MapHandle {
 }
 interface Props {
   network: Network;
+  vehicles: Vehicle[];
+  selectedStop: Stop | null;
+  onStop: (stop: Stop) => void;
   journey: Journey | null;
   selectedRoute: Route | null;
   reversed: boolean;
@@ -38,20 +42,21 @@ export const MapView = forwardRef<MapHandle, Props>(function MapView(props, ref)
   const state = useRef(props); state.current = props;
   const [ready, setReady] = useState(0);
   const frame = useRef(0);
+  const preview = useRef<L.CircleMarker | null>(null);
   const simulating = useRef(false);
 
   function fit(points?: Point[]) {
     const instance = map.current;
     if (!instance) return;
     const p = state.current;
-    const target = points?.length ? points : p.selectedRoute ? p.selectedRoute.segments.flat() : p.journey ? [...p.journey.legs.flatMap(leg => leg.geometry), p.journey.origin.point, p.journey.destination.point] : p.origin && p.destination ? [p.origin.point, p.destination.point] : p.network.routes.flatMap(route => route.segments.flat());
+    const target = points?.length ? points : p.selectedStop ? [p.selectedStop.point] : p.selectedRoute ? p.selectedRoute.segments.flat() : p.journey ? [...p.journey.legs.flatMap(leg => leg.geometry), p.journey.origin.point, p.journey.destination.point] : p.origin && p.destination ? [p.origin.point, p.destination.point] : p.network.routes.flatMap(route => route.segments.flat());
     const mobile = window.innerWidth <= 760;
-    instance.fitBounds(L.latLngBounds(target), { paddingTopLeft: mobile ? [40, 82] : [100, 125], paddingBottomRight: mobile ? [40, 55] : [100, 150], maxZoom: p.journey || p.selectedRoute ? 16 : 15.5, animate: false });
+    instance.fitBounds(L.latLngBounds(target), { paddingTopLeft: mobile ? [40, 82] : [100, 125], paddingBottomRight: mobile ? [40, 55] : [100, 150], maxZoom: p.selectedStop ? 17 : p.journey || p.selectedRoute ? 16 : 15.5, animate: false });
     instance.panInsideBounds(L.latLngBounds(p.network.coverage.bounds), { animate: false });
   }
 
   function stopSimulation() {
-    cancelAnimationFrame(frame.current);
+    cancelAnimationFrame(frame.current); preview.current?.remove(); preview.current = null;
     if (simulating.current) { simulating.current = false; state.current.onSimulation(null); redraw(); }
   }
 
@@ -60,6 +65,7 @@ export const MapView = forwardRef<MapHandle, Props>(function MapView(props, ref)
     if (!journey) return;
     if (simulating.current) { stopSimulation(); return; }
     simulating.current = true;
+    preview.current = L.circleMarker(journey.legs[0].geometry[0], { radius: 9, color: '#ffffff', weight: 3, fillColor: '#173e31', fillOpacity: 1, interactive: false }).addTo(map.current!);
     const started = performance.now();
     function tick(now: number) {
       if (!simulating.current || !journey) return;
@@ -67,10 +73,10 @@ export const MapView = forwardRef<MapHandle, Props>(function MapView(props, ref)
       const index = Math.min(Math.floor(raw), journey.legs.length - 1), leg = journey.legs[index];
       const step = Math.min((raw - index) * (leg.geometry.length - 1), leg.geometry.length - 1);
       const at = Math.floor(step), next = Math.min(at + 1, leg.geometry.length - 1), ratio = step - at;
-      buses.current.get(leg.routeId)?.setLatLng([leg.geometry[at][0] + (leg.geometry[next][0] - leg.geometry[at][0]) * ratio, leg.geometry[at][1] + (leg.geometry[next][1] - leg.geometry[at][1]) * ratio]);
-      state.current.onSimulation(`Simulación · ${leg.routeId}${index ? ' · trasbordo realizado' : ''}`);
+      preview.current?.setLatLng([leg.geometry[at][0] + (leg.geometry[next][0] - leg.geometry[at][0]) * ratio, leg.geometry[at][1] + (leg.geometry[next][1] - leg.geometry[at][1]) * ratio]);
+      state.current.onSimulation(`Vista previa · ${leg.routeId}${index ? ' · trasbordo' : ''}`);
       if (progress < 1) frame.current = requestAnimationFrame(tick);
-      else { stopSimulation(); state.current.onMessage('Llegaste al destino de ejemplo. Las combis son ilustrativas, no seguimiento en vivo.'); }
+      else { stopSimulation(); state.current.onMessage('Terminó la vista previa del recorrido. Este punto animado no representa a un chofer.'); }
     }
     frame.current = requestAnimationFrame(tick);
   }
@@ -106,8 +112,12 @@ export const MapView = forwardRef<MapHandle, Props>(function MapView(props, ref)
       line.on('click', () => { if (!state.current.pinMode) state.current.onRoute(route.id); });
       line.bindTooltip(`${route.id} · ${escape(route.name)}`, { sticky: true, direction: 'top' });
       lines.current.set(route.id, line);
-      const bus = L.marker(geometry[Math.floor(geometry.length * 0.58)], { icon: busIcon(route, 'idle'), title: `Combi ilustrativa ${route.id}`, zIndexOffset: 500 }).addTo(instance);
-      bus.on('click', () => state.current.onRoute(route.id)); buses.current.set(route.id, bus);
+
+    }
+    for (const stop of network.stops) {
+      const marker = L.circleMarker(stop.point, { radius: 4, color: '#6e8576', weight: 1.5, fillColor: '#ffffff', fillOpacity: .95, className: 'network-stop' }).addTo(instance);
+      marker.bindTooltip(escape(stop.name.replace(' · demo', '')));
+      marker.on('click', () => { if (!state.current.pinMode) state.current.onStop(stop); });
     }
     instance.on('click', event => {
       if (!state.current.pinMode) return;
@@ -125,7 +135,7 @@ export const MapView = forwardRef<MapHandle, Props>(function MapView(props, ref)
     marker.bindTooltip(escape(place.name.replace(' · demo', '')), { permanent: window.innerWidth > 760, direction: letter === 'A' ? 'right' : 'left', offset: [letter === 'A' ? 16 : -16, -20], className: 'place-label' });
   }
   function drawStops(ids: string[], color: string) {
-    ids.forEach(id => { const stop = props.network.stops.find(stop => stop.id === id)!; L.circleMarker(stop.point, { pane: 'selected', radius: 4.5, color, weight: 2.5, fillColor: 'white', fillOpacity: 1 }).addTo(stops.current!).bindTooltip(escape(stop.name)); });
+    ids.forEach(id => { const stop = props.network.stops.find(stop => stop.id === id)!; L.circleMarker(stop.point, { pane: 'selected', radius: 4.5, color, weight: 2.5, fillColor: 'white', fillOpacity: 1 }).addTo(stops.current!).bindTooltip(escape(stop.name)).on('click', () => state.current.onStop(stop)); });
   }
   function redraw() {
     if (!map.current || !selection.current || !stops.current || !endpoints.current) return;
@@ -135,8 +145,7 @@ export const MapView = forwardRef<MapHandle, Props>(function MapView(props, ref)
     for (const route of network.routes) {
       const selected = active.has(route.id);
       lines.current.get(route.id)!.setStyle({ opacity: selected ? selectedRoute ? 1 : 0.24 : active.size ? 0.18 : 0.5, weight: selected && selectedRoute ? 7 : 4 });
-      const geometry = !selectedRoute && journey?.legs.find(leg => leg.routeId === route.id)?.geometry || route.segments.flat();
-      buses.current.get(route.id)!.setIcon(busIcon(route, selected ? 'selected' : active.size ? 'muted' : 'idle')).setLatLng(geometry[Math.floor(geometry.length * 0.58)]).setZIndexOffset(selected ? 700 : 100);
+
     }
     if (journey && !selectedRoute) {
       for (const leg of journey.legs) {
@@ -154,9 +163,28 @@ export const MapView = forwardRef<MapHandle, Props>(function MapView(props, ref)
       drawStops(ids, selectedRoute.color);
       addEndpoint({ ...network.stops.find(stop => stop.id === ids[0])!, kind: 'stop', description: '', demo: true }, 'A');
       addEndpoint({ ...network.stops.find(stop => stop.id === ids.at(-1))!, kind: 'stop', description: '', demo: true }, 'B');
-    } else { if (origin) addEndpoint(origin, 'A'); if (destination) addEndpoint(destination, 'B'); }
+    } else { if (origin && origin.id !== state.current.selectedStop?.id) addEndpoint(origin, 'A'); if (destination && destination.id !== state.current.selectedStop?.id) addEndpoint(destination, 'B'); }
+    if (state.current.selectedStop) { const stop = state.current.selectedStop; L.circleMarker(stop.point, { radius: 11, color: '#173e31', weight: 3, fillColor: '#dce8a8', fillOpacity: 1, className: 'focused-stop' }).addTo(stops.current!).bindTooltip(escape(stop.name.replace(' · demo', '')), { permanent: true, direction: 'top' }); }
   }
 
-  useEffect(() => { stopSimulation(); redraw(); fit(); }, [ready, props.journey, props.selectedRoute, props.reversed, props.origin, props.destination]);
+  useEffect(() => { stopSimulation(); redraw(); fit(); }, [ready, props.journey?.id, props.selectedRoute?.id, props.reversed, props.origin?.id, props.destination?.id, props.selectedStop?.id]);
+  useEffect(() => {
+    if (!map.current) return;
+    const active = new Set(props.selectedRoute ? [props.selectedRoute.id] : props.journey?.legs.map(leg => leg.routeId) ?? []);
+    const ids = new Set(props.vehicles.map(vehicle => vehicle.id));
+    for (const [id, marker] of buses.current) if (!ids.has(id)) { marker.remove(); buses.current.delete(id); }
+    for (const vehicle of props.vehicles) {
+      const route = props.network.routes.find(route => route.id === vehicle.routeId);
+      if (!route) continue;
+      const selected = active.has(route.id), icon = busIcon(route, selected ? 'selected' : active.size ? 'muted' : 'idle');
+      let marker = buses.current.get(vehicle.id);
+      if (!marker) {
+        marker = L.marker(vehicle.point, { icon, title: 'Unidad ' + vehicle.unit + ' · ' + route.id }).addTo(map.current);
+        marker.on('click', () => state.current.onRoute(route.id)); buses.current.set(vehicle.id, marker);
+      }
+      marker.setLatLng(vehicle.point).setIcon(icon).setZIndexOffset(selected ? 700 : 100);
+      marker.unbindTooltip().bindTooltip(escape(vehicle.unit + ' · ' + route.id + ' · GPS'), { direction: 'top' });
+    }
+  }, [ready, props.vehicles, props.selectedRoute?.id, props.journey?.id]);
   return <div id="map" ref={container} className={props.pinMode ? 'pin-mode' : ''} />;
 });

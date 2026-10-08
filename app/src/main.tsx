@@ -1,6 +1,7 @@
 import '@fontsource-variable/manrope';
 import 'leaflet/dist/leaflet.css';
 import './style.css';
+import './live.css';
 import React, { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { CercaApp } from './App';

@@ -87,7 +87,7 @@ export function makeLeg(route: Route, fromIndex: number, toIndex: number): Leg {
   return { routeId: route.id, from: stopIds[0], to: stopIds.at(-1)!, stopIds, geometry, rideMinutes: Math.max(2, Math.ceil(meters / 300 + (stopIds.length - 2) * 0.6)) };
 }
 
-export function planJourneys(origin: Place, destination: Place, network: Network, maxWalk = 420): Journey[] {
+export function planJourneys(origin: Place, destination: Place, network: Network, maxWalk = 420, allCandidates = false): Journey[] {
   if (!insideCoverage(origin.point, network) || !insideCoverage(destination.point, network) || distance(origin.point, destination.point) < 30) return [];
   const access = network.stops.map(stop => ({ stop, meters: distance(origin.point, stop.point) })).filter(s => s.meters <= maxWalk).sort((a, b) => a.meters - b.meters).slice(0, 3);
   const exits = new Map(network.stops.map(stop => [stop.id, distance(destination.point, stop.point)]).filter((entry): entry is [string, number] => Number(entry[1]) <= maxWalk));
@@ -113,6 +113,7 @@ export function planJourneys(origin: Place, destination: Place, network: Network
   }
   access.forEach(({ stop, meters }) => visit(stop.id, [], meters, new Set([stop.id])));
   candidates.sort((a, b) => (a.totalMinutes + a.transfers * 4) - (b.totalMinutes + b.transfers * 4) || a.fare - b.fare);
+  if (allCandidates) return candidates;
   const bestMinutes = candidates[0]?.totalMinutes ?? 0;
   const seen = new Set<string>();
   return candidates.filter(journey => {

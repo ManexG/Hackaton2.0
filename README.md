@@ -1,24 +1,36 @@
 # Hackaton2.0 · Cerca
 
-Demo de movilidad en combis para el corredor de Jugos Acapulco al entronque de la avenida Lázaro Cárdenas. La aplicación está en [`app/`](app/) y usa **React, TypeScript, Vite, Leaflet y Capacitor para Android**.
+Aplicación Android y web para consultar combis en el corredor de Jugos Acapulco al entronque de la avenida Lázaro Cárdenas. El proyecto está en [`app/`](app/): **React, TypeScript, Vite, Leaflet y Capacitor**, con servidor propio **Node.js 24 + SQLite + SSE**.
 
-Permite buscar negocios, lugares de interés, calles y direcciones dentro de la zona, elegir origen y destino y comparar recorridos con trasbordos. El viaje seleccionado resalta todas sus combis en el mapa. Las recomendaciones se calculan según los puntos elegidos; la app empieza sin un viaje predeterminado.
+- Pasajeros sin registro: búsqueda de negocios, calles y direcciones, lugares cercanos y recorridos de colores.
+- Choferes con cuenta, unidad, ruta y horario asignados: activación y desactivación de servicio con GPS.
+- Combis disponibles y llegadas estimadas por parada; viajes con hasta dos trasbordos según vehículos activos.
+- Enlaces y QR por parada, lector QR y búsqueda por voz en Android y navegadores compatibles.
 
-Las cuatro rutas de combis son ficticias y se pueden sustituir por datos reales. El catálogo incluye 941 lugares, calles y direcciones de OpenStreetMap. La cobertura es un perímetro de demostración alrededor del corredor, no el límite oficial de la ciudad.
+Las rutas, paradas intermedias y tarifas siguen siendo de prueba. El catálogo incluye 941 lugares, calles y direcciones de OpenStreetMap. La cobertura rodea el corredor indicado y no representa el límite oficial de la ciudad. No se crean choferes ni horarios ficticios.
 
-## Ejecutar en computadora
+## Ejecutar
 
-Requiere Node.js 22 o superior.
+Requiere Node.js 24 o superior.
 
 ```sh
 cd app
 npm ci
-npm run dev
+npm run build
+npm run server
 ```
 
-## Android con Capacitor
+Abre `http://127.0.0.1:8787/`. Para editar React, ejecuta también `npm run dev` en otra terminal.
 
-Requiere Android Studio, SDK 36 y JDK 21.
+## Alojar y configurar cuentas
+
+[`app/SERVIDOR.md`](app/SERVIDOR.md) explica el servidor, la configuración de HTTPS con Docker Compose, la creación de choferes y la asignación de rutas y horarios. El servidor está preparado para alojarse; **no hay dominio público configurado ni cuentas creadas por defecto**.
+
+## Android
+
+Requiere Android Studio, SDK 36 y JDK 21. Android mínimo: 8.0/API 26.
+
+Configura las direcciones públicas `VITE_PUBLIC_API_URL` y `VITE_PUBLIC_APP_URL` antes de compilar para conectar el APK al servidor alojado.
 
 ```sh
 cd app
@@ -27,7 +39,7 @@ npm run android:sync
 npm run android:open
 ```
 
-El proyecto nativo está en `app/android/`. Android Studio permite compilar e instalar la aplicación sin depender del servidor de desarrollo. El APK se genera en `app/android/app/build/outputs/apk/debug/app-debug.apk`.
+El proyecto nativo está en `app/android/`. Versión 1.2, código 3. En esta versión el chofer debe mantener la app abierta para compartir GPS; el seguimiento con pantalla bloqueada queda pendiente de definir.
 
 ## Verificar
 
@@ -39,6 +51,6 @@ npm run test:ui
 npm run build
 ```
 
-Las pruebas de interfaz usan Microsoft Edge. El navegador se puede ajustar en `app/playwright.config.ts`.
+30 pruebas de datos, búsqueda, planificación, autenticación, horarios, GPS, SSE y QR; 21 pruebas de interfaz, incluyendo chofer y pasajero con servidor real y GPS controlado. Las pruebas de interfaz usan Edge y un puerto aislado. Se verificó la compilación Android; no se probó en un teléfono físico.
 
-Consulta [`app/LEEME.md`](app/LEEME.md) para los ejemplos de búsqueda, la cobertura, el formato de las rutas y las limitaciones de la demo. Los datos del mapa tienen atribución a [OpenStreetMap y licencia ODbL](https://www.openstreetmap.org/copyright). La búsqueda en línea y los mapas detallados requieren conexión; el catálogo y las calles guardadas funcionan localmente.
+Consulta [`app/LEEME.md`](app/LEEME.md) para uso, ejemplos, cobertura y formato de las rutas. Datos del mapa © [OpenStreetMap contributors, ODbL](https://www.openstreetmap.org/copyright).

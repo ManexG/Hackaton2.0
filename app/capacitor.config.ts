@@ -5,7 +5,7 @@ const config: CapacitorConfig = {
   appName: 'Cerca · Combis',
   webDir: 'dist',
   backgroundColor: '#f7f9f6',
-  appendUserAgent: ' CercaDemo/1.1 (mx.cerca.combis.demo)',
+  appendUserAgent: ' CercaDemo/1.2 (mx.cerca.combis.demo)',
   android: { backgroundColor: '#f7f9f6', allowMixedContent: false },
   plugins: { SystemBars: { style: 'LIGHT' } },
 };

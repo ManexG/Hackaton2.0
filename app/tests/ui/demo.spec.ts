@@ -1,4 +1,7 @@
 import { test, expect, type Page } from '@playwright/test';
+import { readFileSync } from 'node:fs';
+import type { Network } from '../../src/types';
+const network = JSON.parse(readFileSync(new URL('../../public/data/network.demo.json', import.meta.url), 'utf8')) as Network;
 const errors = new WeakMap<Page, string[]>();
 async function choose(page: Page, field: 'origin' | 'destination', query: string) {
   await page.locator(`#${field}`).fill(query);
@@ -7,6 +10,12 @@ async function choose(page: Page, field: 'origin' | 'destination', query: string
 }
 test.beforeEach(async ({ page }) => {
   errors.set(page, []); page.on('pageerror', error => errors.get(page)!.push(error.message));
+  // Fixed GPS fixtures exist only in this isolated UI suite, never in the running server.
+  await page.addInitScript(() => {
+    class TestEvents extends EventTarget { static OPEN = 1; readyState = 0; onerror = null; constructor(_url: string) { super(); } close() { this.readyState = 2; } }
+    Object.assign(window, { EventSource: TestEvents });
+  });
+  await page.route('**/api/fleet', route => route.fulfill({ json: { serverTime: Date.now(), publicAppUrl: '', services: [], vehicles: network.routes.map(item => ({ id: `test-${item.id}`, unit: `TEST-${item.id}`, routeId: item.id, point: item.segments[0][0], direction: 1, speed: 5, accuracy: 5, updatedAt: Date.now(), serviceEndAt: Date.now() + 3_600_000 })) } }));
   await page.goto('/'); await expect(page.locator('.plan-welcome')).toBeVisible();
 });
 test.afterEach(async ({ page }) => { expect(errors.get(page)).toEqual([]); });

@@ -142,6 +142,36 @@ export class TransitStoreCore {
     this.db.prepare('UPDATE drivers SET active=0 WHERE id=?').run(driver.id);
     this.db.prepare('DELETE FROM sessions WHERE token_hash=?').run(hashToken(token));
   }
+  /**
+   * El chofer cambia su propia contraseña. Antes solo el administrador podía
+   * restablecerla, así que si alguien veía la contraseña inicial no había
+   * forma de cambiarla sin pedirle ayuda a un operador.
+   *
+   * Se pide la contraseña actual para confirmar que quien está en el panel es
+   * el dueño de la cuenta. Se cierran las demás sesiones del chofer, no la
+   * actual: cerrarla desenchufaría el GPS que acaba de activar.
+   */
+  async changePassword(token, current, next) {
+    const driver = this.authenticate(token);
+    const row = this.row(driver.id);
+    if (typeof next !== 'string' || next.length < 12 || next.length > 256)
+      throw new ApiError(422, 'La contraseña necesita al menos 12 caracteres.');
+    if (typeof current !== 'string' || current.length > 256)
+      throw new ApiError(400, 'Escribe tu contraseña actual.');
+    const [salt, saved] = row.password.split(':');
+    const key = await deriveKey(current, salt, 64);
+    if (!timingSafeEqual(key, Buffer.from(saved, 'hex')))
+      throw new ApiError(401, 'Tu contraseña actual no coincide.');
+    const nuevoSalt = Buffer.from(randomBytes(16)).toString('hex');
+    const nuevo = `${nuevoSalt}:${Buffer.from(scryptSync(next, nuevoSalt, 64)).toString('hex')}`;
+    this.db.transaction(() => {
+      this.db.prepare('UPDATE drivers SET password=? WHERE id=?').run(nuevo, driver.id);
+      // Se cierra el resto de sesiones por si la contraseña estaba comprometida.
+      this.db
+        .prepare('DELETE FROM sessions WHERE driver_id=? AND token_hash<>?')
+        .run(driver.id, hashToken(token));
+    });
+  }
   pause(id) {
     this.db.prepare('UPDATE drivers SET active=0 WHERE id=?').run(id);
     return this.profile(this.row(id));

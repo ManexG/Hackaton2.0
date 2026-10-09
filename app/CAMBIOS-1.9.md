@@ -1,4 +1,4 @@
-# Las Palmas Rutas 1.9.0
+# Las Palmas Rutas 1.9.1
 
 ## Buscar un viaje
 
@@ -44,7 +44,7 @@ Administración permite generar/imprimir sus códigos QR después de iniciar ses
 
 ## Actualización nativa Android
 
-Desde 1.9.0, **Actualizar ahora** descarga el APK dentro de la app, muestra progreso,
+Desde 1.9.1, **Actualizar ahora** descarga el APK dentro de la app, muestra progreso,
 comprueba SHA-256 contra `SHA256SUMS.txt` de la misma Release y valida el identificador,
 la versión Android creciente y el certificado de firma contra la instalación actual.
 Solo admite los enlaces HTTPS del repositorio y sus servidores de assets de GitHub.
@@ -54,8 +54,8 @@ de Android mediante un FileProvider restringido a `cache/updates/`.
 Android pide permiso para instalar desde Las Palmas Rutas y confirmación de instalación.
 No es una instalación silenciosa. Si cancelas, puedes instalar el archivo ya descargado,
 incluso sin conexión; una descarga incompleta se puede reintentar. Se conservan los datos.
-El bloqueo de versión sigue activo hasta actualizar. Un APK anterior a 1.9.0 conserva
-su código antiguo y requiere instalar 1.9.0 una vez para adoptar este nuevo flujo.
+El bloqueo de versión sigue activo hasta actualizar. Un APK anterior a 1.9.1 conserva
+su código antiguo y requiere instalar 1.9.1 una vez para adoptar este nuevo flujo.
 
 Referencias Android: [instalación de paquetes](https://developer.android.com/reference/android/content/pm/PackageManager#canRequestPackageInstalls()),
 [permiso de instalación](https://developer.android.com/reference/android/provider/Settings#ACTION_MANAGE_UNKNOWN_APP_SOURCES).
@@ -74,14 +74,22 @@ de funciones. No se cachean cuentas ni operaciones administrativas. Sin conexió
 no se muestran herramientas de una sesión que todavía no se pudo verificar.
 La creación del primer administrador está documentada en `CLOUDFLARE-ADMIN.md`.
 
+## Actualizaciones de Axel
+
+Se integró el commit `ce138d1` de la rama `Axel`. Recargar el panel del chofer
+conserva el servicio y retoma el observador GPS; si no puede obtener una señal
+reciente, muestra el motivo. La disponibilidad pública sigue exigiendo GPS vigente.
+El chofer puede cambiar su contraseña con la actual: se conserva su sesión y se
+cierran las demás. Los servidores Node y Cloudflare admiten esta función.
+
 ## Icono y verificación
 
 Van 4303195, Cuputo / Noun Project, de la página indicada por el usuario. Se utiliza
 la imagen pública con máscara CSS y el color de cada ruta, con atribución en el mapa.
 La descarga pública accesible es PNG; no se afirma que sea un SVG vectorial.
 
-111 pruebas pasaron: 57 de lógica y servidor, 52 de interfaz, una de Cloudflare y
-una de PWA sin conexión. Incluyen mapa, buscador plegable y paradas en escritorio/móvil;
+La integración de Axel se comprobó con sus pruebas de servidor y de interfaz de
+chofer. Las pruebas existentes incluyen mapa, buscador plegable y paradas en escritorio/móvil;
 protección del panel; integración de la interfaz con el puente nativo (progreso,
 cancelación, instalación y reutilización sin internet); PWA sin conexión; SQLite y
 permisos en el runtime de Cloudflare; compilación Android y lint de release.

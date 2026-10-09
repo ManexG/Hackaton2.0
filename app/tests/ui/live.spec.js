@@ -206,3 +206,114 @@ test('mobile guest can enter and leave driver access without mandatory registrat
   await expect(page.locator('.search-status')).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
 });
+
+test('reloading the driver panel keeps the service alive and re-attaches the GPS', async ({
+  page,
+  context,
+}, testInfo) => {
+  testInfo.setTimeout(60000);
+  store.provision(account);
+  await context.grantPermissions(['geolocation']);
+  await context.setGeolocation({
+    latitude: firstStop.point[0],
+    longitude: firstStop.point[1],
+    accuracy: 5,
+  });
+  const guest = await context.newPage();
+  await connect(guest);
+  await guest.goto('/');
+  await page.goto('/?driver=1');
+  await page.locator('#driver-email').fill(account.email);
+  await page.locator('#driver-password').fill(account.password);
+  await page.getByRole('button', { name: 'Ingresar como chofer', exact: true }).click();
+  await page.getByRole('button', { name: 'Activar mi servicio', exact: true }).click();
+  await expect(page.locator('.driver-service-state')).toContainText('Tu combi está en servicio');
+
+  // Esto es lo que fallaba: al recargar, la pantalla desactivaba el servicio en
+  // el servidor. El chofer veía desaparecer su combi sin ninguna explicación.
+  await page.reload();
+  // El estado puede tardar un instante en leerse del servidor tras recargar.
+  await expect(page.locator('.driver-service-state')).toContainText('Tu combi está en servicio');
+  await expect(page.getByRole('button', { name: 'Desactivar servicio', exact: true })).toBeVisible({
+    timeout: 10_000,
+  });
+
+  // Y elchiedor sigue viéndose desde otra pestaña, con la sesión intacta.
+  await expect(guest.locator('.fleet-status')).toContainText('1 combi en servicio');
+  await expect(guest.locator('.bus-marker')).toHaveCount(1);
+
+  // El GPS quedó reenganchado: una posición nueva sigue llegando al servidor.
+  await expect.poll(() => store.snapshot().vehicles.length, { timeout: 15000 }).toBeGreaterThan(0);
+
+  await page.getByRole('button', { name: 'Desactivar servicio', exact: true }).click();
+  await expect(guest.locator('.bus-marker')).toHaveCount(0);
+  await guest.close();
+});
+
+test('driver changes their own password and keeps working with the same session', async ({
+  page,
+  context,
+}, testInfo) => {
+  testInfo.setTimeout(60000);
+  store.provision(account);
+  await context.grantPermissions(['geolocation']);
+  await context.setGeolocation({
+    latitude: firstStop.point[0],
+    longitude: firstStop.point[1],
+    accuracy: 5,
+  });
+  const guest = await context.newPage();
+  await connect(guest);
+  await guest.goto('/');
+  await page.goto('/?driver=1');
+  await page.locator('#driver-email').fill(account.email);
+  await page.locator('#driver-password').fill(account.password);
+  await page.getByRole('button', { name: 'Ingresar como chofer', exact: true }).click();
+  await expect(page.locator('.driver-assignment')).toContainText('R01');
+  await page.getByRole('button', { name: 'Cambiar mi contraseña', exact: true }).click();
+
+  // La contraseña actual es obligatoria: tener la sesión no alcanza.
+  await page.locator('.driver-password input').nth(0).fill('no-es-la-actual');
+  await page.locator('.driver-password input').nth(1).fill('clave-nueva-larga-2026');
+  await page.getByRole('button', { name: 'Guardar contraseña', exact: true }).click();
+  await expect(page.locator('.driver-note')).toContainText('no coincide');
+
+  // Menos de 12 caracteres no llega ni a enviarse: el campo lo exige en el
+  // navegador. La regla misma se comprueba en la prueba de servidor.
+  await page.locator('.driver-password input').nth(0).fill(account.password);
+  await page.locator('.driver-password input').nth(1).fill('corta');
+  const demasiadoCorta = await page
+    .locator('.driver-password input')
+    .nth(1)
+    .evaluate((campo) => campo.validity.tooShort);
+  expect(demasiadoCorta).toBe(true);
+
+  await page.locator('.driver-password input').nth(0).fill(account.password);
+  await page.locator('.driver-password input').nth(1).fill('clave-nueva-larga-2026');
+  await page.getByRole('button', { name: 'Guardar contraseña', exact: true }).click();
+  // El formulario se cierra al guardar: ese cierre es la señal de éxito.
+  await expect(page.locator('.driver-password')).toHaveCount(0);
+  await expect(
+    page.getByRole('button', { name: 'Activar mi servicio', exact: true })
+  ).toBeVisible();
+
+  // La sesión no se cae: cambiar la contraseña no debe desenchufar el GPS que
+  // el chofer acaba de activar.
+  await expect(page.locator('.driver-assignment')).toContainText('R01');
+  await page.getByRole('button', { name: 'Activar mi servicio', exact: true }).click();
+  await expect(page.locator('.driver-service-state')).toContainText('Tu combi está en servicio');
+  await expect(guest.locator('.bus-marker')).toHaveCount(1);
+
+  // Y la contraseña anterior ya no sirve.
+  await page.getByRole('button', { name: 'Cerrar sesión', exact: true }).click();
+  await expect(page.locator('#driver-email')).toBeVisible();
+  await page.locator('#driver-email').fill(account.email);
+  await page.locator('#driver-password').fill(account.password);
+  await page.getByRole('button', { name: 'Ingresar como chofer', exact: true }).click();
+  await expect(page.locator('.driver-error')).toContainText('no coinciden');
+
+  await page.locator('#driver-password').fill('clave-nueva-larga-2026');
+  await page.getByRole('button', { name: 'Ingresar como chofer', exact: true }).click();
+  await expect(page.locator('.driver-assignment')).toContainText('R01');
+  await guest.close();
+});

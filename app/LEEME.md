@@ -1,16 +1,16 @@
-# Las Palmas Rutas 1.9.0 · React + Capacitor + GPS + Comunidad
+# Las Palmas Rutas 1.9.1 · React + Capacitor + GPS + Comunidad
 
 Aplicación Android y web de movilidad para la zona urbana de Lázaro Cárdenas, conservando el encuadre del corredor indicado. Usa **React 19, JavaScript, Vite 8, Leaflet y Capacitor 8**. La publicación en **Cloudflare Workers** guarda cuentas y GPS en un **Durable Object con SQLite** y comparte las posiciones mediante **SSE**. También se conserva el servidor alternativo de Node.js 24 para uso local o alojamiento propio.
 
 La configuración y los comandos para publicar en `workers.dev` están en [CLOUDFLARE.md](CLOUDFLARE.md). El almacenamiento en Cloudflare es independiente del SQLite local; no se suben automáticamente cuentas ni datos del equipo.
 
-## Versión 1.9.0
+## Versión 1.9.1
 
 Origen y destino plegables, ocho rutas de ejemplo, paradas por zonas y administración después de validar el inicio de sesión. Las actualizaciones Android se descargan dentro de la app y abren el instalador del sistema. Detalles y límites en [CAMBIOS-1.9.md](CAMBIOS-1.9.md).
 
 Incluye 33 semáforos de OpenStreetMap, actualización obligatoria con novedades desde GitHub Releases, avisos sin señal, recuperación de errores y menor consumo de datos. El modelo se descarga cuando hace falta y el lector de cámara al utilizarlo. La ubicación de los semáforos no representa su estado real.
 
-Las instalaciones 1.7 y anteriores necesitan instalar 1.9.0 una vez para recibir los avisos futuros. Publicación, firma, etiqueta de versión y despliegue en [ACTUALIZACIONES.md](ACTUALIZACIONES.md). Pruebas, correcciones y límites en [AUDITORIA.md](AUDITORIA.md).
+Las instalaciones 1.7 y anteriores necesitan instalar 1.9.1 una vez para recibir los avisos futuros. Publicación, firma, etiqueta de versión y despliegue en [ACTUALIZACIONES.md](ACTUALIZACIONES.md). Pruebas, correcciones y límites en [AUDITORIA.md](AUDITORIA.md).
 
 ## Interfaz para viajar con menos pasos
 
@@ -114,7 +114,7 @@ npm run android:sync
 npm run android:open
 ```
 
-Configura primero `VITE_PUBLIC_API_URL` y `VITE_PUBLIC_APP_URL` para conectar el APK al servidor publicado. El identificador es `mx.cerca.combis.demo`; versión **1.9.0**, código **12**. GitHub Releases publica el APK de release firmado. Consulta [ACTUALIZACIONES.md](ACTUALIZACIONES.md) para generar una versión y conocer la firma utilizada.
+Configura primero `VITE_PUBLIC_API_URL` y `VITE_PUBLIC_APP_URL` para conectar el APK al servidor publicado. El identificador es `mx.cerca.combis.demo`; versión **1.9.1**, código **12**. GitHub Releases publica el APK de release firmado. Consulta [ACTUALIZACIONES.md](ACTUALIZACIONES.md) para generar una versión y conocer la firma utilizada.
 
 ## Verificar
 

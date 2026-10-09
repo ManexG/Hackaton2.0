@@ -133,9 +133,20 @@ test('SSE delivers public fleet updates without login', async () => {
     const response = await fetch(base + '/api/events', { signal: controller.signal });
     assert.equal(response.headers.get('content-type'), 'text/event-stream');
     const reader = response.body.getReader();
-    const first = new TextDecoder().decode((await reader.read()).value);
-    assert.match(first, /event: fleet/);
-    assert.match(first, /"vehicles":\[\]/);
+    // El stream llega troceado según agrupe Node los `write`. El servidor
+    // escribe primero `retry:` y después el evento, así que hay que leer hasta
+    // encontrarlo en vez de mirar solo el primer fragmento: en Node 24 ambos
+    // salían juntos y en Node 26 en trozos separados.
+    const decoder = new TextDecoder();
+    let recibido = '';
+    const limite = Date.now() + 5000;
+    while (!recibido.includes('event: fleet') && Date.now() < limite) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      recibido += decoder.decode(value, { stream: true });
+    }
+    assert.match(recibido, /event: fleet/);
+    assert.match(recibido, /"vehicles":\[\]/);
     await reader.cancel();
   } finally {
     controller.abort();
@@ -143,5 +154,49 @@ test('SSE delivers public fleet updates without login', async () => {
       server.close(() => resolve());
       server.closeAllConnections();
     });
+  }
+});
+test('driver changes their own password, other sessions close and a wrong current one is refused', async () => {
+  const store = new TransitStore(':memory:', network);
+  const now = Date.parse('2026-10-08T21:15:00Z');
+  try {
+    const driver = store.provision(account);
+    // Cada inicio de sesión reemplaza al anterior en este almacén, así que se
+    // prueban las dos sesiones sobre cuentas distintas para poder comprobar que
+    // al cambiar la contraseña se cierra la de otro dispositivo.
+    const first = await store.login(account.email, account.password, now);
+    const otro = store.provision({ ...account, email: 'otro@example.test', unit: 'TEST-02' });
+    const second = await store.login(otro.email, account.password, now);
+
+    // La contraseña actual debe ser correcta: no basta con tener la sesión.
+    await assert.rejects(
+      async () =>
+        store.changePassword(first.token, 'no-es-la-actual', 'nueva-clave-suficientemente-larga'),
+      /no coincide/
+    );
+    // Mínimo de 12 caracteres, igual que para los administradores.
+    await assert.rejects(
+      async () => store.changePassword(first.token, account.password, 'corta'),
+      /12 caracteres/
+    );
+    // Sin sesión no se puede cambiar.
+    await assert.rejects(
+      async () =>
+        store.changePassword('inventada', account.password, 'nueva-clave-suficientemente-larga'),
+      /sesión/i
+    );
+
+    await store.changePassword(first.token, account.password, 'clave-nueva-del-chofer-2026');
+
+    // La sesión con la que se cambió sigue viva: cerrar el servicio en pleno
+    // viaje sería peor que la ventaja de cerrar las demás.
+    assert.equal(store.authenticate(first.token, now).id, driver.id);
+    // La contraseña anterior deja de servir y la nueva sí.
+    await assert.rejects(() => store.login(account.email, account.password, now), /no coinciden/);
+    const nueva = await store.login(account.email, 'clave-nueva-del-chofer-2026', now);
+    assert.equal(nueva.driver.id, driver.id);
+    assert.equal(store.authenticate(second.token, now).id, otro.id);
+  } finally {
+    store.close();
   }
 });

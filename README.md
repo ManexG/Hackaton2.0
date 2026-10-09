@@ -79,4 +79,4 @@ npm run test:cloudflare
 
 Consulta [`app/LEEME.md`](app/LEEME.md) para uso, ejemplos, cobertura y formato de las rutas. Datos del mapa © [OpenStreetMap contributors, ODbL](https://www.openstreetmap.org/copyright).
 
-La versión 1.9.0 integra actualización dentro de Android, origen/destino plegables, paradas por zonas y panel de administración después de autenticar. [Cambios y uso de paradas](app/CAMBIOS-1.9.md).
+La versión 1.9.1 integra actualización dentro de Android, origen/destino plegables, paradas por zonas y panel de administración después de autenticar. [Cambios y uso de paradas](app/CAMBIOS-1.9.md).

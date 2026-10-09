@@ -1,9 +1,10 @@
 {
-  "version": "1.9.0",
-  "androidVersionCode": 13,
+  "version": "1.9.1",
+  "androidVersionCode": 14,
   "repository": "ManexG/Hackaton2.0",
   "assetName": "Las-Palmas-Rutas.apk",
   "notes": [
+    "Actualizaciones de Axel: el servicio se conserva al recargar, se retoma el GPS y el chofer puede cambiar su contraseña.",
     "Actualizaciones Android dentro de la app, con progreso y verificación de firma e integridad.",
     "Origen y destino en tarjetas plegables: toca un lugar elegido para cambiarlo.",
     "Ocho rutas de ejemplo y búsqueda en la zona urbana de Lázaro Cárdenas, La Orilla y Las Guacamayas.",

@@ -318,6 +318,11 @@ export class FleetService extends DurableObject {
       }
       if (request.method === 'GET' && url.pathname === '/api/driver/profile')
         return json(200, this.store.authenticate(token));
+      if (request.method === 'POST' && url.pathname === '/api/driver/password') {
+        const data = await this.body(request);
+        await this.store.changePassword(token, data.current, data.next);
+        return json(200, { ok: true });
+      }
       if (
         request.method === 'POST' &&
         ['/api/driver/service', '/api/driver/location'].includes(url.pathname)

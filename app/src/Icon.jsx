@@ -36,6 +36,7 @@ import {
   Radio,
   LogOut,
   Power,
+  KeyRound,
   WifiOff,
 } from 'lucide-react';
 const icons = {
@@ -75,6 +76,7 @@ const icons = {
   users: UsersRound,
   radio: Radio,
   logout: LogOut,
+  key: KeyRound,
   power: Power,
   offline: WifiOff,
 };

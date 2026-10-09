@@ -54,6 +54,14 @@
 .reporting-fleet span { font-size: .9rem; }
 .reporting-fleet small, .arrival-availability-note { font-size: .85rem; line-height: 1.6; color: #536647; }
 .driver-error { background: #f9ede6; border: 1px solid #edcfbc; color: #934b35; font-size: 12px; line-height: 1.7; padding: 14px; border-radius: 9px; margin-top: 16px; }
+/* Cambio de contraseña del chofer. */
+.driver-password { display: grid; gap: 10px; padding: 14px; margin-top: 12px; border: 1px solid #dce4d5; border-radius: 11px; background: #fbfcf8; }
+.driver-password h3 { font-size: 1rem; margin: 0; }
+.driver-password label { display: grid; gap: 4px; font-size: 11px; color: #4e5c3f; }
+.driver-password input { width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid #d5ddcc; border-radius: 9px; background: #fff; font: inherit; font-size: 16px; color: #294331; }
+.driver-password input:focus-visible { outline: 3px solid #e6af43; outline-offset: 1px; }
+.driver-password small { font-size: 10px; color: #7c8a6e; }
+.driver-note { font-size: 12px; color: #47603c; line-height: 1.7; }
 @media (max-width: 760px) {
   .role-switch { padding: 5px 0 12px; }.role-switch > span { font-size: 10px; }.role-switch > button { min-height: 40px; }
   .fleet-status { margin-bottom: 18px; }.fleet-status strong { font-size: 12px; }.fleet-status span { font-size: 9px; }

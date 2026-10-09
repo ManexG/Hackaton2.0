@@ -238,6 +238,12 @@ export function createTransitServer(options = {}) {
         send(200, store.authenticate(token));
         return;
       }
+      if (request.method === 'POST' && url.pathname === '/api/driver/password') {
+        const data = await body(request);
+        await store.changePassword(token, data.current, data.next);
+        send(200, { ok: true });
+        return;
+      }
       if (
         request.method === 'POST' &&
         ['/api/driver/service', '/api/driver/location'].includes(url.pathname)

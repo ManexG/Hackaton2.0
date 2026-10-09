@@ -86,12 +86,39 @@ export function DriverPanel({ network, fleet, onMessage }) {
     if (token)
       void api('/driver/profile', { token })
         .then(async (driver) => {
-          // A reload ends this foreground-only watch. Require a fresh GPS fix before resuming.
-          const profile = driver.active
-            ? await api('/driver/service', { token, body: { active: false } })
-            : driver;
           const current = sessionRef.current;
-          if (current?.token === token) persist({ ...current, driver: profile });
+          if (current?.token !== token) return;
+          persist({ ...current, driver });
+
+          // Recargar la app ya no desactiva el servicio. Antes sí lo hacía, y
+          // como el GPS solo corre con la pantalla abierta, bastaba con que el
+          // sistema matara la app para que la combi desapareciera del mapa sin
+          // avisar. Ahora se reanuda el observador y se pide un punto nuevo.
+          if (!driver.active) return;
+          if (!online) {
+            setError(
+              'Tu servicio sigue activo, pero este dispositivo está sin internet. La combi desaparecerá del mapa si la señal no vuelve pronto.'
+            );
+            return;
+          }
+          try {
+            await startWatch();
+            // No hace falta mandar un punto aquí: el observador entrega uno en
+            // cuanto tenga GPS y `publish` lo envía. Basta con reengancharlo.
+            // Antes se mandaba la última posición guardada en el navegador, que
+            // puede ser anterior a la señal que el servidor ya tenía, y por
+            // eso la rechazaba con "anterior a la última señal".
+            setError('');
+            onMessage('Seguimos compartiendo tu ubicación.');
+          } catch (reason) {
+            // Si no se puede reanudar, se dice claro. Antes el chofer solo
+            // veía que su combi había desaparecido, sin explicación.
+            setError(
+              reason instanceof Error
+                ? `Tu servicio sigue activo pero no pudimos retomar el GPS en este dispositivo: ${reason.message}`
+                : 'Tu servicio sigue activo, pero no pudimos retomar el GPS. Revisa el permiso de ubicación.'
+            );
+          }
         })
         .catch((reason) => {
           if (reason instanceof ConnectionError && reason.status === 401) persist(null);
@@ -183,7 +210,15 @@ export function DriverPanel({ network, fleet, onMessage }) {
       }
     } catch (reason) {
       if (run !== generation.current) return;
-      setError(reason instanceof Error ? reason.message : 'No pudimos compartir la ubicación.');
+      // Tras recargar, el navegador entrega primero la posición que tenía
+      // cacheada, que puede ser anterior a la última señal ya guardada. El
+      // servidor la rechaza con un mensaje de "anterior a la última señal" y el
+      // observador entrega una fresca justo después, así que no es un fallo que
+      // deba mostrarse al chofer.
+      const senalCacheada =
+        reason instanceof Error && /anterior a la última señal/i.test(reason.message);
+      if (!senalCacheada)
+        setError(reason instanceof Error ? reason.message : 'No pudimos compartir la ubicación.');
       if (reason instanceof ConnectionError && [401, 403, 409].includes(reason.status)) {
         await clearWatch();
         if (reason.status === 401) persist(null);
@@ -192,6 +227,38 @@ export function DriverPanel({ network, fleet, onMessage }) {
     } finally {
       uploading.current = false;
     }
+  }
+  /**
+   * Arranca el observador de GPS. Se separa de `toggle` porque al montar la
+   * pantalla hay que poder reanudarlo sin pasar por el botón: recargar la app
+   * no debe equivaler a desactivar el servicio.
+   */
+  async function startWatch() {
+    const run = generation.current;
+    if (Capacitor.isNativePlatform()) {
+      const id = await Geolocation.watchPosition(
+        { enableHighAccuracy: true, timeout: 15_000, minimumUpdateInterval: 5000 },
+        (position, reason) => {
+          if (position) void publish(position, run);
+          if (reason && run === generation.current)
+            setError('No llega una señal GPS reciente. Comprueba el permiso y tu ubicación.');
+        }
+      );
+      if (run !== generation.current) {
+        await Geolocation.clearWatch({ id });
+        return;
+      }
+      watch.current = { native: id };
+    } else
+      watch.current = {
+        web: navigator.geolocation.watchPosition(
+          (position) => {
+            void publish(position, run);
+          },
+          () => setError('No llega una señal GPS reciente. Comprueba el permiso y tu ubicación.'),
+          { enableHighAccuracy: true, maximumAge: 5000, timeout: 15_000 }
+        ),
+      };
   }
   async function toggle() {
     if (!session) return;
@@ -223,31 +290,7 @@ export function DriverPanel({ network, fleet, onMessage }) {
       });
       lastSent.current = Date.now();
       persist({ ...session, driver });
-      const run = generation.current;
-      if (Capacitor.isNativePlatform()) {
-        const id = await Geolocation.watchPosition(
-          { enableHighAccuracy: true, timeout: 15_000, minimumUpdateInterval: 5000 },
-          (position, reason) => {
-            if (position) void publish(position, run);
-            if (reason && run === generation.current)
-              setError('No llega una señal GPS reciente. Comprueba el permiso y tu ubicación.');
-          }
-        );
-        if (run !== generation.current) {
-          await Geolocation.clearWatch({ id });
-          return;
-        }
-        watch.current = { native: id };
-      } else
-        watch.current = {
-          web: navigator.geolocation.watchPosition(
-            (position) => {
-              void publish(position, run);
-            },
-            () => setError('No llega una señal GPS reciente. Comprueba el permiso y tu ubicación.'),
-            { enableHighAccuracy: true, maximumAge: 5000, timeout: 15_000 }
-          ),
-        };
+      await startWatch();
       onMessage('Servicio activado. Los pasajeros ya pueden ver tu combi.');
     } catch (reason) {
       await clearWatch();
@@ -260,6 +303,34 @@ export function DriverPanel({ network, fleet, onMessage }) {
           ? reason.message
           : 'Permite la ubicación precisa para activar el servicio.'
       );
+    } finally {
+      setBusy(false);
+    }
+  }
+  // El chofer cambia su propia contraseña. Antes solo un administrador podía
+  // restablecerla, así que quien viera la contraseña inicial no tenía forma
+  // de cambiarla por su cuenta.
+  const [cambiandoClave, setCambiandoClave] = useState(false);
+  const [claveActual, setClaveActual] = useState('');
+  const [claveNueva, setClaveNueva] = useState('');
+  const [mensajeClave, setMensajeClave] = useState('');
+  async function cambiarClave(event) {
+    event.preventDefault();
+    setBusy(true);
+    setMensajeClave('');
+    try {
+      await api('/driver/password', {
+        token: session.token,
+        body: { current: claveActual, next: claveNueva },
+      });
+      setClaveActual('');
+      setClaveNueva('');
+      setCambiandoClave(false);
+      // El aviso va fuera del formulario porque este se cierra al guardar; si
+      // se quedara dentro, el chofer nunca lo vería.
+      onMessage('Tu contraseña quedó actualizada. Cierra sesión en los demás dispositivos.');
+    } catch (reason) {
+      setMensajeClave(reason instanceof Error ? reason.message : 'No pudimos cambiarla.');
     } finally {
       setBusy(false);
     }
@@ -442,6 +513,61 @@ export function DriverPanel({ network, fleet, onMessage }) {
             Mantén la app abierta para compartir tu ubicación. Si no llega una señal reciente, tu
             combi deja de aparecer como disponible.
           </p>
+          {!cambiandoClave ? (
+            <button
+              className="secondary-button"
+              disabled={busy}
+              onClick={() => {
+                setCambiandoClave(true);
+                setMensajeClave('');
+              }}
+            >
+              <Icon name="key" />
+              Cambiar mi contraseña
+            </button>
+          ) : (
+            <form className="driver-password" onSubmit={cambiarClave}>
+              <h3>Cambiar contraseña</h3>
+              <label>
+                Tu contraseña actual
+                <input
+                  type="password"
+                  value={claveActual}
+                  onChange={(e) => setClaveActual(e.target.value)}
+                  autoComplete="current-password"
+                  required
+                />
+              </label>
+              <label>
+                Contraseña nueva
+                <input
+                  type="password"
+                  value={claveNueva}
+                  onChange={(e) => setClaveNueva(e.target.value)}
+                  autoComplete="new-password"
+                  minLength={12}
+                  required
+                />
+                <small>Necesita al menos 12 caracteres.</small>
+              </label>
+              {mensajeClave && <p className="driver-note">{mensajeClave}</p>}
+              <button type="submit" className="primary-button" disabled={busy}>
+                Guardar contraseña
+              </button>
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => {
+                  setCambiandoClave(false);
+                  setClaveActual('');
+                  setClaveNueva('');
+                  setMensajeClave('');
+                }}
+              >
+                Cancelar
+              </button>
+            </form>
+          )}
           <button
             className="secondary-button"
             disabled={busy}

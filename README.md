@@ -1,6 +1,6 @@
 # Hackaton2.0 · Las Palmas Rutas
 
-Aplicación Android y web para consultar combis en el corredor de Jugos Acapulco al entronque de la avenida Lázaro Cárdenas. El proyecto está en [`app/`](app/): **React, TypeScript, Vite, Leaflet y Capacitor**, alojado en **Cloudflare Workers + Durable Objects con SQLite + SSE**. Se conserva un servidor alternativo de Node.js 24.
+Aplicación Android y web para consultar combis en el corredor de Jugos Acapulco al entronque de la avenida Lázaro Cárdenas. El proyecto está en [`app/`](app/): **React con JavaScript/JSX, Vite, Leaflet y Capacitor**, alojado en **Cloudflare Workers + Durable Objects con SQLite + SSE**. Los componentes usan `.jsx` y la lógica, el servidor, Cloudflare y las pruebas usan `.js` con módulos ES. Se conserva un servidor alternativo de Node.js 24. No se necesita compilar TypeScript ni instalar `tsx`. Capacitor se configura con `capacitor.config.json`.
 
 **Web pública: [cerca-combis.alanedgardo4.workers.dev](https://cerca-combis.alanedgardo4.workers.dev/)**.
 
@@ -49,13 +49,14 @@ npm run android:sync
 npm run android:open
 ```
 
-El proyecto nativo está en `app/android/`. Versión 1.4, código 5. En esta versión el chofer debe mantener la app abierta para compartir GPS; el seguimiento con pantalla bloqueada queda pendiente de definir.
+El proyecto nativo está en `app/android/`. Versión 1.5, código 6. En esta versión el chofer debe mantener la app abierta para compartir GPS; el seguimiento con pantalla bloqueada queda pendiente de definir.
 
 ## Verificar
 
 Desde `app/`:
 
 ```sh
+npm run format:check
 npm test
 npm run test:ui
 npm run build

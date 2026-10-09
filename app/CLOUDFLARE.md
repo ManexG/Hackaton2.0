@@ -45,6 +45,6 @@ Con las dos variables públicas anteriores, ejecuta `npm run android:sync` y com
 
 ## Verificación
 
-`npm run cloudflare:check` revisa TypeScript y el paquete que recibirá Cloudflare. `npm run test:cloudflare` comprueba cuentas, sesiones, GPS, CORS y eventos sobre el runtime local de Cloudflare, con una base de datos aislada. `npm test` mantiene las pruebas de rutas, búsqueda y del servidor Node alternativo.
+`npm run cloudflare:check` revisa JavaScript y el paquete que recibirá Cloudflare. `npm run test:cloudflare` comprueba cuentas, sesiones, GPS, CORS y eventos sobre el runtime local de Cloudflare, con una base de datos aislada. `npm test` mantiene las pruebas de rutas, búsqueda y del servidor Node alternativo.
 
 El almacenamiento público inicia sin choferes ni posiciones inventadas. Las cuatro rutas permanecen como demostración hasta recibir las rutas oficiales.

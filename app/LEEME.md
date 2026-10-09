@@ -1,6 +1,6 @@
-# Las Palmas Rutas 1.4 · React + Capacitor + GPS + Cloudflare
+# Las Palmas Rutas 1.5 · React + Capacitor + GPS + Cloudflare
 
-Aplicación Android y web de movilidad para el corredor indicado en Lázaro Cárdenas. Usa **React 19, TypeScript, Vite 8, Leaflet y Capacitor 8**. La publicación en **Cloudflare Workers** guarda cuentas y GPS en un **Durable Object con SQLite** y comparte las posiciones mediante **SSE**. También se conserva el servidor alternativo de Node.js 24 para uso local o alojamiento propio.
+Aplicación Android y web de movilidad para el corredor indicado en Lázaro Cárdenas. Usa **React 19, JavaScript, Vite 8, Leaflet y Capacitor 8**. La publicación en **Cloudflare Workers** guarda cuentas y GPS en un **Durable Object con SQLite** y comparte las posiciones mediante **SSE**. También se conserva el servidor alternativo de Node.js 24 para uso local o alojamiento propio.
 
 La configuración y los comandos para publicar en `workers.dev` están en [CLOUDFLARE.md](CLOUDFLARE.md). El almacenamiento en Cloudflare es independiente del SQLite local; no se suben automáticamente cuentas ni datos del equipo.
 
@@ -98,7 +98,7 @@ npm run android:sync
 npm run android:open
 ```
 
-Configura primero `VITE_PUBLIC_API_URL` y `VITE_PUBLIC_APP_URL` para conectar el APK al servidor publicado. El identificador es `mx.cerca.combis.demo`; versión **1.4**, código **5**. El APK de depuración se genera en `android/app/build/outputs/apk/debug/app-debug.apk`.
+Configura primero `VITE_PUBLIC_API_URL` y `VITE_PUBLIC_APP_URL` para conectar el APK al servidor publicado. El identificador es `mx.cerca.combis.demo`; versión **1.5**, código **6**. El APK de depuración se genera en `android/app/build/outputs/apk/debug/app-debug.apk`.
 
 ## Verificar
 
@@ -116,13 +116,13 @@ Las pruebas de interfaz usan Microsoft Edge y un puerto propio para evitar confl
 
 | Archivo | Función |
 | --- | --- |
-| `src/App.tsx` | Origen, destino, roles, paradas y paneles. |
-| `src/MapView.tsx` | Rutas de colores, GPS de combis, paradas y trasbordos. |
-| `src/DriverPanel.tsx` | Sesión del chofer, activación y publicación GPS. |
-| `src/StopPanel.tsx` | Llegadas, lector QR y QR descargables. |
-| `src/VoiceButton.tsx` | Dictado en navegador o Android. |
-| `src/transit.ts` | Horarios, frescura de señal y predicciones según vehículos. |
-| `src/planner.ts` | Cobertura, catálogo y candidatos de viaje. |
+| `src/App.jsx` | Origen, destino, roles, paradas y paneles. |
+| `src/MapView.jsx` | Rutas de colores, GPS de combis, paradas y trasbordos. |
+| `src/DriverPanel.jsx` | Sesión del chofer, activación y publicación GPS. |
+| `src/StopPanel.jsx` | Llegadas, lector QR y QR descargables. |
+| `src/VoiceButton.jsx` | Dictado en navegador o Android. |
+| `src/transit.js` | Horarios, frescura de señal y predicciones según vehículos. |
+| `src/planner.js` | Cobertura, catálogo y candidatos de viaje. |
 | `server/` | Cuentas, asignaciones, sesiones, GPS y eventos públicos. |
 | `SERVIDOR.md` | Preparación, alojamiento y configuración de Android. |
 

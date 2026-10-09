@@ -2,7 +2,7 @@
 
 La app integra el modelo de [`ManexG/Hackaton2.0`, rama `prediction-model`, commit `4266afc`](https://github.com/ManexG/Hackaton2.0/tree/4266afc/model). Se conservan el script y el archivo entrenado originales en `model-tools/`. El archivo original tiene SHA-256 `e5f11fed02e5d5f58ff7c5741ffafc66c15c37a6cdfdd6614184600726255593`.
 
-`public/data/eta-model.json` contiene los árboles y las predicciones base de los tres estimadores HistGradientBoosting: media y cuantiles 0.1 y 0.9. `src/etaModel.ts` los evalúa con el mismo criterio de división y suma que scikit-learn. Esto funciona en la web y dentro del APK, sin añadir un servicio de Python a Cloudflare.
+`public/data/eta-model.json` contiene los árboles y las predicciones base de los tres estimadores HistGradientBoosting: media y cuantiles 0.1 y 0.9. `src/etaModel.js` los evalúa con el mismo criterio de división y suma que scikit-learn. Esto funciona en la web y dentro del APK, sin añadir un servicio de Python a Cloudflare.
 
 ## Uso en los viajes
 

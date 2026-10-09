@@ -7,7 +7,7 @@ for (const width of [1440, 390]) {
     await page.setViewportSize({ width, height: 844 });
     await page.goto('/');
     await openSection(page, 'Buscar viaje');
-  await expect(page.locator('#origin')).toBeVisible();
+    await expect(page.locator('#origin')).toBeVisible();
     await expect(page.locator('#destination')).toBeHidden();
     await page.locator('#origin').fill('Jugos Acapulco');
     await page.getByRole('option').first().click();

@@ -27,7 +27,7 @@ git tag vX.Y.Z
 git push origin vX.Y.Z
 ```
 
-Sustituye `X.Y.Z` por la versión real, por ejemplo `1.8.1`. La etiqueta debe coincidir exactamente con `release.json`; el workflow rechaza incoherencias. Publica desde el commit ya revisado, sin credenciales ni archivos locales. Los commits de `V2Camion` ejecutan verificación; las etiquetas ejecutan además compilación y publicación.
+Sustituye `X.Y.Z` por la versión real, por ejemplo `1.8.2`. La etiqueta debe coincidir exactamente con `release.json`; el workflow rechaza incoherencias. Publica desde el commit ya revisado, sin credenciales ni archivos locales. Los commits de `V2Camion` ejecutan verificación; las etiquetas ejecutan además compilación y publicación.
 
 El workflow raíz `.github/workflows/release.yml` instala Node 24, JDK 21 y SDK 36, revisa dependencias, ejecuta pruebas, sincroniza Capacitor y compila un APK de release firmado. Solo entonces crea una GitHub Release estable con:
 
@@ -51,7 +51,7 @@ Android comprueba al iniciar y, mientras permanece visible y conectado, cada 10 
 
 La web usa la versión realmente desplegada en Cloudflare. Su botón actualiza el service worker y comprueba el HTML nuevo antes de recargar. Publicar un APK no obliga a la web a descargar una versión web que todavía no existe.
 
-**Las instalaciones 1.7 y anteriores no tenían este mecanismo: deben instalar 1.8.1 una vez para recibir los avisos siguientes.** No se puede añadir código a un APK ya instalado desde el servidor. Si un teléfono nunca pudo consultar una versión nueva, conserva las funciones locales disponibles; no puede conocer una publicación estando desconectado. Este control es un flujo de actualización, no una protección contra clientes modificados que falseen su versión.
+**Las instalaciones 1.7 y anteriores no tenían este mecanismo: deben instalar la versión actual (1.8.2) una vez para recibir los avisos siguientes.** No se puede añadir código a un APK ya instalado desde el servidor. Si un teléfono nunca pudo consultar una versión nueva, conserva las funciones locales disponibles; no puede conocer una publicación estando desconectado. Este control es un flujo de actualización, no una protección contra clientes modificados que falseen su versión.
 
 ## Publicar también la web y el servidor
 

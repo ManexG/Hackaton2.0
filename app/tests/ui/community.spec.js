@@ -65,8 +65,22 @@ test('guest community is optional, navigation returns to transport, and mobile l
   await page.keyboard.press('Escape');
   await page.getByRole('button', { name: 'Mapa', exact: true }).click();
   await expect(page.locator('.community-map .flat-street-name').first()).toBeVisible();
+  const streetLayer = page.locator('.community-map .leaflet-localMap-pane > svg');
+  await expect(streetLayer).toHaveCount(1);
+  expect(
+    await streetLayer.evaluate(
+      (svg) => svg.getBoundingClientRect().width >= svg.closest('.community-map').clientWidth
+    )
+  ).toBe(true);
   await expect(page.locator('.community-map .leaflet-tile')).toHaveCount(0);
   await page.setViewportSize({ width: 390, height: 844 });
+  await expect
+    .poll(() =>
+      streetLayer.evaluate(
+        (svg) => svg.getBoundingClientRect().width >= svg.closest('.community-map').clientWidth
+      )
+    )
+    .toBe(true);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.getByRole('button', { name: 'Volver a transporte', exact: true }).click();
   await expect(page.locator('#origin')).toBeVisible();

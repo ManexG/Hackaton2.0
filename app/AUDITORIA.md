@@ -1,4 +1,4 @@
-# Revisión de Las Palmas Rutas 1.8.1
+# Revisión de Las Palmas Rutas 1.8.2
 
 Revisión del 8 de octubre de 2026: React/JavaScript, servidor Node, Cloudflare Durable Object, comunidad integrada de Axel, datos cartográficos, modelo de predicción, PWA, Capacitor Android y publicación en GitHub. Se conserva la cobertura y los datos persistentes del servicio. La revisión reduce riesgos concretos; no demuestra que cualquier dispositivo o circunstancia futura esté libre de errores.
 
@@ -28,6 +28,8 @@ Revisión del 8 de octubre de 2026: React/JavaScript, servidor Node, Cloudflare 
 | Paradas borradas que podían quedar en sugerencias tras editar la red | La recarga de rutas excluye paradas antiguas retiradas. |
 | Respuesta de trazado externo incompleta | Validación y error 502 comprensible antes de utilizar la geometría. |
 | Temporizador del editor que operaba sobre un mapa desmontado | Se cancela al abandonar el editor; las pruebas administrativas ahora rechazan cualquier excepción del navegador. |
+| Etiquetas de calles que intentaban actualizar un mapa ya destruido | Todas las vistas cancelan los temporizadores del mapa antes de desmontarlo. |
+| Calles invisibles en Comunidad, aunque sus nombres y semáforos aparecían | La regla de tamaño de los iconos se limita a Lucide; el SVG de Leaflet conserva sus dimensiones. La prueba falla antes de corregirlo y pasa con tamaños de escritorio y móvil. |
 | Preparación Android en GitHub que pedía un paquete retirado por Google | Se solicitan únicamente platform-tools y SDK/build-tools actuales. |
 | Pruebas que dependían de un servidor local o una consulta real a GitHub | Backend de pruebas aislado, versión simulada controlada y tolerancia únicamente a cancelación de solicitudes al recargar. |
 | Orden de permisos en el manifiesto Android | Permisos declarados antes de la aplicación, conforme a la revisión estática. |
@@ -52,6 +54,15 @@ La web requiere completar una primera visita con conexión para conservar sus ar
 - Formato, auditoría npm, compilación Vite, revisión de despliegue Cloudflare, APK firmado y `lintRelease`.
 
 Las pruebas de escritura usan servidores y cuentas aislados. Las cuentas reales no se reinician ni se usan para publicar posiciones ficticias. La comprobación pública consulta API, mapa, SSE, QR, recursos y asignaciones sin alterar las sesiones reales.
+
+## Evidencia de publicación y consumo de datos
+
+- La [verificación del commit final](https://github.com/ManexG/Hackaton2.0/actions/runs/37885031875) completó las 100 pruebas en GitHub.
+- La [compilación y publicación Android](https://github.com/ManexG/Hackaton2.0/actions/runs/37885034888) terminó correctamente. La [Release v1.8.1](https://github.com/ManexG/Hackaton2.0/releases/tag/v1.8.1) contiene el APK firmado, novedades y suma SHA-256.
+- APK publicado: versión 1.8.1, código Android 10, SHA-256 `8fd9b40990acc235b70ab161a41cbdb94f6e7bde728e792f545b03409d0e4149`. La firma coincide con el certificado de las instalaciones anteriores.
+- Primera visita a la web pública, con un contexto nuevo de Edge y sin choferes activos: la suma de `ResourceTiming.transferSize` de los recursos de la página bajó de 820 578 a aproximadamente 393 000 bytes, un 52 %. Se esperó a que el campo de origen y el service worker estuvieran disponibles y cuatro segundos adicionales en ambas mediciones. Esta cifra excluye el documento, transferencias de fondo del service worker y el flujo SSE; no representa todo el consumo del teléfono. La recarga siguiente reutilizó los recursos guardados, pero sigue necesitando datos para las consultas y servicios en vivo. No se atribuye una mejora de latencia a esta medición: también depende de la conexión y del servidor.
+
+Los modelos, la cámara y la administración pueden añadir descargas cuando se usan. Los iconos de semáforo, mapa y catálogo funcionan localmente después de la primera carga; la información en vivo sigue necesitando conexión.
 
 ## Límites que permanecen
 

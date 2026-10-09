@@ -5,7 +5,7 @@
 .community-root button { border: 1px solid #b7c7ac; background: white; color: #24551f; font-weight: 700; }
 .community-root button:disabled { opacity: .55; cursor: default; }
 .community-root button.community-primary { color: #fff; background: #24551f; border-color: #24551f; }
-.community-root svg { width: 22px; height: 22px; flex-shrink: 0; }
+.community-root svg.lucide { width: 22px; height: 22px; flex-shrink: 0; }
 .community-root :is(input, select, textarea) { width: 100%; border: 1px solid #a9b99e; border-radius: 9px; padding: 12px; background: #fff; color: #213620; font: inherit; min-height: 50px; }
 .community-root :is(h1,h2,h3,p) { letter-spacing: normal; }
 .community-root h1 { font-size: 1.65rem; line-height: 1.3; margin: 8px 0; }

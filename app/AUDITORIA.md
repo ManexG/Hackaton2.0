@@ -23,6 +23,10 @@ Revisión del 8 de octubre de 2026: React/JavaScript, servidor Node, Cloudflare 
 | Excepción de React que dejaba pantalla vacía | Pantalla de recuperación con recarga y mensaje en español; conserva borradores. |
 | Dependencia UUID vulnerable en herramientas de Capacitor | Sustitución compatible verificada en compilación Android; auditoría npm sin vulnerabilidades conocidas en este conjunto instalado. |
 | Actualizaciones sin versión fiable o enlace seguro | Comparación semántica, publicación firmada por etiqueta, URLs limitadas al repositorio, notas, bloqueo obligatorio y HTTP 426. |
+| Administración del equipo que respondía 404 en Cloudflare | Mismo controlador y permisos en Node y Workers, con primer administrador protegido, edición persistente de rutas y bloqueo al borrar rutas asignadas. |
+| Paradas borradas que podían quedar en sugerencias tras editar la red | La recarga de rutas excluye paradas antiguas retiradas. |
+| Respuesta de trazado externo incompleta | Validación y error 502 comprensible antes de utilizar la geometría. |
+| Temporizador del editor que operaba sobre un mapa desmontado | Se cancela al abandonar el editor; las pruebas administrativas ahora rechazan cualquier excepción del navegador. |
 | Orden de permisos en el manifiesto Android | Permisos declarados antes de la aplicación, conforme a la revisión estática. |
 
 ## Comportamiento sin internet
@@ -38,10 +42,10 @@ La web requiere completar una primera visita con conexión para conservar sus ar
 
 ## Verificación
 
-- 46 pruebas de lógica y servidor: datos, búsqueda, planificación, horarios, cobertura, autenticación, GPS, SSE, QR, comunidad y actualizaciones. Incluyen 260 entradas de paridad del modelo original.
-- 44 pruebas de interfaz de escritorio y móvil: accesibilidad, ampliación de texto, roles, selección y trasbordos, comunidad, errores de red, versiones, caché y cambios de cuenta.
+- 52 pruebas de lógica y servidor: datos, búsqueda, planificación, horarios, cobertura, autenticación, GPS, SSE, QR, comunidad y actualizaciones. Incluyen 260 entradas de paridad del modelo original.
+- 46 pruebas de interfaz de escritorio y móvil: accesibilidad, ampliación de texto, roles, selección y trasbordos, comunidad, errores de red, versiones, caché y cambios de cuenta.
 - Una prueba de PWA compilada: recarga completa sin señal, catálogo y semáforos, borrador que se sincroniza exactamente una vez y bloqueo de actualización persistente.
-- Una prueba con el runtime de Cloudflare: sesiones, GPS, SSE, CORS, persistencia de reportes/fotos, versión y rechazo de un cliente antiguo.
+- Una prueba con el runtime de Cloudflare: sesiones, GPS, SSE, CORS, persistencia de reportes/fotos, versión, rechazo de un cliente antiguo y administración por sesiones, CRUD, permisos y persistencia de rutas.
 - Formato, auditoría npm, compilación Vite, revisión de despliegue Cloudflare, APK firmado y `lintRelease`.
 
 Las pruebas de escritura usan servidores y cuentas aislados. Las cuentas reales no se reinician ni se usan para publicar posiciones ficticias. La comprobación pública consulta API, mapa, SSE, QR, recursos y asignaciones sin alterar las sesiones reales.

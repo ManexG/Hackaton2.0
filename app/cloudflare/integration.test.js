@@ -94,6 +94,68 @@ test('Cloudflare runtime: persistent SQLite, private accounts, real GPS API, SSE
     assert.equal(login.status, 200);
     const session = await login.json();
     assert.equal((await call('/driver/profile', undefined, session.token)).status, 200);
+    const administrator = {
+      name: 'Admin CF',
+      email: 'admin-cf@example.test',
+      password: 'isolated-admin-cloudflare-123',
+    };
+    assert.equal((await call('/admin/admins', administrator)).status, 401);
+    assert.equal((await call('/admin/admins', administrator, admin)).status, 201);
+    assert.equal((await call('/admin/admins', administrator, admin)).status, 409);
+    assert.equal((await call('/manage/routes', undefined, session.token)).status, 401);
+    assert.equal(
+      (await call('/manage/login', { email: administrator.email, password: 'incorrect' })).status,
+      401
+    );
+    const adminLogin = await call('/manage/login', administrator);
+    assert.equal(adminLogin.status, 200);
+    const adminSession = await adminLogin.json();
+    const manage = async (method, path, body) =>
+      runtime.dispatchFetch('https://cerca-test.workers.dev/api/manage' + path, {
+        method,
+        headers: {
+          Authorization: `Bearer ${adminSession.token}`,
+          ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
+        },
+        body: body === undefined ? undefined : JSON.stringify(body),
+      });
+    const routes = await (await manage('GET', '/routes')).json();
+    assert.equal(routes.routes.length, 4);
+    const custom = {
+      ...routes.routes[0],
+      name: 'Ruta administrada CF',
+      stops: routes.routes[0].stops.slice(0, 2),
+      segments: routes.routes[0].segments.slice(0, 1),
+    };
+    const customResponse = await manage('POST', '/routes', custom);
+    assert.equal(customResponse.status, 201);
+    const customRoute = await customResponse.json();
+    const createdDriver = await manage('POST', '/drivers', {
+      name: 'Chofer gestionado',
+      email: 'managed-cf@example.test',
+      unit: 'CF-MANAGED',
+      routeId: customRoute.id,
+      windows: account.windows,
+    });
+    assert.equal(createdDriver.status, 201);
+    const managedDriver = await createdDriver.json();
+    assert.equal(typeof managedDriver.password, 'string');
+    assert.equal((await manage('DELETE', '/routes/' + customRoute.id)).status, 409);
+    assert.equal(
+      (await manage('PATCH', '/drivers/' + managedDriver.driver.id, { routeId: 'R01' })).status,
+      200
+    );
+    assert.equal((await manage('DELETE', '/drivers/' + managedDriver.driver.id)).status, 200);
+    assert.equal(
+      (
+        await manage('PUT', '/routes/' + customRoute.id, {
+          ...customRoute,
+          name: 'Ruta CF editada',
+        })
+      ).status,
+      200
+    );
+    assert.ok((await (await call('/network')).json()).routes.some((r) => r.id === customRoute.id));
     const community = (path, options = {}) =>
       runtime.dispatchFetch('https://cerca-test.workers.dev/api/community' + path, options);
     const communityDriver = await (
@@ -234,6 +296,11 @@ test('Cloudflare runtime: persistent SQLite, private accounts, real GPS API, SSE
     reader = undefined;
     await runtime.dispose();
     runtime = new Miniflare(options);
+    assert.equal((await manage('GET', '/me')).status, 200);
+    assert.ok(
+      (await (await call('/network')).json()).routes.some((r) => r.name === 'Ruta CF editada')
+    );
+    assert.equal((await manage('DELETE', '/routes/' + customRoute.id)).status, 200);
     const restoredReport = await (await community(`/reportes/${reportId}`)).json();
     assert.equal(restoredReport.votos, 1);
     assert.equal(restoredReport.estado, 'recibido');

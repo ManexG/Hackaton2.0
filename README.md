@@ -75,6 +75,6 @@ npm run cloudflare:check
 npm run test:cloudflare
 ```
 
-46 pruebas de datos, búsqueda, planificación, autenticación, horarios, GPS, SSE, QR, comunidad y zona piloto; 44 pruebas de interfaz; una prueba de integración con el runtime de Cloudflare que verifica cuentas, GPS, desactivación por SSE, CORS y persistencia de reportes y fotos al reiniciar. Las pruebas usan datos aislados. También se verifica una PWA compilada sin señal. Compilación y lint Android pasaron y el APK se instaló conservando los datos de la versión anterior en un Samsung SM-S938B. Detalles y límites en [app/AUDITORIA.md](app/AUDITORIA.md).
+52 pruebas de datos, búsqueda, planificación, autenticación, horarios, GPS, SSE, QR, comunidad y zona piloto; 46 pruebas de interfaz; una prueba de integración con el runtime de Cloudflare que verifica cuentas, GPS, desactivación por SSE, CORS y persistencia de reportes y fotos al reiniciar. Las pruebas usan datos aislados. También se verifica una PWA compilada sin señal. Compilación y lint Android pasaron y el APK se instaló conservando los datos de la versión anterior en un Samsung SM-S938B. Detalles y límites en [app/AUDITORIA.md](app/AUDITORIA.md).
 
 Consulta [`app/LEEME.md`](app/LEEME.md) para uso, ejemplos, cobertura y formato de las rutas. Datos del mapa © [OpenStreetMap contributors, ODbL](https://www.openstreetmap.org/copyright).

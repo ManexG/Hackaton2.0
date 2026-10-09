@@ -3,6 +3,8 @@ import { createHash, timingSafeEqual } from 'node:crypto';
 import { ApiError, TransitStoreCore } from '../server/store-core.js';
 import { CommunityService } from '../server/community/service.js';
 import { ReleaseService } from '../server/releases.js';
+import { AdminCore } from '../server/admin-core.js';
+import { createManageHandler } from '../server/admin.js';
 import networkData from '../public/data/network.demo.json';
 const network = networkData;
 const json = (status, data) =>
@@ -46,7 +48,7 @@ export default {
         'Access-Control-Allow-Headers',
         'Content-Type,Authorization,X-Admin-Key,X-App-Version,X-App-Platform'
       );
-      headers.set('Access-Control-Allow-Methods', 'GET,POST,PATCH,OPTIONS');
+      headers.set('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
     }
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers });
     // Check the current deployment's secret at the gateway, before invoking the persistent object.
@@ -91,6 +93,26 @@ export class FleetService extends DurableObject {
     this.store = new TransitStoreCore(db, network, env.PUBLIC_APP_URL ?? '');
     this.community = new CommunityService(this.store, env.CERCA_ADMIN_TOKEN ?? '');
     this.releases = new ReleaseService({ db });
+    this.admin = new AdminCore(db, network, this.store);
+    this.community.transform = (base) => this.admin.applyTo(base);
+    this.community.refreshNetwork();
+    this.manage = createManageHandler({
+      admin: this.admin,
+      store: this.store,
+      community: this.community,
+      broadcast: () => this.broadcast(),
+      readBody: (request) =>
+        this.body(
+          request,
+          new URL(request.url).pathname.startsWith('/api/manage/routes') ? 512_000 : 16_384
+        ),
+      throttleLogin: (request, email) =>
+        this.throttle(
+          `admin:${String(email ?? '')}`,
+          request.headers.get('CF-Connecting-IP') ?? 'local'
+        ),
+      getToken: (request) => request.headers.get('Authorization')?.replace(/^Bearer /, '') ?? '',
+    });
     // Eviction/redeployment must preserve driver availability; snapshot expires stale GPS.
     ctx.storage.sql.exec(
       'CREATE TABLE IF NOT EXISTS login_attempts (key TEXT PRIMARY KEY, count INTEGER NOT NULL, reset INTEGER NOT NULL)'
@@ -150,10 +172,10 @@ export class FleetService extends DurableObject {
       }
     });
   }
-  async body(request) {
+  async body(request, maximum = 16_384) {
     if (!request.headers.get('Content-Type')?.startsWith('application/json'))
       throw new ApiError(415, 'Envía los datos en formato JSON.');
-    if (Number(request.headers.get('Content-Length')) > 16_384)
+    if (Number(request.headers.get('Content-Length')) > maximum)
       throw new ApiError(413, 'Solicitud demasiado grande.');
     const reader = request.body?.getReader();
     if (!reader) throw new ApiError(400, 'Faltan los datos de la solicitud.');
@@ -165,7 +187,7 @@ export class FleetService extends DurableObject {
         const { done, value } = await reader.read();
         if (done) break;
         size += value.length;
-        if (size > 16_384) {
+        if (size > maximum) {
           await reader.cancel();
           throw new ApiError(413, 'Solicitud demasiado grande.');
         }
@@ -189,11 +211,25 @@ export class FleetService extends DurableObject {
     try {
       if (request.method === 'GET' && url.pathname === '/api/version')
         return json(200, await this.releases.current());
+      if (request.method === 'POST' && url.pathname === '/api/admin/admins') {
+        if (this.admin.listAdmins().length)
+          throw new ApiError(
+            409,
+            'El primer administrador ya existe. Usa su panel para agregar otros.'
+          );
+        const input = await this.body(request);
+        if (this.admin.listAdmins().length)
+          throw new ApiError(409, 'El primer administrador ya existe.');
+        return json(201, this.admin.createAdmin(input));
+      }
       if (
-        ['POST', 'PATCH', 'DELETE'].includes(request.method) &&
-        !['/api/auth/logout', '/api/community/vehiculos/detener', '/api/driver/service'].includes(
-          url.pathname
-        )
+        ['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method) &&
+        ![
+          '/api/auth/logout',
+          '/api/manage/logout',
+          '/api/community/vehiculos/detener',
+          '/api/driver/service',
+        ].includes(url.pathname)
       ) {
         const release = this.releases.required(
           request.headers.get('X-App-Version'),
@@ -201,6 +237,13 @@ export class FleetService extends DurableObject {
         );
         if (release)
           return json(426, { message: 'Actualiza Las Palmas Rutas para continuar.', release });
+      }
+      if (url.pathname.startsWith('/api/manage/')) {
+        let response;
+        await this.manage(request, url, (status, value) => {
+          response = json(status, value);
+        });
+        return response;
       }
       if (url.pathname.startsWith('/api/community/') || url.pathname === '/api/network') {
         if (['/api/community/auth/login', '/api/community/auth/registro'].includes(url.pathname)) {
@@ -211,7 +254,8 @@ export class FleetService extends DurableObject {
           this.throttle(data.email, request.headers.get('CF-Connecting-IP') ?? 'local');
         }
         const response = await this.community.fetch(request);
-        if (response.ok && ['POST', 'PATCH', 'DELETE'].includes(request.method)) this.broadcast();
+        if (response.ok && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method))
+          this.broadcast();
         return response;
       }
       if (request.method === 'GET' && url.pathname === '/api/health')

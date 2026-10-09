@@ -35,7 +35,7 @@ export function offlinePlugin() {
 const PREFIX = 'las-palmas-';
 const CACHE = PREFIX + '${version}';
 const ASSETS = ${JSON.stringify(assets)};
-const PRECACHE = ASSETS.filter(path => !path.includes('/esm-') && path !== '/data/eta-model.json');
+const PRECACHE = ASSETS.filter(path => !path.includes('/esm-') && !path.includes('/AdminPanel-') && path !== '/data/eta-model.json');
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE);

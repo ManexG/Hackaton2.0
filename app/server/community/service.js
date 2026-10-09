@@ -14,6 +14,9 @@ export class CommunityService {
     this.store = store;
     this.db = store.db;
     this.baseNetwork = store.network;
+    // Gancho opcional: lo usa la administración (server/admin-core.js) para aplicar rutas editadas.
+    // CLOUDFLARE: asignar aquí `admin.applyTo` al crear el servicio en FleetService.
+    this.transform = null;
     this.adminKey = adminKey;
     this.db.exec('CREATE TABLE IF NOT EXISTS community_migrations (id TEXT PRIMARY KEY)');
     for (const migration of migrations) {
@@ -110,11 +113,12 @@ export class CommunityService {
     return { body: data, httpMetadata: { contentType: meta.type } };
   }
   refreshNetwork() {
+    const managed = this.transform ? this.transform(this.baseNetwork) : this.baseNetwork;
     const network = {
-      ...this.baseNetwork,
-      routes: [...this.baseNetwork.routes],
-      stops: [...this.baseNetwork.stops],
-      places: [...this.baseNetwork.places],
+      ...managed,
+      routes: [...managed.routes],
+      stops: [...managed.stops],
+      places: [...managed.places],
     };
     const row = this.db
       .prepare('SELECT nombre,lat,lng,radio_m FROM zona ORDER BY id DESC LIMIT 1')

@@ -11,6 +11,7 @@
     "test:ui": "playwright test",
     "server": "node --env-file-if-exists=.env server/index.js",
     "driver:create": "node --env-file-if-exists=.env server/create-driver.js",
+    "admin:create": "node --env-file-if-exists=.env server/create-admin.js",
     "android:sync": "npm run build && cap sync android",
     "android:open": "cap open android",
     "android:run": "npm run android:sync && cap run android",

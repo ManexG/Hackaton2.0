@@ -5,6 +5,8 @@ import { extname, resolve, sep } from 'node:path';
 import { TransitStore, ApiError } from './store.js';
 import { CommunityService } from './community/service.js';
 import { ReleaseService } from './releases.js';
+import { AdminCore } from './admin-core.js';
+import { createManageHandler } from './admin.js';
 import { validateNetwork } from '../src/planner.js';
 const root = fileURLToPath(new URL('../', import.meta.url));
 export function createTransitServer(options = {}) {
@@ -39,6 +41,9 @@ export function createTransitServer(options = {}) {
     store,
     options.adminToken ?? process.env.CERCA_ADMIN_TOKEN ?? ''
   );
+  const admin = new AdminCore(store.db, network, store);
+  community.transform = (base) => admin.applyTo(base);
+  community.refreshNetwork();
   const clients = new Set();
   const releases = new ReleaseService({
     db: store.db,
@@ -69,6 +74,13 @@ export function createTransitServer(options = {}) {
     for (const [key, value] of attempts) if (value.reset < now) attempts.delete(key);
   }, 10_000);
   interval.unref();
+  const manage = createManageHandler({
+    admin,
+    store,
+    community,
+    broadcast,
+    fetcher: options.fetcher,
+  });
   async function body(request) {
     if (!request.headers['content-type']?.startsWith('application/json'))
       throw new ApiError(415, 'Envía los datos en formato JSON.');
@@ -104,7 +116,7 @@ export function createTransitServer(options = {}) {
         'Access-Control-Allow-Headers',
         'Content-Type,Authorization,X-Admin-Key,X-App-Version,X-App-Platform'
       );
-      response.setHeader('Access-Control-Allow-Methods', 'GET,POST,PATCH,OPTIONS');
+      response.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
     }
     if (request.method === 'OPTIONS') {
       response.writeHead(204).end();
@@ -135,10 +147,13 @@ export function createTransitServer(options = {}) {
       }
       const token = request.headers.authorization?.replace(/^Bearer /, '') ?? '';
       if (
-        ['POST', 'PATCH', 'DELETE'].includes(request.method) &&
-        !['/api/auth/logout', '/api/community/vehiculos/detener', '/api/driver/service'].includes(
-          url.pathname
-        )
+        ['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method) &&
+        ![
+          '/api/auth/logout',
+          '/api/manage/logout',
+          '/api/community/vehiculos/detener',
+          '/api/driver/service',
+        ].includes(url.pathname)
       ) {
         const release = releases.required(
           request.headers['x-app-version'],
@@ -150,6 +165,7 @@ export function createTransitServer(options = {}) {
         }
       }
 
+      if (await manage(request, url, send)) return;
       if (url.pathname.startsWith('/api/community/') || url.pathname === '/api/network') {
         const chunks = [];
         let length = 0;
@@ -167,7 +183,7 @@ export function createTransitServer(options = {}) {
         );
         response.writeHead(result.status, Object.fromEntries(result.headers));
         response.end(Buffer.from(await result.arrayBuffer()));
-        if (result.ok && ['POST', 'PATCH', 'DELETE'].includes(request.method)) broadcast();
+        if (result.ok && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method)) broadcast();
         return;
       }
       if (request.method === 'GET' && url.pathname === '/api/health') {
@@ -299,7 +315,7 @@ export function createTransitServer(options = {}) {
     for (const client of clients) client.end();
     store.close();
   });
-  return { server, store };
+  return { server, store, admin };
 }
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const { server } = createTransitServer();

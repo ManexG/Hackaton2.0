@@ -42,7 +42,9 @@ function Bootstrap() {
       ...routes,
       places: [
         ...routes.places,
-        ...current.places.filter((p) => !routes.places.some((r) => r.id === p.id)),
+        ...current.places.filter(
+          (p) => p.kind !== 'stop' && !routes.places.some((r) => r.id === p.id)
+        ),
       ],
     }));
   }

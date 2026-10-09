@@ -14,6 +14,7 @@ import { ConnectivityProvider } from './connectivity.jsx';
 import { UpdateGate } from './UpdateGate.jsx';
 import { ErrorBoundary } from './ErrorBoundary.jsx';
 import './reliability.css';
+import './layout.css';
 // Accept the URLs shared by the original Axel app and use one root shell.
 if (
   /^\/(reporte\/\d+|parada\/[A-Za-z0-9-]+|admin|perfil|mapa|estadisticas|campo|avenida|chofer)\/?$/.test(

@@ -1,4 +1,4 @@
-import { openField } from '../support/travel.js';
+import { openField, openSection } from '../support/travel.js';
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 const network = JSON.parse(
@@ -56,6 +56,7 @@ test.beforeEach(async ({ page }) => {
     })
   );
   await page.goto('/');
+  await openSection(page, 'Buscar viaje');
   await expect(page.locator('.search-status')).toBeVisible();
 });
 test.afterEach(async ({ page }) => {
@@ -157,7 +158,8 @@ test('online lookup runs only on explicit action and filters out-of-zone results
     requests++;
     const url = new URL(route.request().url());
     expect(url.searchParams.get('bounded')).toBe('1');
-    expect(url.searchParams.get('viewbox')).toBe('-102.257,18.035,-102.174,17.929');
+    const [[south, west], [north, east]] = network.coverage.bounds;
+    expect(url.searchParams.get('viewbox')).toBe(`${west},${north},${east},${south}`);
     await route.fulfill({
       json: [
         {
@@ -219,6 +221,7 @@ test('stale remote search cannot overwrite an edited destination', async ({ page
   await expect(page.locator('#destination')).toHaveValue('Reforma');
 });
 test('explorer displays route endpoints and reverse direction', async ({ page }) => {
+  await page.getByRole('button', { name: 'Cerrar panel y ver el mapa' }).click();
   await page.locator('.map-legend [data-route=R02]').click();
   await expect(page.locator('#routes-panel')).toBeVisible();
   await expect(page.locator('.stop-list li').first()).toContainText('Jugos Acapulco');
@@ -249,7 +252,7 @@ test('mobile instructions and destination-specific transfer', async ({ page }) =
   await expect(page.locator('#origin')).toBeVisible();
   await choose(page, 'origin', 'Jugos Acapulco');
   await choose(page, 'destination', 'Café del Puerto');
-  await expect(page.locator('.app-shell')).toHaveAttribute('data-mobile-view', 'instructions');
+  await expect(page.locator('.app-shell')).toHaveAttribute('data-sheet', 'open');
   await expect(page.locator('.bus-marker.selected')).toHaveCount(2);
   await page.evaluate(() => {
     const panel = document.querySelector('.panel-scroll');
@@ -274,6 +277,7 @@ test('swap recalculates return journey for chosen endpoints', async ({ page }) =
 test('bundled streets and catalog work when internet map tiles fail', async ({ page }) => {
   await page.route('https://tile.openstreetmap.org/**', (route) => route.abort());
   await page.reload();
+  await openSection(page, 'Buscar viaje');
   await expect(page.locator('.search-status')).toBeVisible();
   await expect.poll(() => page.locator('.leaflet-localMap-pane path').count()).toBeGreaterThan(0);
   await openField(page, 'destination');

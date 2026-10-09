@@ -1,4 +1,4 @@
-import { openField } from '../support/travel.js';
+import { openCommunity, openField, openSection } from '../support/travel.js';
 import { test, expect } from '@playwright/test';
 import { APP_VERSION } from '../../src/version.js';
 import { bundledRelease } from '../../server/releases.js';
@@ -63,6 +63,7 @@ test('an Android release ahead of the deployed web does not block the current we
     route.fulfill({ json: { ...newer, minimumWebVersion: APP_VERSION } })
   );
   await page.goto('/');
+  await openSection(page, 'Buscar viaje');
   await expect(page.locator('#origin')).toBeVisible();
 });
 test('invalid release download URLs cannot lock the app or direct users to another site', async ({
@@ -72,6 +73,7 @@ test('invalid release download URLs cannot lock the app or direct users to anoth
     route.fulfill({ json: { ...newer, downloadUrl: 'https://bad.test/app.apk' } })
   );
   await page.goto('/');
+  await openSection(page, 'Buscar viaje');
   await expect(page.locator('#origin')).toBeVisible();
   await expect(page.locator('.update-required')).toHaveCount(0);
 });
@@ -92,6 +94,7 @@ test('loss of connectivity stops the live stream and disables online search whil
   page,
 }) => {
   await page.goto('/');
+  await openSection(page, 'Buscar viaje');
   await expect(page.locator('#origin')).toBeVisible();
   await expect
     .poll(() => page.evaluate(() => window.testStreams.created - window.testStreams.closed))
@@ -124,6 +127,7 @@ test('the initial passenger screen avoids fleet polling and model download when 
   const requests = [];
   page.on('request', (r) => requests.push(r.url()));
   await page.goto('/');
+  await openSection(page, 'Buscar viaje');
   await expect(page.locator('#origin')).toBeVisible();
   await page.waitForTimeout(2800);
   expect(requests.filter((u) => u.endsWith('/api/fleet'))).toHaveLength(0);
@@ -136,6 +140,7 @@ test('public cached reports remain available offline without storing authenticat
     route.fulfill({ json: [{ id: 7, descripcion: 'Reporte guardado de prueba' }] })
   );
   await page.goto('/');
+  await openSection(page, 'Buscar viaje');
   await expect(page.locator('#origin')).toBeVisible();
   const result = await page.evaluate(async () => {
     const { api } = await import('/src/community/api.js');
@@ -169,16 +174,18 @@ test('damaged saved sessions do not crash passenger, driver or community access'
     );
   });
   await page.goto('/');
+  await openSection(page, 'Buscar viaje');
   await expect(page.locator('#origin')).toBeVisible();
-  await page.getByRole('button', { name: 'Entrar como chofer', exact: true }).click();
+  await page.getByRole('button', { name: 'Soy un chofer', exact: true }).click();
   await expect(page.locator('#driver-email')).toBeVisible();
-  await page.getByRole('button', { name: 'Comunidad', exact: true }).click();
+  await openCommunity(page);
   await page.getByRole('button', { name: 'Mi cuenta', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Crear una cuenta', exact: true })).toBeVisible();
   expect(errors).toEqual([]);
 });
 test('malformed live GPS payloads are rejected before reaching the map', async ({ page }) => {
   await page.goto('/');
+  await openSection(page, 'Buscar viaje');
   await expect(page.locator('#origin')).toBeVisible();
   const values = await page.evaluate(async () => {
     const { isSnapshot } = await import('/src/liveApi.js');
@@ -195,6 +202,7 @@ test('changing accounts during report synchronization never uploads the next dra
   page,
 }) => {
   await page.goto('/');
+  await openSection(page, 'Buscar viaje');
   await expect(page.locator('#origin')).toBeVisible();
   const tokens = [];
   await page.route('**/api/community/reportes', async (route) => {

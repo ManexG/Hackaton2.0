@@ -1,4 +1,4 @@
-import { openField } from '../support/travel.js';
+import { openField, openSection } from '../support/travel.js';
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { createTransitServer } from '../../server/index.js';
@@ -77,6 +77,7 @@ test('guest needs no account, sees no invented drivers or default recommendation
   await choose(page, 'destination', 'Entronque av');
   await expect(page.locator('.journey-card')).toHaveCount(0);
   await expect(page.locator('.empty-state')).toContainText('No hay un viaje disponible ahora');
+  await page.getByRole('button', { name: 'Cerrar panel y ver el mapa' }).click();
   await page.locator('.map-legend [data-route=R01]').click();
   await expect(page.locator('.route-hours')).toContainText('Horario pendiente de asignación');
   await expect(page.locator('#route-detail .stop-list')).toContainText('Jugos Acapulco');
@@ -96,7 +97,8 @@ test('authenticated driver shares GPS through the real server and a guest immedi
   const guest = await context.newPage();
   await connect(guest);
   await guest.goto('/');
-  await page.getByRole('button', { name: 'Entrar como chofer', exact: true }).click();
+  await openSection(guest, 'Buscar viaje');
+  await page.getByRole('button', { name: 'Soy un chofer', exact: true }).click();
   await page.locator('#driver-email').fill(account.email);
   await page.locator('#driver-password').fill(account.password);
   await page.getByRole('button', { name: 'Ingresar como chofer', exact: true }).click();
@@ -142,7 +144,7 @@ test('a driver in another city gets a clear zone warning and produces no public 
   store.provision(account);
   await context.grantPermissions(['geolocation']);
   await context.setGeolocation({ latitude: 19.43, longitude: -99.13, accuracy: 5 });
-  await page.getByRole('button', { name: 'Entrar como chofer', exact: true }).click();
+  await page.getByRole('button', { name: 'Soy un chofer', exact: true }).click();
   await page.locator('#driver-email').fill(account.email);
   await page.locator('#driver-password').fill(account.password);
   await page.getByRole('button', { name: 'Ingresar como chofer', exact: true }).click();
@@ -199,10 +201,11 @@ test('mobile guest can enter and leave driver access without mandatory registrat
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.getByRole('button', { name: 'Entrar como chofer', exact: true }).click();
+  await page.getByRole('button', { name: 'Soy un chofer', exact: true }).click();
   await expect(page.locator('#driver-email')).toBeVisible();
   await page.screenshot({ path: '../cerca-android-acceso.png' });
   await page.getByRole('button', { name: 'Volver a viajar como pasajero', exact: true }).click();
+  await openSection(page, 'Buscar viaje');
   await expect(page.locator('.search-status')).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
 });

@@ -10,6 +10,7 @@ import { ExplorePlaces } from './ExplorePlaces.jsx';
 import { RouteExplorer } from './RouteExplorer.jsx';
 import { DriverPanel } from './DriverPanel.jsx';
 import { FleetStatus, StopPanel } from './StopPanel.jsx';
+import { BottomNav, SheetHeader, sheetHeights } from './Sheet.jsx';
 import { useFleet } from './useFleet.js';
 import { predictJourneys } from './transit.js';
 import { stopFromLink } from './stopLinks.js';
@@ -34,7 +35,11 @@ export function CercaApp({ network: originalNetwork, catalog }) {
     new URLSearchParams(location.search).get('driver') === '1' ? 'driver' : 'passenger'
   );
   const [selectedStop, setSelectedStop] = useState(null);
-  const [drawer, setDrawer] = useState('normal');
+  // 'collapsed' = only the map; 'normal' = bottom sheet at its resting height; 'expanded' = half screen.
+  const [drawer, setDrawer] = useState(() =>
+    new URLSearchParams(location.search).get('driver') === '1' ? 'normal' : 'collapsed'
+  );
+  const [dragHeight, setDragHeight] = useState(null);
   const [pinMode, setPinMode] = useState(null);
   const [toast, setToast] = useState('');
   const [largeText, setLargeText] = useState(() => {
@@ -69,6 +74,9 @@ export function CercaApp({ network: originalNetwork, catalog }) {
         : []
   );
   useEffect(() => {
+    document.documentElement.style.setProperty('--sheet-h', `${sheetPx}px`);
+  });
+  useEffect(() => {
     document.documentElement.classList.toggle('large-text', largeText);
     try {
       localStorage.setItem('las-palmas-large-text', String(largeText));
@@ -76,13 +84,6 @@ export function CercaApp({ network: originalNetwork, catalog }) {
       /* Private browsing still supports the current setting. */
     }
   }, [largeText]);
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      map.current?.getMap()?.invalidateSize();
-      map.current?.fit();
-    }, 100);
-    return () => clearTimeout(timer);
-  }, [drawer]);
   useEffect(() => {
     if (!trip) return;
     const frame = requestAnimationFrame(() => {
@@ -119,10 +120,10 @@ export function CercaApp({ network: originalNetwork, catalog }) {
       } else if (ui.pinMode) {
         setPinMode(null);
         setDrawer('normal');
-      } else if (ui.drawer !== 'normal') setDrawer('normal');
-      else if (ui.role === 'driver') setRole('passenger');
-      else if (ui.tab !== 'plan') changeTab('plan');
-      else void NativeApp.minimizeApp();
+      } else if (ui.drawer !== 'collapsed') {
+        setDrawer('collapsed');
+        if (ui.role === 'driver') setRole('passenger');
+      } else void NativeApp.minimizeApp();
     });
     return () => {
       void registration.then((listener) => listener.remove());
@@ -268,6 +269,45 @@ export function CercaApp({ network: originalNetwork, catalog }) {
     setDrawer('normal');
     if (next !== 'routes') setSelectedRoute(null);
   }
+  function openSection(id) {
+    if (drawer !== 'collapsed' && role === 'passenger' && tab === id) {
+      setDrawer('collapsed');
+      return;
+    }
+    changeTab(id);
+  }
+  function openDriver() {
+    if (drawer !== 'collapsed' && role === 'driver') {
+      setDrawer('collapsed');
+      setRole('passenger');
+      return;
+    }
+    map.current?.stopSimulation();
+    setRole('driver');
+    setActive(null);
+    setDrawer('normal');
+    panel.current?.scrollTo({ top: 0 });
+  }
+  function closeSheet() {
+    setDrawer('collapsed');
+    setDragHeight(null);
+    setActive(null);
+    if (role === 'driver') setRole('passenger');
+  }
+  function goHome() {
+    map.current?.stopSimulation();
+    setRole('passenger');
+    setSelectedRoute(null);
+    setDrawer('collapsed');
+    setActive(null);
+    requestAnimationFrame(() => map.current?.fit());
+  }
+  function releaseSheet(height) {
+    const { peek, half } = sheetHeights();
+    setDragHeight(null);
+    if (height < peek * 0.55) closeSheet();
+    else setDrawer(height > (peek + half) / 2 ? 'expanded' : 'normal');
+  }
   function selectRoute(id) {
     map.current?.stopSimulation();
     setRole('passenger');
@@ -382,9 +422,9 @@ export function CercaApp({ network: originalNetwork, catalog }) {
     }
   }
   function showCoverage() {
-    map.current?.fit(network.coverage.polygon);
+    map.current?.fit(network.routes.flatMap((route) => route.segments.flat()));
     setToast(
-      'Puedes buscar en Lázaro Cárdenas, La Orilla y Las Guacamayas. Las rutas son ejemplos y las llegadas requieren combis en servicio.'
+      'Puedes buscar en todo el municipio de Lázaro Cárdenas. Las rutas son ejemplos y las llegadas requieren combis en servicio.'
     );
   }
   const debugState = useRef({
@@ -410,18 +450,21 @@ export function CercaApp({ network: originalNetwork, catalog }) {
       delete window.cercaDemo;
     };
   }, [network]);
+  const sheetTitle =
+    role === 'driver'
+      ? 'Soy un chofer'
+      : { plan: 'Buscar viaje', routes: 'Rutas', stops: 'Paradas' }[tab];
+  const restingPx = drawer === 'expanded' ? sheetHeights().half : sheetHeights().peek;
+  const sheetPx = drawer === 'collapsed' ? 0 : (dragHeight ?? restingPx);
   return (
     <>
       <main
         className="app-shell"
-        data-mobile-view={drawer === 'collapsed' ? 'map' : 'instructions'}
+        data-sheet={drawer === 'collapsed' ? 'closed' : 'open'}
+        data-dragging={dragHeight !== null}
       >
         <header className="app-header">
-          <button
-            className="brand-home"
-            aria-label="Las Palmas Rutas, ir al inicio"
-            onClick={() => changeTab('plan')}
-          >
+          <button className="brand-home" aria-label="Las Palmas Rutas, ir al mapa" onClick={goHome}>
             <img src="./brand/las-palmas-logo.webp" alt="Las Palmas Rutas" />
           </button>
           <div className="header-actions">
@@ -434,57 +477,35 @@ export function CercaApp({ network: originalNetwork, catalog }) {
               {largeText ? 'Letra normal' : 'Letra más grande'}
             </button>
             <button
-              onClick={() => {
-                location.hash = '/comunidad';
-              }}
+              className="driver-button"
+              aria-pressed={role === 'driver' && drawer !== 'collapsed'}
+              onClick={openDriver}
             >
-              <Icon name="users" />
-              Comunidad
+              <Icon name="bus-front" />
+              Soy un chofer
             </button>
           </div>
         </header>
-        <aside className="sidebar" aria-label="Planeador de rutas">
+        <aside
+          className="sidebar"
+          aria-label={sheetTitle}
+          hidden={drawer === 'collapsed'}
+          onKeyDown={(event) => event.key === 'Escape' && !active && closeSheet()}
+        >
+          <SheetHeader
+            title={sheetTitle}
+            onDrag={(height) => setDragHeight(Math.max(0, Math.min(height, sheetHeights().half)))}
+            onRelease={releaseSheet}
+            onToggle={() => setDrawer(drawer === 'expanded' ? 'normal' : 'expanded')}
+            onClose={closeSheet}
+          />
           <div className="panel-scroll" ref={panel}>
-            <div className="current-mode" role="status">
-              <Icon name={role === 'passenger' ? 'user' : 'bus-front'} />
-              <div>
-                <strong>
-                  {role === 'passenger' ? 'Estás en: Pasajero' : 'Acceso para choferes'}
-                </strong>
-                <span>
-                  {role === 'passenger'
-                    ? 'Puedes viajar sin crear una cuenta.'
-                    : 'Inicia sesión con tu cuenta de chofer.'}
-                </span>
-              </div>
-            </div>
             <div className="passenger-content" hidden={role !== 'passenger'}>
               <OfflineNotice />
-              <h1 className="passenger-title">¿Qué necesitas hacer?</h1>
-              <div className="tabs" role="tablist" aria-label="Modo de consulta">
-                {[
-                  ['plan', 'Buscar viaje', 'search'],
-                  ['routes', 'Ver rutas', 'bus-front'],
-                  ['stops', 'Paradas', 'map-pin'],
-                ].map(([id, label, icon]) => (
-                  <button
-                    key={id}
-                    id={`${id}-tab`}
-                    role="tab"
-                    aria-selected={tab === id}
-                    aria-controls={`${id}-panel`}
-                    className={`tab ${tab === id ? 'active' : ''}`}
-                    onClick={() => changeTab(id)}
-                  >
-                    <Icon name={icon} />
-                    {label}
-                  </button>
-                ))}
-              </div>
               <section
                 id="plan-panel"
-                role="tabpanel"
-                aria-labelledby="plan-tab"
+                role="region"
+                aria-label="Buscar viaje"
                 hidden={tab !== 'plan'}
               >
                 <div className="task-intro">
@@ -588,12 +609,7 @@ export function CercaApp({ network: originalNetwork, catalog }) {
                   onSelect={(place) => choosePlace('destination', place)}
                 />
               </section>
-              <section
-                id="routes-panel"
-                role="tabpanel"
-                aria-labelledby="routes-tab"
-                hidden={tab !== 'routes'}
-              >
+              <section id="routes-panel" role="region" aria-label="Rutas" hidden={tab !== 'routes'}>
                 <RouteExplorer
                   network={network}
                   selected={selectedRoute}
@@ -609,12 +625,7 @@ export function CercaApp({ network: originalNetwork, catalog }) {
                   onMap={() => setDrawer('collapsed')}
                 />
               </section>
-              <section
-                id="stops-panel"
-                role="tabpanel"
-                aria-labelledby="stops-tab"
-                hidden={tab !== 'stops'}
-              >
+              <section id="stops-panel" role="region" aria-label="Paradas" hidden={tab !== 'stops'}>
                 <StopPanel
                   network={network}
                   selected={selectedStop}
@@ -629,21 +640,6 @@ export function CercaApp({ network: originalNetwork, catalog }) {
                 />
               </section>
               <FleetStatus fleet={fleet} network={network} />
-              <div className="driver-entry">
-                <p>¿Trabajas como chofer?</p>
-                <button
-                  className="secondary-button"
-                  onClick={() => {
-                    setRole('driver');
-                    setActive(null);
-                    setDrawer('normal');
-                    panel.current?.scrollTo({ top: 0 });
-                  }}
-                >
-                  Entrar como chofer
-                  <Icon name="arrow-right" />
-                </button>
-              </div>
             </div>
             <div className="driver-content" hidden={role !== 'driver'}>
               <button
@@ -665,6 +661,15 @@ export function CercaApp({ network: originalNetwork, catalog }) {
                 conectados con GPS real.
               </p>
             </div>
+            <button
+              className="community-link"
+              onClick={() => {
+                location.hash = '/comunidad';
+              }}
+            >
+              <Icon name="users" />
+              Comunidad
+            </button>
           </div>
         </aside>
         <section className="map-section" aria-label="Mapa de rutas dentro de la cobertura">
@@ -684,13 +689,14 @@ export function CercaApp({ network: originalNetwork, catalog }) {
             vehicles={fleet.vehicles}
             selectedStop={tab === 'stops' ? selectedStop : null}
             onStop={selectStop}
+            sheetInset={drawer === 'collapsed' ? 0 : restingPx}
           />
           <div className="map-action-bar">
             <strong>
               <Icon name="map-pin" />
               Lázaro Cárdenas
             </strong>
-            <button onClick={showCoverage}>Ver toda la ciudad</button>
+            <button onClick={showCoverage}>Ver todo el municipio</button>
           </div>
           <div className="map-controls">
             <button aria-label="Acercar mapa" onClick={() => map.current?.getMap()?.zoomIn()}>
@@ -760,7 +766,7 @@ export function CercaApp({ network: originalNetwork, catalog }) {
                   <Icon name="bus-front" />
                 </div>
                 <div>
-                  <strong>Estas son las rutas de ejemplo</strong>
+                  <strong>Todas las rutas del municipio</strong>
                   <span>Toca una línea de color para ver sus paradas.</span>
                 </div>
               </>
@@ -786,20 +792,10 @@ export function CercaApp({ network: originalNetwork, catalog }) {
             </div>
           </div>
         </section>
-        <button
-          className="mobile-map-toggle"
-          onClick={() => {
-            if (drawer === 'collapsed') {
-              setPinMode(null);
-              map.current?.stopSimulation();
-            }
-            setDrawer(drawer === 'collapsed' ? 'normal' : 'collapsed');
-            setActive(null);
-          }}
-        >
-          <Icon name={drawer === 'collapsed' ? 'arrow-right-left' : 'map'} />
-          {drawer === 'collapsed' ? 'Volver a las instrucciones' : 'Ver mapa de las rutas'}
-        </button>
+        <BottomNav
+          current={drawer !== 'collapsed' && role === 'passenger' ? tab : null}
+          onSelect={openSection}
+        />
       </main>
       {toast && (
         <div id="toast" className="toast" role="status">

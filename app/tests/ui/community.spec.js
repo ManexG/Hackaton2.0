@@ -1,4 +1,4 @@
-import { openField } from '../support/travel.js';
+import { openCommunity, openField, openSection } from '../support/travel.js';
 import { test, expect } from '@playwright/test';
 import { createTransitServer } from '../../server/index.js';
 import { readFileSync } from 'node:fs';
@@ -38,7 +38,7 @@ test.beforeEach(async ({ page }) => {
   });
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto('/');
-  await page.getByRole('button', { name: 'Comunidad', exact: true }).click();
+  await openCommunity(page);
   await expect(page.getByRole('heading', { name: 'Tu comunidad', exact: true })).toBeVisible();
 });
 test.afterEach(async ({ page }) => {
@@ -186,7 +186,7 @@ test('operator imports a bounded route into the travel map and generates its QR'
   await expect(page.locator('.community-qr img')).toBeVisible();
   await expect(page.locator('.community-qr')).toContainText('?stop=AXS1');
   await page.locator('.admin-top').getByRole('button', { name: 'Mapa', exact: true }).click();
-  await page.getByRole('tab', { name: 'Ver rutas', exact: true }).click();
+  await openSection(page, 'Rutas');
   await expect(page.getByText('Ruta importada UI', { exact: true })).toBeVisible();
   await page.goto('/#/parada/UI-QR-0');
   await expect(page).toHaveURL(/\?stop=AXS1/);

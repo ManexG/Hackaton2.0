@@ -16,6 +16,7 @@ function busIcon(route, mode) {
     iconAnchor: [46, 24],
   });
 }
+const allRoutePoints = (network) => network.routes.flatMap((route) => route.segments.flat());
 export const MapView = forwardRef(function MapView(props, ref) {
   const container = useRef(null);
   const map = useRef(null);
@@ -50,12 +51,12 @@ export const MapView = forwardRef(function MapView(props, ref) {
               ? [p.origin.point, p.destination.point]
               : pilotZone(p.network)
                 ? [[p.network.pilotZone.lat, p.network.pilotZone.lng]]
-                : p.network.coverage.initialBounds ||
-                  p.network.routes.flatMap((route) => route.segments.flat());
+                : allRoutePoints(p.network);
     const mobile = window.innerWidth <= 760;
+    const inset = Math.min(p.sheetInset || 0, instance.getSize().y * 0.5);
     instance.fitBounds(L.latLngBounds(target), {
-      paddingTopLeft: mobile ? [40, 82] : [100, 125],
-      paddingBottomRight: mobile ? [40, 55] : [100, 150],
+      paddingTopLeft: mobile ? [40, 70] : [100, 80],
+      paddingBottomRight: mobile ? [40, 40 + inset] : [100, 90 + inset],
       maxZoom: p.selectedStop ? 17 : p.journey || p.selectedRoute ? 16 : 15.5,
       animate: false,
     });
@@ -126,13 +127,13 @@ export const MapView = forwardRef(function MapView(props, ref) {
       zoomControl: false,
       maxBounds: bounds,
       maxBoundsViscosity: 1,
-      minZoom: 12,
+      minZoom: 10,
       maxZoom: 18,
       zoomSnap: 0.25,
       fadeAnimation: false,
     });
     map.current = instance;
-    instance.fitBounds(network.coverage.initialBounds || bounds, { animate: false });
+    instance.fitBounds(L.latLngBounds(allRoutePoints(network)), { animate: false });
     instance.attributionControl.setPrefix(false);
     for (const [name, z] of [
       ['localMap', 150],

@@ -3,50 +3,34 @@
   "demo": true,
   "city": "Lázaro Cárdenas",
   "coverage": {
-    "name": "Zona urbana de Lázaro Cárdenas",
+    "name": "Municipio de Lázaro Cárdenas",
     "scope": "city",
     "bounds": [
       [
-        17.929,
-        -102.257
+        17.82,
+        -102.42
       ],
       [
-        18.035,
-        -102.174
+        18.08,
+        -102.06
       ]
     ],
     "polygon": [
       [
-        17.94,
-        -102.257
+        17.82,
+        -102.42
       ],
       [
-        18.001,
-        -102.257
+        18.08,
+        -102.42
       ],
       [
-        18.035,
-        -102.24
+        18.08,
+        -102.06
       ],
       [
-        18.035,
-        -102.193
-      ],
-      [
-        18.014,
-        -102.177
-      ],
-      [
-        17.96,
-        -102.174
-      ],
-      [
-        17.929,
-        -102.182
-      ],
-      [
-        17.929,
-        -102.223
+        17.82,
+        -102.06
       ]
     ],
     "initialBounds": [
@@ -59,7 +43,7 @@
         -102.186
       ]
     ],
-    "description": "Cobertura aproximada de la demo: Lázaro Cárdenas, La Orilla y Las Guacamayas. No es un límite administrativo oficial."
+    "description": "Cobertura aproximada del municipio de Lázaro Cárdenas, incluidos Playa Azul, La Orilla y Las Guacamayas. Es un rectángulo de referencia, no un límite administrativo oficial."
   },
   "stops": [
     {

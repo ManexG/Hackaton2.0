@@ -1,12 +1,13 @@
 import { test, expect } from '@playwright/test';
-import { openField } from '../support/travel.js';
+import { openField, openSection } from '../support/travel.js';
 for (const width of [1440, 390]) {
   test(`travel cards collapse selections and keep a single editable field (${width}px)`, async ({
     page,
   }) => {
     await page.setViewportSize({ width, height: 844 });
     await page.goto('/');
-    await expect(page.locator('#origin')).toBeVisible();
+    await openSection(page, 'Buscar viaje');
+  await expect(page.locator('#origin')).toBeVisible();
     await expect(page.locator('#destination')).toBeHidden();
     await page.locator('#origin').fill('Jugos Acapulco');
     await page.getByRole('option').first().click();
@@ -47,7 +48,7 @@ test('stops are grouped by zone, collapse after selection and reopen for another
   page,
 }) => {
   await page.goto('/');
-  await page.getByRole('tab', { name: 'Paradas', exact: true }).click();
+  await openSection(page, 'Paradas');
   await expect(page.locator('.stop-explanation')).toContainText('subes, bajas');
   await page.locator('.zone-heading').filter({ hasText: 'Las Guacamayas' }).click();
   await page.locator('.stop-choice').filter({ hasText: 'Las Guacamayas' }).click();

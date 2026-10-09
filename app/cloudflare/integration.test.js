@@ -4,6 +4,7 @@ import { readFileSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { resolve, sep } from 'node:path';
 import { randomBytes } from 'node:crypto';
 import { Buffer } from 'node:buffer';
+import { APP_VERSION } from '../src/version.js';
 import { build } from 'esbuild';
 import { Miniflare, convertV4MiniflareOptions } from 'miniflare';
 test('Cloudflare runtime: persistent SQLite, private accounts, real GPS API, SSE and CORS', async () => {
@@ -70,7 +71,7 @@ test('Cloudflare runtime: persistent SQLite, private accounts, real GPS API, SSE
     assert.equal((await call('/health')).status, 200);
     const releaseResponse = await call('/version');
     assert.equal(releaseResponse.status, 200);
-    assert.equal((await releaseResponse.json()).minimumWebVersion, '1.8.0');
+    assert.equal((await releaseResponse.json()).minimumWebVersion, APP_VERSION);
     const oldClient = await runtime.dispatchFetch('https://cerca-test.workers.dev/api/auth/login', {
       method: 'POST',
       headers: {

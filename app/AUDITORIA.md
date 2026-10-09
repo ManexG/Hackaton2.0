@@ -1,4 +1,4 @@
-# Revisión de Las Palmas Rutas 1.8.0
+# Revisión de Las Palmas Rutas 1.8.1
 
 Revisión del 8 de octubre de 2026: React/JavaScript, servidor Node, Cloudflare Durable Object, comunidad integrada de Axel, datos cartográficos, modelo de predicción, PWA, Capacitor Android y publicación en GitHub. Se conserva la cobertura y los datos persistentes del servicio. La revisión reduce riesgos concretos; no demuestra que cualquier dispositivo o circunstancia futura esté libre de errores.
 
@@ -27,6 +27,8 @@ Revisión del 8 de octubre de 2026: React/JavaScript, servidor Node, Cloudflare 
 | Paradas borradas que podían quedar en sugerencias tras editar la red | La recarga de rutas excluye paradas antiguas retiradas. |
 | Respuesta de trazado externo incompleta | Validación y error 502 comprensible antes de utilizar la geometría. |
 | Temporizador del editor que operaba sobre un mapa desmontado | Se cancela al abandonar el editor; las pruebas administrativas ahora rechazan cualquier excepción del navegador. |
+| Preparación Android en GitHub que pedía un paquete retirado por Google | Se solicitan únicamente platform-tools y SDK/build-tools actuales. |
+| Pruebas que dependían de un servidor local o una consulta real a GitHub | Backend de pruebas aislado, versión simulada controlada y tolerancia únicamente a cancelación de solicitudes al recargar. |
 | Orden de permisos en el manifiesto Android | Permisos declarados antes de la aplicación, conforme a la revisión estática. |
 
 ## Comportamiento sin internet
@@ -54,7 +56,7 @@ Las pruebas de escritura usan servidores y cuentas aislados. Las cuentas reales 
 
 - Las rutas y tarifas son de demostración. El modelo se entrenó con datos ficticios; no tiene tráfico, lluvia ni estado actual de semáforos. Las caminatas no son indicaciones peatonales verificadas.
 - El chofer debe mantener la app abierta. El seguimiento continuo con pantalla bloqueada requiere una implementación Android específica y otra validación.
-- Ningún dispositivo desconectado puede conocer una Release que nunca consultó. Las instalaciones anteriores a 1.8.0 requieren una actualización inicial manual.
+- Ningún dispositivo desconectado puede conocer una Release que nunca consultó. Las instalaciones anteriores a 1.8.1 requieren una actualización inicial manual.
 - La caché puede ser eliminada por el sistema o el usuario; el almacenamiento tiene límites. La voz, cámara y GPS dependen de permisos, hardware y servicios del dispositivo.
 - Android lint conserva avisos de recursos generados por Capacitor, iconos y versiones de herramientas/dependencias. No quedaron errores que impidan compilar. No se modificaron dependencias nativas mayores ni archivos internos de paquetes para ocultar avisos.
 - La firma de la demo conserva el certificado de desarrollo anterior para permitir instalación sobre los APK existentes. La distribución definitiva y Google Play requieren definir la firma de producción.

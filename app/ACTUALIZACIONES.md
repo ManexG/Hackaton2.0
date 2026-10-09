@@ -1,6 +1,6 @@
 # Actualizaciones de Las Palmas Rutas
 
-La versión 1.8.0 incorpora el control de versiones. Un commit conserva el trabajo; una etiqueta estable `vX.Y.Z` publica una actualización Android mediante GitHub Actions. No se solicita instalar un APK diferente por cada commit.
+La versión 1.8.1 incorpora el control de versiones. Un commit conserva el trabajo; una etiqueta estable `vX.Y.Z` publica una actualización Android mediante GitHub Actions. No se solicita instalar un APK diferente por cada commit.
 
 ## Publicar una versión Android
 
@@ -51,7 +51,7 @@ Android comprueba al iniciar y, mientras permanece visible y conectado, cada 10 
 
 La web usa la versión realmente desplegada en Cloudflare. Su botón actualiza el service worker y comprueba el HTML nuevo antes de recargar. Publicar un APK no obliga a la web a descargar una versión web que todavía no existe.
 
-**Las instalaciones 1.7 y anteriores no tenían este mecanismo: deben instalar 1.8.0 una vez para recibir los avisos siguientes.** No se puede añadir código a un APK ya instalado desde el servidor. Si un teléfono nunca pudo consultar una versión nueva, conserva las funciones locales disponibles; no puede conocer una publicación estando desconectado. Este control es un flujo de actualización, no una protección contra clientes modificados que falseen su versión.
+**Las instalaciones 1.7 y anteriores no tenían este mecanismo: deben instalar 1.8.1 una vez para recibir los avisos siguientes.** No se puede añadir código a un APK ya instalado desde el servidor. Si un teléfono nunca pudo consultar una versión nueva, conserva las funciones locales disponibles; no puede conocer una publicación estando desconectado. Este control es un flujo de actualización, no una protección contra clientes modificados que falseen su versión.
 
 ## Publicar también la web y el servidor
 

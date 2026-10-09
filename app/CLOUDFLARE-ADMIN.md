@@ -1,6 +1,6 @@
 # Administración en Cloudflare
 
-Desde 1.8.0, el panel `#/gestion` funciona con Node y con Cloudflare. Se incorporó el trabajo del equipo de `V2Camion` (`8ce5045`) y se completó la parte que estaba pendiente en Workers. No se crea ninguna cuenta de administrador por defecto.
+Desde 1.8.1, el panel `#/gestion` funciona con Node y con Cloudflare. Se incorporó el trabajo del equipo de `V2Camion` (`8ce5045`) y se completó la parte que estaba pendiente en Workers. No se crea ninguna cuenta de administrador por defecto.
 
 `AdminCore` usa el mismo SQLite del Durable Object. Las tablas nuevas se crean sin borrar datos: `admins`, `admin_sessions`, `managed_routes` y `deleted_routes`. El controlador de operaciones se comparte entre Node y Cloudflare. Las rutas demo permanecen como semilla; ediciones, nuevas rutas y rutas ocultas viven en la base. Las cuentas de chofer existentes conservan asignaciones y contraseñas.
 

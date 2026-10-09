@@ -14,9 +14,9 @@ Las rutas, paradas intermedias y tarifas siguen siendo de prueba. El catálogo i
 
 ## Actualizaciones y funcionamiento sin señal
 
-La versión 1.8.0 agrega 33 semáforos de OpenStreetMap, animaciones de carga, avisos sin conexión, caché pública acotada y cargas diferidas para reducir datos. Los semáforos son ubicaciones cartográficas; no indican el estado de la luz.
+La versión 1.8.1 agrega 33 semáforos de OpenStreetMap, animaciones de carga, avisos sin conexión, caché pública acotada y cargas diferidas para reducir datos. Los semáforos son ubicaciones cartográficas; no indican el estado de la luz.
 
-Una etiqueta estable `vX.Y.Z` ejecuta pruebas, compila Android firmado y publica APK, suma SHA-256 y novedades en GitHub Releases. La app muestra las novedades y bloquea versiones antiguas cuando conoce una actualización. **Los APK anteriores a 1.8.0 requieren instalar esta versión una vez.** Los commits ordinarios ejecutan verificación sin forzar una actualización. La web usa la versión realmente desplegada en Cloudflare. Procedimiento y condiciones de firma en [app/ACTUALIZACIONES.md](app/ACTUALIZACIONES.md).
+Una etiqueta estable `vX.Y.Z` ejecuta pruebas, compila Android firmado y publica APK, suma SHA-256 y novedades en GitHub Releases. La app muestra las novedades y bloquea versiones antiguas cuando conoce una actualización. **Los APK anteriores a 1.8.1 requieren instalar esta versión una vez.** Los commits ordinarios ejecutan verificación sin forzar una actualización. La web usa la versión realmente desplegada en Cloudflare. Procedimiento y condiciones de firma en [app/ACTUALIZACIONES.md](app/ACTUALIZACIONES.md).
 
 ## Interfaz y modelo del equipo
 
@@ -58,7 +58,7 @@ npm run android:sync
 npm run android:open
 ```
 
-El proyecto nativo está en `app/android/`. Versión 1.8.0, código 9. En esta versión el chofer debe mantener la app abierta para compartir GPS; el seguimiento con pantalla bloqueada queda pendiente de definir.
+El proyecto nativo está en `app/android/`. Versión 1.8.1, código 10. En esta versión el chofer debe mantener la app abierta para compartir GPS; el seguimiento con pantalla bloqueada queda pendiente de definir.
 
 ## Verificar
 

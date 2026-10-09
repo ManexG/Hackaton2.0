@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { APP_VERSION } from '../../src/version.js';
 import { bundledRelease } from '../../server/releases.js';
 import { readFileSync } from 'node:fs';
 const network = JSON.parse(readFileSync('public/data/network.demo.json', 'utf8'));
@@ -58,7 +59,7 @@ test('an Android release ahead of the deployed web does not block the current we
   page,
 }) => {
   await page.route('**/api/version', (route) =>
-    route.fulfill({ json: { ...newer, minimumWebVersion: '1.8.0' } })
+    route.fulfill({ json: { ...newer, minimumWebVersion: APP_VERSION } })
   );
   await page.goto('/');
   await expect(page.locator('#origin')).toBeVisible();

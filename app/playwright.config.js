@@ -10,10 +10,21 @@ export default defineConfig({
     launchOptions: { channel: process.env.CI ? undefined : 'msedge' },
   },
   reporter: 'list',
-  webServer: {
-    command: 'npm run dev -- --port 5184',
-    url: 'http://127.0.0.1:5184',
-    reuseExistingServer: false,
-    env: { VITE_PUBLIC_API_URL: '/api', VITE_PUBLIC_APP_URL: 'http://127.0.0.1:5184/' },
-  },
+  webServer: [
+    {
+      command: 'node tests/support/ui-server.mjs',
+      url: 'http://127.0.0.1:5185/api/health',
+      reuseExistingServer: false,
+    },
+    {
+      command: 'npm run dev -- --port 5184',
+      url: 'http://127.0.0.1:5184',
+      reuseExistingServer: false,
+      env: {
+        VITE_PUBLIC_API_URL: '/api',
+        VITE_PUBLIC_APP_URL: 'http://127.0.0.1:5184/',
+        VITE_DEV_API_PROXY: 'http://127.0.0.1:5185',
+      },
+    },
+  ],
 });

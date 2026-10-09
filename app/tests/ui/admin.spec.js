@@ -12,6 +12,7 @@ test.beforeEach(async ({ page }) => {
   browserErrors = [];
   page.on('pageerror', (error) => browserErrors.push(error.message));
   const service = createTransitServer({
+    releaseFetcher: async () => new Response(null, { status: 404 }),
     dbPath: ':memory:',
     publicAppUrl: 'http://127.0.0.1:5184/',
     allowedOrigins: ['http://127.0.0.1:5184'],

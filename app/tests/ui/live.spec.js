@@ -48,6 +48,7 @@ async function choose(page, field, query) {
 }
 test.beforeEach(async ({ page }) => {
   const service = createTransitServer({
+    releaseFetcher: async () => new Response(null, { status: 404 }),
     dbPath: ':memory:',
     publicAppUrl: 'http://127.0.0.1:5184/',
     allowedOrigins: ['http://127.0.0.1:5184'],

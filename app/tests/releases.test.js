@@ -2,11 +2,12 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { ReleaseService, bundledRelease, githubRelease } from '../server/releases.js';
-import { compareVersions, validRelease } from '../src/version.js';
+import { APP_VERSION, compareVersions, validRelease } from '../src/version.js';
 import { publicPath } from '../src/offlineCache.js';
 import { createTransitServer } from '../server/index.js';
 import { insideCoverage } from '../src/planner.js';
-const candidate = (version = '1.9.0') => ({
+const futureVersion = `${Number(APP_VERSION.split('.')[0]) + 1}.0.0`;
+const candidate = (version = futureVersion) => ({
   tag_name: 'v' + version,
   published_at: '2026-10-09T00:00:00Z',
   draft: false,
@@ -55,14 +56,14 @@ test('release checks share requests, cache for ten minutes, revalidate with ETag
         assert.equal(options.headers['If-None-Match'], '"release-9"');
         return new Response(null, { status: 304 });
       }
-      return Response.json(candidate(mode === 'older' ? '1.8.0' : '1.9.0'), {
+      return Response.json(candidate(mode === 'older' ? APP_VERSION : futureVersion), {
         headers: { ETag: '"release-9"' },
       });
     },
   });
   await Promise.all(Array.from({ length: 20 }, () => service.current()));
   assert.equal(calls, 1);
-  assert.equal((await service.current()).version, '1.9.0');
+  assert.equal((await service.current()).version, futureVersion);
   assert.equal(calls, 1);
   time += 600001;
   mode = '304';
@@ -70,12 +71,12 @@ test('release checks share requests, cache for ten minutes, revalidate with ETag
   assert.equal(calls, 2);
   time += 600001;
   mode = 'older';
-  assert.equal((await service.current()).version, '1.9.0');
+  assert.equal((await service.current()).version, futureVersion);
   assert.equal(calls, 3);
   await service.current();
   assert.equal(calls, 3);
-  assert.ok(service.required('1.8.0', 'native'));
-  assert.equal(service.required('1.8.0', 'web'), null);
+  assert.ok(service.required(APP_VERSION, 'native'));
+  assert.equal(service.required(APP_VERSION, 'web'), null);
 });
 test('GitHub failure does not crash startup or lose a known mandatory version', async () => {
   let calls = 0;
@@ -85,11 +86,11 @@ test('GitHub failure does not crash startup or lose a known mandatory version', 
       throw Error('offline');
     },
   });
-  assert.equal((await service.current()).version, '1.8.0');
+  assert.equal((await service.current()).version, APP_VERSION);
   await service.current();
   assert.equal(calls, 1);
   service.cached = { data: githubRelease(candidate()), checkedAt: 0 };
-  assert.equal((await service.current()).version, '1.9.0');
+  assert.equal((await service.current()).version, futureVersion);
 });
 test('offline cache never accepts sessions, live locations, operator data or mutation endpoints', () => {
   for (const path of [
@@ -135,7 +136,7 @@ test('HTTP version endpoint and 426 restriction work without rejecting logout or
   const base = `http://127.0.0.1:${server.address().port}`;
   try {
     const release = await (await fetch(base + '/api/version')).json();
-    assert.equal(release.version, '1.9.0');
+    assert.equal(release.version, futureVersion);
     const outdated = await fetch(base + '/api/auth/login', {
       method: 'POST',
       headers: {
@@ -146,12 +147,12 @@ test('HTTP version endpoint and 426 restriction work without rejecting logout or
       body: '{}',
     });
     assert.equal(outdated.status, 426);
-    assert.equal((await outdated.json()).release.version, '1.9.0');
+    assert.equal((await outdated.json()).release.version, futureVersion);
     const currentWeb = await fetch(base + '/api/auth/login', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-App-Version': '1.8.0',
+        'X-App-Version': APP_VERSION,
         'X-App-Platform': 'web',
       },
       body: '{}',

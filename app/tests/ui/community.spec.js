@@ -6,6 +6,7 @@ const errors = [];
 test.beforeEach(async ({ page }) => {
   errors.length = 0;
   service = createTransitServer({
+    releaseFetcher: async () => new Response(null, { status: 404 }),
     dbPath: ':memory:',
     adminToken: 'isolated-ui-community-admin',
     allowedOrigins: ['http://127.0.0.1:5184'],
@@ -21,7 +22,12 @@ test.beforeEach(async ({ page }) => {
   await page.route('**/api/**', async (route) => {
     const url = new URL(route.request().url());
     const response = await route.fetch({ url: backend + url.pathname + url.search });
-    await route.fulfill({ response });
+    try {
+      await route.fulfill({ response });
+    } catch (error) {
+      // Reload can cancel an intercepted request before the backend returns.
+      if (!error.message.includes('Route is already handled')) throw error;
+    }
   });
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto('/');

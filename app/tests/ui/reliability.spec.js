@@ -1,3 +1,4 @@
+import { openField } from '../support/travel.js';
 import { test, expect } from '@playwright/test';
 import { APP_VERSION } from '../../src/version.js';
 import { bundledRelease } from '../../server/releases.js';
@@ -5,13 +6,13 @@ import { readFileSync } from 'node:fs';
 const network = JSON.parse(readFileSync('public/data/network.demo.json', 'utf8'));
 const newer = {
   ...bundledRelease(),
-  version: '1.9.0',
-  minimumVersion: '1.9.0',
-  minimumWebVersion: '1.9.0',
+  version: '9.0.0',
+  minimumVersion: '9.0.0',
+  minimumWebVersion: '9.0.0',
   notes: ['Nueva versión de prueba', 'GPS más preciso'],
-  releaseUrl: 'https://github.com/ManexG/Hackaton2.0/releases/tag/v1.9.0',
+  releaseUrl: 'https://github.com/ManexG/Hackaton2.0/releases/tag/v9.0.0',
   downloadUrl:
-    'https://github.com/ManexG/Hackaton2.0/releases/download/v1.9.0/Las-Palmas-Rutas.apk',
+    'https://github.com/ManexG/Hackaton2.0/releases/download/v9.0.0/Las-Palmas-Rutas.apk',
 };
 test.beforeEach(async ({ page }) => {
   await page.route('**/api/version', (route) => route.fulfill({ json: bundledRelease() }));
@@ -103,6 +104,7 @@ test('loss of connectivity stops the live stream and disables online search whil
   await expect
     .poll(() => page.evaluate(() => window.testStreams.created - window.testStreams.closed))
     .toBe(0);
+  await openField(page, 'destination');
   await page.locator('#destination').fill('Reforma');
   await expect(page.getByRole('option').first()).toBeVisible();
   await expect(

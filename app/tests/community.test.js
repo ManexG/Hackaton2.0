@@ -10,14 +10,14 @@ const network = JSON.parse(
 );
 const point = network.stops[0].point;
 const secret = 'isolated-community-admin-test-secret';
-test('Axel update: configured pilot zone, live metadata, explicit server stop and no out-of-zone ETA', async () =>
+test('city coverage ignores an old pilot circle, preserves live metadata and rejects GPS outside the city', async () =>
   withService(async (call, store, base) => {
     const headers = { 'X-Admin-Key': secret };
     const zone = { nombre: 'Piloto de prueba aislado', lat: point[0], lng: point[1], radio_m: 350 };
     assert.equal((await call('/admin/zona', { ...zone, radio_m: 0 }, { headers })).status, 400);
     assert.equal((await call('/admin/zona', { ...zone, lat: 0, lng: 0 }, { headers })).status, 400);
     assert.equal((await call('/admin/zona', zone, { headers })).status, 201);
-    assert.equal((await (await fetch(base + '/api/network')).json()).pilotZone.nombre, zone.nombre);
+    assert.equal((await (await fetch(base + '/api/network')).json()).pilotZone, null);
     store.provision({
       name: 'Chofer Axel aislado',
       email: 'zone-driver@example.test',
@@ -40,17 +40,17 @@ test('Axel update: configured pilot zone, live metadata, explicit server stop an
     assert.equal(vehicles[0].lat, point[0]);
     assert.equal(vehicles[0].lng, point[1]);
     assert.ok(vehicles[0].edad_s < 5);
-    assert.equal(vehicles[0].distancia_zona_m, 0);
-    assert.equal(vehicles[0].zona.nombre, zone.nombre);
+    assert.ok(vehicles[0].distancia_zona_m >= 0);
+    assert.equal(vehicles[0].zona, null);
     const snapshot = store.snapshot();
-    assert.deepEqual(
+    assert.equal(
       stopArrivals(
         network.routes[0].stops.at(-1),
         store.network,
         snapshot.vehicles,
         snapshot.serverTime
-      ),
-      []
+      ).length,
+      1
     );
     assert.equal((await call('/vehiculos/detener', {})).status, 401);
     const stopped = await call('/vehiculos/detener', {}, { headers: driverHeaders });
@@ -59,19 +59,26 @@ test('Axel update: configured pilot zone, live metadata, explicit server stop an
     assert.deepEqual(await (await call('/vehiculos/activos')).json(), []);
     assert.equal(store.authenticate(session.token).active, false);
     const remote = network.stops.find((stop) => stop.id === network.routes[0].stops.at(-1)).point;
-    assert.throws(
-      () => store.update(session.driver.id, { ...fix, point: remote, timestamp: Date.now() }, true),
-      /fuera de la zona/
-    );
-    assert.deepEqual(store.snapshot().vehicles, []);
-    // A changed pilot zone also removes a previously valid active driver immediately.
+    store.update(session.driver.id, { ...fix, point: remote, timestamp: Date.now() }, true);
+    assert.equal(store.snapshot().vehicles.length, 1);
+    // Legacy pilot settings no longer narrow the urban network.
     store.update(session.driver.id, { ...fix, timestamp: Date.now() }, true);
     assert.equal(
       (await call('/admin/zona', { ...zone, lat: remote[0], lng: remote[1] }, { headers })).status,
       201
     );
+    assert.equal(store.snapshot().vehicles.length, 1);
+    assert.equal(store.authenticate(session.token).active, true);
+    assert.throws(
+      () =>
+        store.update(
+          session.driver.id,
+          { ...fix, point: [19.43, -99.13], timestamp: Date.now() },
+          true
+        ),
+      /fuera de la zona/
+    );
     assert.deepEqual(store.snapshot().vehicles, []);
-    assert.equal(store.authenticate(session.token).active, false);
   }));
 async function withService(callback) {
   const service = createTransitServer({ dbPath: ':memory:', adminToken: secret });

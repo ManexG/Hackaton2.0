@@ -1,3 +1,4 @@
+import { openField } from '../support/travel.js';
 import { test, expect } from '@playwright/test';
 import { createTransitServer } from '../../server/index.js';
 import { readFileSync } from 'node:fs';
@@ -12,6 +13,11 @@ test.beforeEach(async ({ page }) => {
     allowedOrigins: ['http://127.0.0.1:5184'],
   });
   await new Promise((resolve) => service.server.listen(0, '127.0.0.1', resolve));
+  service.admin.createAdmin({
+    name: 'Community admin UI',
+    email: 'community-admin-ui@example.test',
+    password: 'isolated-ui-community-admin',
+  });
   backend = `http://127.0.0.1:${service.server.address().port}`;
   await page.addInitScript(() => {
     class Events extends EventTarget {
@@ -135,8 +141,15 @@ test('operator imports a bounded route into the travel map and generates its QR'
   await page.evaluate(() => {
     location.hash = '/admin';
   });
-  await expect(page.getByRole('heading', { name: 'Administración', exact: true })).toBeVisible();
-  await page.getByLabel('Clave de administración').fill('isolated-ui-community-admin');
+  await expect(
+    page.getByRole('heading', { name: 'Acceso de administración', exact: true })
+  ).toBeVisible();
+  await page.locator('.admin-login').getByLabel('Correo').fill('community-admin-ui@example.test');
+  await page.locator('.admin-login').getByLabel('Contraseña').fill('isolated-ui-community-admin');
+  await page.locator('.admin-login').getByRole('button', { name: 'Entrar', exact: true }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Reportes y paradas', exact: true })
+  ).toBeVisible();
   const network = JSON.parse(readFileSync('public/data/network.demo.json', 'utf8'));
   const source = network.routes[0];
   const data = {
@@ -172,7 +185,7 @@ test('operator imports a bounded route into the travel map and generates its QR'
   await page.getByRole('combobox', { name: 'Parada', exact: true }).selectOption('AXS1');
   await expect(page.locator('.community-qr img')).toBeVisible();
   await expect(page.locator('.community-qr')).toContainText('?stop=AXS1');
-  await page.getByRole('button', { name: 'Volver a transporte', exact: true }).click();
+  await page.locator('.admin-top').getByRole('button', { name: 'Mapa', exact: true }).click();
   await page.getByRole('tab', { name: 'Ver rutas', exact: true }).click();
   await expect(page.getByText('Ruta importada UI', { exact: true })).toBeVisible();
   await page.goto('/#/parada/UI-QR-0');

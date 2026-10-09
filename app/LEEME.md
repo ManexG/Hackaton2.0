@@ -1,14 +1,16 @@
-# Las Palmas Rutas 1.8.3 · React + Capacitor + GPS + Comunidad
+# Las Palmas Rutas 1.9.0 · React + Capacitor + GPS + Comunidad
 
-Aplicación Android y web de movilidad para el corredor indicado en Lázaro Cárdenas. Usa **React 19, JavaScript, Vite 8, Leaflet y Capacitor 8**. La publicación en **Cloudflare Workers** guarda cuentas y GPS en un **Durable Object con SQLite** y comparte las posiciones mediante **SSE**. También se conserva el servidor alternativo de Node.js 24 para uso local o alojamiento propio.
+Aplicación Android y web de movilidad para la zona urbana de Lázaro Cárdenas, conservando el encuadre del corredor indicado. Usa **React 19, JavaScript, Vite 8, Leaflet y Capacitor 8**. La publicación en **Cloudflare Workers** guarda cuentas y GPS en un **Durable Object con SQLite** y comparte las posiciones mediante **SSE**. También se conserva el servidor alternativo de Node.js 24 para uso local o alojamiento propio.
 
 La configuración y los comandos para publicar en `workers.dev` están en [CLOUDFLARE.md](CLOUDFLARE.md). El almacenamiento en Cloudflare es independiente del SQLite local; no se suben automáticamente cuentas ni datos del equipo.
 
-## Versión 1.8.3
+## Versión 1.9.0
+
+Origen y destino plegables, ocho rutas de ejemplo, paradas por zonas y administración después de validar el inicio de sesión. Las actualizaciones Android se descargan dentro de la app y abren el instalador del sistema. Detalles y límites en [CAMBIOS-1.9.md](CAMBIOS-1.9.md).
 
 Incluye 33 semáforos de OpenStreetMap, actualización obligatoria con novedades desde GitHub Releases, avisos sin señal, recuperación de errores y menor consumo de datos. El modelo se descarga cuando hace falta y el lector de cámara al utilizarlo. La ubicación de los semáforos no representa su estado real.
 
-Las instalaciones 1.7 y anteriores necesitan instalar 1.8.3 una vez para recibir los avisos futuros. Publicación, firma, etiqueta de versión y despliegue en [ACTUALIZACIONES.md](ACTUALIZACIONES.md). Pruebas, correcciones y límites en [AUDITORIA.md](AUDITORIA.md).
+Las instalaciones 1.7 y anteriores necesitan instalar 1.9.0 una vez para recibir los avisos futuros. Publicación, firma, etiqueta de versión y despliegue en [ACTUALIZACIONES.md](ACTUALIZACIONES.md). Pruebas, correcciones y límites en [AUDITORIA.md](AUDITORIA.md).
 
 ## Interfaz para viajar con menos pasos
 
@@ -24,13 +26,13 @@ Texto base de 18 px, control **Letra más grande** a 22 px con preferencia guard
 
 ## Comunidad de la rama Axel
 
-**Comunidad** abre reportes ciudadanos con foto y ubicación, apoyos únicos por dispositivo, comentarios e historial, filtros, perfil con reportes y reconocimientos, estadísticas, trabajo de campo y administración. Consultar es libre; publicar requiere cuenta. Los choferes pueden usar su sesión ya asignada. [COMUNIDAD.md](COMUNIDAD.md) documenta la integración y el formato de importación de rutas.
+**Comunidad** abre reportes ciudadanos con foto y ubicación, apoyos únicos por dispositivo, comentarios e historial, filtros, perfil con reportes y reconocimientos, estadísticas y trabajo de campo. La administración se abre desde su acceso y requiere una cuenta autorizada. Consultar es libre; publicar requiere cuenta. Los choferes pueden usar su sesión ya asignada. [COMUNIDAD.md](COMUNIDAD.md) documenta la integración y el formato de importación de rutas.
 
 La web conserva sus recursos para abrir sin señal después de la primera visita. Los reportes se guardan en IndexedDB y se envían al recuperar conexión, con un identificador que evita duplicados. GPS y disponibilidad siguen requiriendo internet. La API, fotos y nuevas tablas se alojan en el mismo SQLite de Cloudflare, conservando las cuentas existentes. No hay conexión automática con un ayuntamiento.
 
 ## Pasajero
 
-No necesita registrarse. Puede buscar entre 941 entradas de OpenStreetMap —452 negocios y puntos de interés, 412 calles y 77 direcciones con número— y consultar lugares cercanos por categoría. El origen y el destino empiezan vacíos.
+No necesita registrarse. Puede buscar entre 2,904 entradas guardadas de OpenStreetMap y consultar lugares cercanos por categoría. El origen y el destino empiezan vacíos.
 
 El mapa muestra los recorridos de colores y las combis de choferes conectados. Seleccionar una ruta o un viaje aumenta su intensidad y atenúa las demás. Si el viaje necesita trasbordo se resaltan todas sus líneas.
 
@@ -112,7 +114,7 @@ npm run android:sync
 npm run android:open
 ```
 
-Configura primero `VITE_PUBLIC_API_URL` y `VITE_PUBLIC_APP_URL` para conectar el APK al servidor publicado. El identificador es `mx.cerca.combis.demo`; versión **1.8.3**, código **12**. GitHub Releases publica el APK de release firmado. Consulta [ACTUALIZACIONES.md](ACTUALIZACIONES.md) para generar una versión y conocer la firma utilizada.
+Configura primero `VITE_PUBLIC_API_URL` y `VITE_PUBLIC_APP_URL` para conectar el APK al servidor publicado. El identificador es `mx.cerca.combis.demo`; versión **1.9.0**, código **12**. GitHub Releases publica el APK de release firmado. Consulta [ACTUALIZACIONES.md](ACTUALIZACIONES.md) para generar una versión y conocer la firma utilizada.
 
 ## Verificar
 

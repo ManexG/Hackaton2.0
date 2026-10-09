@@ -62,19 +62,19 @@ export function addStreetMap(map, network, options = {}) {
     return element;
   };
   legend.addTo(map);
-  for (const street of streets) {
-    L.polyline(street.streetSegments, {
-      pane: 'localMap',
-      color: '#fff',
-      weight: /Avenida|Boulevard/.test(street.name) ? 9 : 5,
-      opacity: 1,
-      interactive: false,
-    }).addTo(map);
-  }
+  const roads = L.layerGroup().addTo(map);
+  const visibleRoads = new Map();
+  const geometries = streets.map((street) => ({
+    street,
+    bounds: L.latLngBounds(street.streetSegments.flat()),
+  }));
   map.attributionControl?.setPrefix(false);
   map.attributionControl?.addAttribution(
     '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a>'
   );
+  const vanCredit =
+    'Van: <a href="https://thenounproject.com/icon/van-4303195/" target="_blank" rel="noopener">Cuputo · Noun Project</a>';
+  map.attributionControl?.addAttribution(vanCredit);
   function redrawNames() {
     if (disposed) return;
     labels.clearLayers();
@@ -82,6 +82,25 @@ export function addStreetMap(map, network, options = {}) {
     const boxes = [];
     const names = new Set();
     const bounds = map.getBounds();
+    const visibleBounds = bounds.pad(0.15);
+    for (const { street, bounds: streetBounds } of geometries) {
+      const visible =
+        visibleBounds.intersects(streetBounds) &&
+        (zoom >= 14 || /Avenida|Boulevard|Carretera/.test(street.name));
+      if (visible && !visibleRoads.has(street.id)) {
+        const line = L.polyline(street.streetSegments, {
+          pane: 'localMap',
+          color: '#fff',
+          weight: /Avenida|Boulevard/.test(street.name) ? 9 : 5,
+          opacity: 1,
+          interactive: false,
+        }).addTo(roads);
+        visibleRoads.set(street.id, line);
+      } else if (!visible && visibleRoads.has(street.id)) {
+        roads.removeLayer(visibleRoads.get(street.id));
+        visibleRoads.delete(street.id);
+      }
+    }
     const candidates = [...streets].sort(
       (a, b) => Number(/Avenida|Boulevard/.test(b.name)) - Number(/Avenida|Boulevard/.test(a.name))
     );
@@ -115,7 +134,10 @@ export function addStreetMap(map, network, options = {}) {
     disposed = true;
     map.off('zoomend moveend resize', redrawNames);
     labels.remove();
+    roads.remove();
+    visibleRoads.clear();
     signals.remove();
     legend.remove();
+    map.attributionControl?.removeAttribution(vanCredit);
   };
 }

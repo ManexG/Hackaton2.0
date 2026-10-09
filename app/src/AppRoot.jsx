@@ -48,9 +48,13 @@ export function AppRoot({ network, catalog, refreshNetwork }) {
             </button>
           )}
         </div>
-      ) : route.startsWith('/gestion') ? (
+      ) : route.startsWith('/gestion') || route === '/admin' ? (
         <Suspense fallback={<div className="boot">Cargando administración…</div>}>
-          <AdminPanel network={network} refreshNetwork={refreshNetwork} />
+          <AdminPanel
+            network={network}
+            refreshNetwork={refreshNetwork}
+            initialTab={route === '/admin' ? 'community' : 'routes'}
+          />
         </Suspense>
       ) : (
         route && (

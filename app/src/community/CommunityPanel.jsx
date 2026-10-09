@@ -35,6 +35,7 @@ import {
 import { drafts, enqueue, removeDraft, syncDrafts } from './queue.js';
 import { insideCoverage } from '../planner.js';
 import { addStreetMap } from '../streetMap.js';
+import { manage } from '../admin/adminApi.js';
 import './community.css';
 
 const go = (path) => {
@@ -995,8 +996,9 @@ function Fieldwork({ network, user, notify }) {
   );
 }
 
-function Admin({ network, notify, refreshNetwork }) {
-  const [key, setKey] = useState('');
+export function CommunityAdmin({ network, notify, refreshNetwork, token }) {
+  const key = token;
+  const api = (path, options = {}) => manage('/community' + path, { ...options, token });
   const [reports, setReports] = useState([]);
   const [colonies, setColonies] = useState([]);
   const [routes, setRoutes] = useState([]);
@@ -1101,17 +1103,8 @@ function Admin({ network, notify, refreshNetwork }) {
   }
   return (
     <>
-      <h1>Administración</h1>
-      <p>Panel del equipo responsable. La clave autoriza los cambios y las exportaciones.</p>
-      <label className="community-admin-key">
-        Clave de administración
-        <input
-          type="password"
-          value={key}
-          onChange={(e) => setKey(e.target.value)}
-          autoComplete="off"
-        />
-      </label>
+      <h1>Reportes y paradas</h1>
+      <p>Gestiona respuestas, importa rutas y prepara los QR con tu sesión de administración.</p>
       <section className="community-section">
         <h2>Reportes por urgencia</h2>
         {reports.length ? (
@@ -1365,7 +1358,6 @@ export default function CommunityPanel({ network, route, refreshNetwork }) {
           <summary>Más</summary>
           <button onClick={() => go('/estadisticas')}>Estadísticas</button>
           <button onClick={() => go('/campo')}>Trabajo de campo</button>
-          <button onClick={() => go('/admin')}>Administración</button>
         </details>
       </nav>
       <main className="community-content">
@@ -1379,7 +1371,7 @@ export default function CommunityPanel({ network, route, refreshNetwork }) {
         ) : page === 'campo' ? (
           <Fieldwork network={network} user={user} notify={setMessage} />
         ) : page === 'admin' ? (
-          <Admin network={network} notify={setMessage} refreshNetwork={refreshNetwork} />
+          <a href="#/gestion">Iniciar sesión de administración</a>
         ) : page === 'mapa' ? (
           <>
             <h1>Problemas en la zona</h1>

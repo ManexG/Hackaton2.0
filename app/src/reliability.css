@@ -1,22 +1,300 @@
-.traffic-signal-marker { background: transparent; border: 0; filter: drop-shadow(0 1px 2px #0005); }
-.traffic-signal-marker svg { width: 24px; height: 36px; }
-.traffic-signal-legend { display: flex; align-items: center; gap: 5px; background: #fffffff0; border-radius: 8px; padding: 4px 8px; color: #26382c; font: 12px/1.4 sans-serif; }
-.traffic-signal-legend svg { width: 13px; height: 21px; }
-.offline-notice { margin: 12px 0; padding: 14px; border: 1px solid #c89e45; border-radius: 12px; background: #fff7df; color: #513e19; }
-.offline-notice p { margin: 6px 0 0; line-height: 1.5; }
-.update-required { max-width: 620px; margin: auto; padding: max(24px, env(safe-area-inset-top)) 22px 40px; min-height: 100dvh; background: #fff; }
-.update-required img { width: 190px; max-width: 100%; }
-.update-required h1 { font-size: 1.8rem; margin: 24px 0 12px; }
-.update-required h2 { font-size: 1.2rem; margin-top: 22px; }
-.update-required li { margin-bottom: 12px; line-height: 1.5; }
-.update-required a, .update-required button { margin: 10px 0; }
-.update-required .primary-button { display: flex; justify-content: center; min-height: 56px; }
-.boot { display: grid; align-content: center; justify-items: center; gap: 14px; min-height: 100dvh; font-size: 1.1rem; padding: 24px; text-align: center; color: #24551f; }
-.boot::before { content: ''; width: 42px; height: 42px; border: 4px solid #d9e6ce; border-top-color: #24551f; border-radius: 50%; }
-button:disabled { cursor: not-allowed; }
+.traffic-signal-marker {
+  background: transparent;
+  border: 0;
+  filter: drop-shadow(0 1px 2px #0005);
+}
+.traffic-signal-marker svg {
+  width: 24px;
+  height: 36px;
+}
+.traffic-signal-legend {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: #fffffff0;
+  border-radius: 8px;
+  padding: 4px 8px;
+  color: #26382c;
+  font: 12px/1.4 sans-serif;
+}
+.traffic-signal-legend svg {
+  width: 13px;
+  height: 21px;
+}
+.offline-notice {
+  margin: 12px 0;
+  padding: 14px;
+  border: 1px solid #c89e45;
+  border-radius: 12px;
+  background: #fff7df;
+  color: #513e19;
+}
+.offline-notice p {
+  margin: 6px 0 0;
+  line-height: 1.5;
+}
+.update-required {
+  max-width: 620px;
+  margin: auto;
+  padding: max(24px, env(safe-area-inset-top)) 22px 40px;
+  min-height: 100dvh;
+  background: #fff;
+}
+.update-required img {
+  width: 190px;
+  max-width: 100%;
+}
+.update-required h1 {
+  font-size: 1.8rem;
+  margin: 24px 0 12px;
+}
+.update-required h2 {
+  font-size: 1.2rem;
+  margin-top: 22px;
+}
+.update-required li {
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+.update-required a,
+.update-required button {
+  margin: 10px 0;
+}
+.update-required .primary-button {
+  display: flex;
+  justify-content: center;
+  min-height: 56px;
+}
+.boot {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 14px;
+  min-height: 100dvh;
+  font-size: 1.1rem;
+  padding: 24px;
+  text-align: center;
+  color: #24551f;
+}
+.boot::before {
+  content: '';
+  width: 42px;
+  height: 42px;
+  border: 4px solid #d9e6ce;
+  border-top-color: #24551f;
+  border-radius: 50%;
+}
+button:disabled {
+  cursor: not-allowed;
+}
 @media (prefers-reduced-motion: no-preference) {
-  .boot::before { animation: app-spin .9s linear infinite; }
-  .driver-panel, .route-detail, .journey-detail, .community-root, .update-required { animation: app-appear .2s ease-out; }
-  @keyframes app-spin { to { transform: rotate(360deg); } }
-  @keyframes app-appear { from { opacity: .5; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+  .boot::before {
+    animation: app-spin 0.9s linear infinite;
+  }
+  .driver-panel,
+  .route-detail,
+  .journey-detail,
+  .community-root,
+  .update-required {
+    animation: app-appear 0.2s ease-out;
+  }
+  @keyframes app-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  @keyframes app-appear {
+    from {
+      opacity: 0.5;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+}
+
+/* Collapsible travel cards keep only one editor open. */
+#app .sidebar .journey-field {
+  display: block;
+  padding: 0;
+  border: 2px solid #bccdb2;
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+#app .sidebar .journey-field.is-open {
+  border-color: #24551f;
+  background: #f5f8ef;
+}
+.field-summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 82px;
+  padding: 16px;
+  text-align: left;
+  background: #fff;
+  border-radius: 12px;
+}
+.field-summary > span:not(.van-icon) {
+  flex: 1;
+  min-width: 0;
+}
+#app .sidebar .field-summary-label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #4b6143;
+}
+#app .sidebar .field-summary strong {
+  display: block;
+  font-size: 1.06rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+  margin: 5px 0;
+}
+#app .sidebar .field-summary small {
+  display: block;
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+#app .sidebar .field-summary .field-confirmation {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.field-summary > svg {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+#app .sidebar .field-editor {
+  padding: 4px 16px 16px;
+}
+#app .sidebar .field-editor[hidden],
+.stop-zones[hidden],
+.stop-zone > div[hidden] {
+  display: none;
+}
+#app .sidebar .field-editor input {
+  width: 100%;
+  min-width: 0;
+  font-size: 1rem;
+}
+.field-editor .field-utilities {
+  margin-top: 10px;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.stop-zones {
+  margin: 10px 0 18px;
+  border: 1px solid #bccdb2;
+  border-radius: 12px;
+  overflow: hidden;
+}
+.zone-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 16px;
+  text-align: left;
+  font-size: 1rem;
+  font-weight: 750;
+  min-height: 58px;
+  background: #edf3e7;
+  border-bottom: 1px solid #cfddc3;
+}
+.zone-heading svg {
+  width: 22px;
+  height: 22px;
+}
+.stop-choice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 72px;
+  padding: 14px 16px;
+  text-align: left;
+  border-bottom: 1px solid #dde5d6;
+  background: #fff;
+}
+.stop-choice > span {
+  flex: 1;
+}
+.stop-choice strong,
+.stop-choice small {
+  display: block;
+  line-height: 1.5;
+}
+.stop-choice svg {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+}
+.stop-choice[aria-pressed='true'] {
+  background: #e8f2df;
+}
+.stop-route-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+.stop-route-tags span {
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid var(--route-color);
+  font-size: 0.85rem;
+}
+.stop-route-tags i {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--route-color);
+  margin-right: 5px;
+}
+.van-icon {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  background: currentColor;
+  mask: url('/brand/van-cuputo-4303195.png') center/contain no-repeat;
+  -webkit-mask: url('/brand/van-cuputo-4303195.png') center/contain no-repeat;
+}
+.bus-bubble {
+  background: #fff;
+  border: 3px solid var(--route-color);
+}
+.bus-bubble .van-icon {
+  width: 42px;
+  height: 36px;
+}
+.route-card-icon .van-icon {
+  width: 38px;
+  height: 34px;
+}
+.download-progress progress {
+  width: 100%;
+  height: 16px;
+  accent-color: #24551f;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .field-editor,
+  .stop-zone > div {
+    animation: app-appear 0.18s ease-out;
+  }
 }

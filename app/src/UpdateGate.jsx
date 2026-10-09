@@ -5,6 +5,7 @@ import { APP_VERSION, compareVersions, validRelease } from './version.js';
 import { apiBase } from './liveApi.js';
 import { useConnectivity } from './connectivity.jsx';
 import { Icon } from './Icon.jsx';
+import { NativeUpdate } from './nativeUpdate.js';
 const KEY = 'las-palmas.latest-release';
 function remembered() {
   try {
@@ -20,6 +21,9 @@ export function UpdateGate({ children }) {
   const [checking, setChecking] = useState(false);
   const [message, setMessage] = useState('');
   const [started, setStarted] = useState(!navigator.onLine);
+  const [download, setDownload] = useState(null);
+  const [ready, setReady] = useState(false);
+  const [nativeBusy, setNativeBusy] = useState(false);
   const { online, active } = useConnectivity();
   const last = useRef(0),
     pending = useRef(false);
@@ -27,6 +31,49 @@ export function UpdateGate({ children }) {
     ? release?.minimumVersion
     : release?.minimumWebVersion || release?.minimumVersion;
   const blocked = release && compareVersions(version, targetVersion) < 0;
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+    let disposed = false;
+    const listener = NativeUpdate.addListener('progress', (value) => {
+      if (!disposed) setDownload(value);
+    });
+    return () => {
+      disposed = true;
+      void listener.then((handle) => handle.remove());
+    };
+  }, []);
+  useEffect(() => {
+    if (!blocked || !Capacitor.isNativePlatform()) return;
+    let disposed = false;
+    setReady(false);
+    NativeUpdate.status({ version: release.version })
+      .then((value) => {
+        if (!disposed) setReady(value.ready);
+      })
+      .catch(() => {});
+    return () => {
+      disposed = true;
+    };
+  }, [blocked, release?.version]);
+  async function updateNative() {
+    setNativeBusy(true);
+    setMessage('');
+    try {
+      if (!ready) {
+        await NativeUpdate.download({ version: release.version, url: release.downloadUrl });
+        setReady(true);
+      }
+      setMessage(
+        'Confirma la instalación en Android. Si pide permiso, activa «Permitir desde esta fuente» y regresa.'
+      );
+      await NativeUpdate.install({ version: release.version });
+    } catch (error) {
+      setMessage(error?.message || 'No pudimos actualizar. Revisa la conexión e intenta de nuevo.');
+    } finally {
+      setNativeBusy(false);
+      setDownload(null);
+    }
+  }
   const check = useCallback(async (force = false) => {
     if (!navigator.onLine || pending.current || (!force && Date.now() - last.current < 60_000))
       return;
@@ -147,25 +194,46 @@ export function UpdateGate({ children }) {
           <li key={i}>{note}</li>
         ))}
       </ul>
-      {!online && (
+      {!online && !ready && (
         <p role="status">
           Necesitas internet para descargar la actualización. El aviso se conservará aunque cierres
           la app.
         </p>
       )}
       {Capacitor.isNativePlatform() ? (
-        <a
-          className="primary-button"
-          href={release.downloadUrl}
-          aria-disabled={!online}
-          onClick={(event) => {
-            if (!online) event.preventDefault();
-          }}
-          target="_blank"
-          rel="noopener"
-        >
-          Descargar actualización APK
-        </a>
+        <>
+          <button
+            className="primary-button"
+            disabled={nativeBusy || (!online && !ready)}
+            onClick={updateNative}
+          >
+            <Icon name={nativeBusy ? 'loading' : 'arrow-right'} />
+            {nativeBusy ? 'Actualizando…' : ready ? 'Instalar actualización' : 'Actualizar ahora'}
+          </button>
+          {download && (
+            <div className="download-progress" role="status">
+              <p>
+                {download.stage === 'checking'
+                  ? 'Preparando la descarga…'
+                  : download.stage === 'verifying'
+                    ? 'Verificando la actualización…'
+                    : download.stage === 'ready'
+                      ? 'Descarga lista. Abriendo instalación…'
+                      : `Descargando${download.percent >= 0 ? ` · ${download.percent}%` : '…'}`}
+              </p>
+              <progress
+                max="100"
+                value={download.percent >= 0 ? download.percent : undefined}
+                aria-label="Descarga de actualización"
+              />
+              {download.stage !== 'ready' && (
+                <button className="secondary-button" onClick={() => NativeUpdate.cancel()}>
+                  Cancelar descarga
+                </button>
+              )}
+            </div>
+          )}
+        </>
       ) : (
         <button className="primary-button" disabled={!online || checking} onClick={updateWeb}>
           <Icon name={checking ? 'loading' : 'arrow-right'} />
@@ -177,12 +245,14 @@ export function UpdateGate({ children }) {
           ? 'Android te pedirá confirmar la instalación. Tus datos y tu cuenta se conservan.'
           : 'Se actualizará esta página sin borrar tus reportes guardados.'}
       </p>
-      <a href={release.releaseUrl} target="_blank" rel="noopener">
-        Ver esta versión en GitHub
-      </a>
+      {!Capacitor.isNativePlatform() && (
+        <a href={release.releaseUrl} target="_blank" rel="noopener">
+          Ver esta versión en GitHub
+        </a>
+      )}
       <button
         className="secondary-button"
-        disabled={!online || checking}
+        disabled={!online || checking || nativeBusy}
         onClick={() => check(true)}
       >
         Comprobar de nuevo

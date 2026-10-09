@@ -30,7 +30,7 @@ export function saveAdminSession(value) {
   }
 }
 
-export async function manage(path, { method, body, token } = {}) {
+export async function manage(path, { method, body, token, download } = {}) {
   if (!navigator.onLine)
     throw new ConnectionError(
       'La administración necesita internet. Conéctate y vuelve a intentar.'
@@ -60,7 +60,7 @@ export async function manage(path, { method, body, token } = {}) {
         data?.message ?? 'No se pudo completar la operación.',
         response.status
       );
-    return data;
+    return download ? new Blob([data.text], { type: data.type }) : data;
   } catch (error) {
     if (error instanceof ConnectionError) throw error;
     throw new ConnectionError('No pudimos conectar con el servicio. Comprueba tu conexión.');

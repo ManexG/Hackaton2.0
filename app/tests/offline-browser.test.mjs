@@ -96,7 +96,7 @@ test(
       await expect(page.locator('#origin')).toBeVisible();
       await expect(page.locator('.passenger-content .offline-notice')).toBeVisible();
       await page.getByRole('tab', { name: 'Ver rutas', exact: true }).click();
-      await expect(page.locator('.route-card')).toHaveCount(4);
+      await expect(page.locator('.route-card')).toHaveCount(8);
       await expect(page.locator('#map .traffic-signal-marker')).toHaveCount(33);
       await page.getByRole('button', { name: 'Entrar como chofer', exact: true }).click();
       await expect(

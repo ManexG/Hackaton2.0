@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import {
   ArrowLeft,
   Copy,
@@ -17,14 +17,21 @@ import './admin.css';
 import { OfflineNotice } from '../connectivity.jsx';
 
 const DAYS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+const CommunityAdmin = lazy(() =>
+  import('../community/CommunityPanel.jsx').then((module) => ({ default: module.CommunityAdmin }))
+);
 const goBack = () => {
   location.hash = '';
 };
 
 /** Panel de administración: rutas, choferes y administradores. Ruta: #/gestion */
-export default function AdminPanel({ network, refreshNetwork }) {
+export default function AdminPanel({ network, refreshNetwork, initialTab = 'routes' }) {
   const [session, setSession] = useState(adminSession);
-  const [tab, setTab] = useState('routes');
+  const [tab, setTab] = useState(initialTab);
+  const [verified, setVerified] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(Boolean(session));
+  const [sessionError, setSessionError] = useState('');
+  const [attempt, setAttempt] = useState(0);
   const [toast, setToast] = useState(null);
   const timer = useRef(0);
   useEffect(() => () => clearTimeout(timer.current), []);
@@ -34,6 +41,34 @@ export default function AdminPanel({ network, refreshNetwork }) {
     timer.current = setTimeout(() => setToast(null), 6000);
   };
   const token = session?.token;
+  useEffect(() => {
+    if (!token) {
+      setVerified(false);
+      setCheckingSession(false);
+      return;
+    }
+    let disposed = false;
+    setCheckingSession(true);
+    setVerified(false);
+    setSessionError('');
+    manage('/me', { token })
+      .then(() => {
+        if (!disposed) setVerified(true);
+      })
+      .catch((error) => {
+        if (disposed) return;
+        if (error.status === 401) {
+          saveAdminSession(null);
+          setSession(null);
+        } else setSessionError(error.message);
+      })
+      .finally(() => {
+        if (!disposed) setCheckingSession(false);
+      });
+    return () => {
+      disposed = true;
+    };
+  }, [token, attempt]);
   function persist(value) {
     saveAdminSession(value);
     setSession(value);
@@ -45,6 +80,22 @@ export default function AdminPanel({ network, refreshNetwork }) {
   };
 
   if (!session) return <Login onSession={persist} onBack={goBack} />;
+  if (!verified)
+    return (
+      <div className="admin-shell admin-login">
+        <p role="status">
+          {checkingSession ? 'Comprobando tu acceso…' : sessionError || 'Comprobando tu acceso…'}
+        </p>
+        {!checkingSession && (
+          <button className="admin-btn" onClick={() => setAttempt((value) => value + 1)}>
+            Reintentar
+          </button>
+        )}
+        <button className="admin-btn" onClick={goBack}>
+          Volver al mapa
+        </button>
+      </div>
+    );
   return (
     <div className="admin-shell">
       <header className="admin-top">
@@ -70,6 +121,7 @@ export default function AdminPanel({ network, refreshNetwork }) {
           ['routes', 'Rutas', RouteIcon],
           ['drivers', 'Choferes', Users],
           ['admins', 'Administradores', ShieldCheck],
+          ['community', 'Reportes y paradas', RouteIcon],
         ].map(([id, label, Icon]) => (
           <button
             key={id}
@@ -92,6 +144,18 @@ export default function AdminPanel({ network, refreshNetwork }) {
       )}
       <main>
         <OfflineNotice />
+        {tab === 'community' && (
+          <div className="community-root">
+            <Suspense fallback={<p role="status">Cargando reportes y paradas…</p>}>
+              <CommunityAdmin
+                network={network}
+                token={token}
+                notify={(text) => notify(text)}
+                refreshNetwork={refreshNetwork}
+              />
+            </Suspense>
+          </div>
+        )}
         {tab === 'routes' && (
           <RoutesTab network={network} token={token} notify={notify} onChanged={refreshNetwork} />
         )}

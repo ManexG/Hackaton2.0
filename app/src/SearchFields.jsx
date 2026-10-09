@@ -97,68 +97,92 @@ export function SearchFields(props) {
     <div className="search-box">
       <div className="fields">
         {['origin', 'destination'].map((field, i) => (
-          <div className={`field ${props[field] ? 'field-chosen' : ''}`} key={field}>
-            <label htmlFor={field}>
-              {field === 'origin' ? '¿Desde dónde sales?' : '¿A dónde vas?'}
-            </label>
-            {field === 'origin' && (
-              <button
-                type="button"
-                className="location-button secondary-button"
-                disabled={props.loadingLocation}
-                onClick={props.onLocation}
-              >
-                <Icon name={props.loadingLocation ? 'loading' : 'locate-fixed'} />
-                {props.loadingLocation ? 'Obteniendo ubicación…' : 'Mi ubicación'}
-              </button>
-            )}
-            <div className="field-input">
-              <input
-                id={field}
-                autoComplete="off"
-                spellCheck={false}
-                role="combobox"
-                aria-autocomplete="list"
-                aria-expanded={active === field}
-                aria-controls={active === field ? 'suggestions' : undefined}
-                aria-activedescendant={
-                  active === field && results.length ? `suggestion-${selectedIndex}` : undefined
-                }
-                value={text[field]}
-                placeholder={
-                  field === 'origin'
-                    ? 'O escribe una calle o un lugar'
-                    : 'Escribe un negocio, calle o número'
-                }
-                onFocus={() => {
-                  setIndex(-1);
-                  props.onFocus(field);
-                }}
-                onChange={(event) => {
-                  setIndex(-1);
-                  props.onChange(field, event.target.value);
-                }}
-                onKeyDown={(event) => keyDown(event, field)}
-              />
-            </div>
-            <div className="field-utilities">
-              <VoiceButton
-                label={field === 'origin' ? 'origen' : 'destino'}
-                onText={(value) => {
-                  setIndex(-1);
-                  props.onChange(field, value);
-                  props.onFocus(field);
-                }}
-                onMessage={props.onMessage}
-              />
-              {props[field] && (
-                <span className="field-confirmation">
-                  <Icon name="check" />
-                  {field === 'origin' ? 'Origen elegido' : 'Destino elegido'}
+          <div
+            className={`field journey-field ${props[field] ? 'field-chosen' : ''} ${props.expanded === field ? 'is-open' : 'is-compact'}`}
+            key={field}
+          >
+            <button
+              type="button"
+              className="field-summary"
+              aria-expanded={props.expanded === field}
+              aria-controls={`${field}-editor`}
+              onClick={() => props.onExpand(props.expanded === field ? null : field)}
+            >
+              <Icon name={field === 'origin' ? 'locate-fixed' : 'map-pin'} />
+              <span>
+                <span className="field-summary-label">
+                  {field === 'origin' ? '¿Desde dónde sales?' : '¿A dónde vas?'}
                 </span>
+                <strong>
+                  {props[field]?.name.replace(' · demo', '') ||
+                    (field === 'origin' ? 'Elige tu punto de partida' : 'Elige tu destino')}
+                </strong>
+                {props[field] && (
+                  <small className="field-confirmation">
+                    <Icon name="check" />
+                    {field === 'origin' ? 'Origen elegido' : 'Destino elegido'}
+                  </small>
+                )}
+              </span>
+              <Icon name={props.expanded === field ? 'chevron-up' : 'chevron-down'} />
+            </button>
+            <div id={`${field}-editor`} className="field-editor" hidden={props.expanded !== field}>
+              <label className="sr-only" htmlFor={field}>
+                {field === 'origin' ? '¿Desde dónde sales?' : '¿A dónde vas?'}
+              </label>
+              {field === 'origin' && (
+                <button
+                  type="button"
+                  className="location-button secondary-button"
+                  disabled={props.loadingLocation}
+                  onClick={props.onLocation}
+                >
+                  <Icon name={props.loadingLocation ? 'loading' : 'locate-fixed'} />
+                  {props.loadingLocation ? 'Obteniendo ubicación…' : 'Mi ubicación'}
+                </button>
               )}
+              <div className="field-input">
+                <input
+                  id={field}
+                  autoComplete="off"
+                  spellCheck={false}
+                  role="combobox"
+                  aria-autocomplete="list"
+                  aria-expanded={active === field}
+                  aria-controls={active === field ? 'suggestions' : undefined}
+                  aria-activedescendant={
+                    active === field && results.length ? `suggestion-${selectedIndex}` : undefined
+                  }
+                  value={text[field]}
+                  placeholder={
+                    field === 'origin'
+                      ? 'O escribe una calle o un lugar'
+                      : 'Escribe un negocio, calle o número'
+                  }
+                  onFocus={() => {
+                    setIndex(-1);
+                    props.onFocus(field);
+                  }}
+                  onChange={(event) => {
+                    setIndex(-1);
+                    props.onChange(field, event.target.value);
+                  }}
+                  onKeyDown={(event) => keyDown(event, field)}
+                />
+              </div>
+              <div className="field-utilities">
+                <VoiceButton
+                  label={field === 'origin' ? 'origen' : 'destino'}
+                  onText={(value) => {
+                    setIndex(-1);
+                    props.onChange(field, value);
+                    props.onFocus(field);
+                  }}
+                  onMessage={props.onMessage}
+                />
+              </div>
+              {suggestions(field)}
             </div>
-            {suggestions(field)}
           </div>
         ))}
       </div>

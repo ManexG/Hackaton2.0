@@ -1,3 +1,4 @@
+import { openField } from '../support/travel.js';
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 const network = JSON.parse(
@@ -5,6 +6,7 @@ const network = JSON.parse(
 );
 const errors = new WeakMap();
 async function choose(page, field, query) {
+  await openField(page, field);
   await page.locator(`#${field}`).fill(query);
   await expect(page.locator('#suggestions [role=option]').first()).toBeVisible();
   await page.locator('#suggestions [role=option]').first().click();
@@ -75,7 +77,7 @@ test('calculates direct journey only after choosing both endpoints', async ({ pa
   await choose(page, 'destination', 'Entronque av');
   await expect(page.locator('.journey-card.selected')).toContainText('Sin trasbordos');
   await expect(page.locator('.bus-marker.selected')).toHaveCount(1);
-  await expect(page.locator('.bus-marker.muted')).toHaveCount(3);
+  await expect(page.locator('.bus-marker.muted')).toHaveCount(7);
 });
 test('selected cafe needs transfer and highlights both combis', async ({ page }) => {
   await choose(page, 'origin', 'Jugos Acapulco');
@@ -95,7 +97,8 @@ test('editing destination clears stale recommendations and recalculates new rout
   await choose(page, 'origin', 'Jugos Acapulco');
   await choose(page, 'destination', 'Entronque av');
   await expect(page.locator('.journey-card.selected')).toContainText('R01');
-  await page.locator('#destination').fill('Mercado');
+  await openField(page, 'destination');
+  await page.locator('#destination').fill('Mercado del Sol');
   await expect(page.locator('.journey-card')).toHaveCount(0);
   await expect(page.locator('.selected-leg')).toHaveCount(0);
   await page.locator('#suggestions [role=option]').first().click();
@@ -107,8 +110,10 @@ test('editing destination clears stale recommendations and recalculates new rout
   ).toBe('mercado');
 });
 test('finds actual indexed street names and numbered addresses', async ({ page }) => {
+  await openField(page, 'destination');
   await page.locator('#destination').fill('Reforma');
   await expect(page.locator('#suggestions')).toContainText('Avenida Reforma');
+  await openField(page, 'destination');
   await page.locator('#destination').fill('Avenida Reforma 534');
   await expect(page.locator('#suggestions [role=option]').first()).toContainText('#534');
   await page.locator('#destination').press('ArrowDown');
@@ -118,10 +123,13 @@ test('finds actual indexed street names and numbered addresses', async ({ page }
 });
 test('finds indexed businesses and Spanish category words', async ({ page }) => {
   await choose(page, 'origin', 'Jugos Acapulco');
+  await openField(page, 'destination');
   await page.locator('#destination').fill('Pollo Feliz');
   await expect(page.locator('#suggestions')).toContainText('Pollo Feliz');
+  await openField(page, 'destination');
   await page.locator('#destination').fill('farmacias');
   await expect(page.locator('#suggestions [role=option]')).not.toHaveCount(0);
+  await openField(page, 'destination');
   await page.locator('#destination').fill('Oxxo');
   await expect(page.locator('#suggestions [role=option]')).not.toHaveCount(0);
   await page.locator('#suggestions [role=option]').first().click();
@@ -149,7 +157,7 @@ test('online lookup runs only on explicit action and filters out-of-zone results
     requests++;
     const url = new URL(route.request().url());
     expect(url.searchParams.get('bounded')).toBe('1');
-    expect(url.searchParams.get('viewbox')).toBe('-102.214,17.977,-102.186,17.951');
+    expect(url.searchParams.get('viewbox')).toBe('-102.257,18.035,-102.174,17.929');
     await route.fulfill({
       json: [
         {
@@ -171,6 +179,7 @@ test('online lookup runs only on explicit action and filters out-of-zone results
     });
   });
   await choose(page, 'origin', 'Jugos Acapulco');
+  await openField(page, 'destination');
   await page.locator('#destination').fill('Dirección no indexada 777');
   await expect(page.locator('.no-suggestions')).toBeVisible();
   expect(requests).toBe(0);
@@ -199,8 +208,10 @@ test('stale remote search cannot overwrite an edited destination', async ({ page
       })
       .catch(() => {});
   });
+  await openField(page, 'destination');
   await page.locator('#destination').fill('Busqueda antigua 888');
   await page.getByRole('button', { name: 'Buscar dirección o negocio en línea' }).click();
+  await openField(page, 'destination');
   await page.locator('#destination').fill('Reforma');
   await expect(page.locator('#suggestions')).toContainText('Avenida Reforma');
   await page.waitForTimeout(1000);
@@ -264,7 +275,8 @@ test('bundled streets and catalog work when internet map tiles fail', async ({ p
   await page.route('https://tile.openstreetmap.org/**', (route) => route.abort());
   await page.reload();
   await expect(page.locator('.search-status')).toBeVisible();
-  await expect(page.locator('.leaflet-localMap-pane path')).toHaveCount(412);
+  await expect.poll(() => page.locator('.leaflet-localMap-pane path').count()).toBeGreaterThan(0);
+  await openField(page, 'destination');
   await page.locator('#destination').fill('Avenida Reforma 534');
   await expect(page.locator('#suggestions [role=option]').first()).toContainText('#534');
 });
@@ -275,6 +287,7 @@ test('missing remote addresses show a helpful message without inventing a route'
     route.fulfill({ json: [] })
   );
   await choose(page, 'origin', 'Jugos Acapulco');
+  await openField(page, 'destination');
   await page.locator('#destination').fill('Calle inexistente 99999');
   await page.getByRole('button', { name: 'Buscar dirección o negocio en línea' }).click();
   await expect(page.locator('#toast')).toContainText('No encontramos esa dirección');
@@ -282,9 +295,11 @@ test('missing remote addresses show a helpful message without inventing a route'
 });
 test('online failure gives a Spanish fallback and local search still works', async ({ page }) => {
   await page.route('https://nominatim.openstreetmap.org/search?**', (route) => route.abort());
+  await openField(page, 'destination');
   await page.locator('#destination').fill('Dirección sin conexión 88888');
   await page.getByRole('button', { name: 'Buscar dirección o negocio en línea' }).click();
   await expect(page.locator('#toast')).toContainText('Usa los lugares guardados');
+  await openField(page, 'destination');
   await page.locator('#destination').fill('Avenida Reforma 534');
   await expect(page.locator('#suggestions [role=option]').first()).toContainText('#534');
 });

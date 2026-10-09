@@ -11,6 +11,7 @@ const json = (data, status = 200) => Response.json(data, { status });
 // incompatible live fleets or credentials embedded in the Android app.
 export class CommunityService {
   constructor(store, adminKey = '') {
+    adminKey ||= crypto.randomUUID();
     this.store = store;
     this.db = store.db;
     this.baseNetwork = store.network;

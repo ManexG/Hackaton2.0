@@ -1,3 +1,4 @@
+import { openField } from '../support/travel.js';
 import { test, expect } from '@playwright/test';
 import { createTransitServer } from '../../server/index.js';
 
@@ -54,7 +55,7 @@ test('admin logs in, lists demo routes, builds a route on the map, reorders and 
   await expect(shell(page).getByRole('alert')).toContainText('no coinciden');
   await login(page);
   const list = shell(page).locator('.admin-route-list li');
-  await expect(list).toHaveCount(4);
+  await expect(list).toHaveCount(8);
   await expect(list.first()).toContainText('Corredor principal');
 
   await shell(page).getByRole('button', { name: 'Agregar' }).click();
@@ -84,7 +85,7 @@ test('admin logs in, lists demo routes, builds a route on the map, reorders and 
     .dragTo(shell(page).locator('.admin-stops li').nth(0));
   expect(await names()).toEqual(['Parada 3', 'Parada 2', 'Parada 1']);
   await shell(page).getByRole('button', { name: 'Guardar ruta' }).click();
-  await expect(list).toHaveCount(5);
+  await expect(list).toHaveCount(9);
   await expect(list.last()).toContainText('Ruta de prueba');
   await expect(list.last()).toContainText('3 paradas');
   // El pasajero ve la ruta nueva en la red pública.
@@ -107,7 +108,7 @@ test('admin logs in, lists demo routes, builds a route on the map, reorders and 
     .last()
     .getByRole('button', { name: /Borrar/ })
     .click();
-  await expect(list).toHaveCount(4);
+  await expect(list).toHaveCount(8);
 });
 
 test('admin creates a driver (password shown once) and another administrator', async ({ page }) => {

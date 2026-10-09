@@ -89,7 +89,7 @@ test('returns no bus ride when origin equals destination', () => {
   assert.deepEqual(planJourneys(place('acapulco'), place('acapulco'), network), []);
 });
 test('does not invent a connection for isolated map points', () => {
-  const isolated = { ...place('cafe'), point: [17.9755, -102.212] };
+  const isolated = { ...place('cafe'), point: [18.03, -102.23] };
   assert.ok(insideCoverage(isolated.point, network));
   assert.deepEqual(planJourneys(place('acapulco'), isolated, network), []);
 });

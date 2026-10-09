@@ -55,6 +55,7 @@ test('pilot circle never expands coverage and invalid or remote signals produce 
   const valid = vehicle('R01');
   const scoped = {
     ...network,
+    coverage: { ...network.coverage, scope: 'corridor' },
     pilotZone: { nombre: 'Piloto', lat: valid.point[0], lng: valid.point[1], radio_m: 1000000 },
   };
   assert.equal(inServiceZone(valid.point, scoped), true);

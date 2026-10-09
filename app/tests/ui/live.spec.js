@@ -1,3 +1,4 @@
+import { openField } from '../support/travel.js';
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { createTransitServer } from '../../server/index.js';
@@ -38,6 +39,7 @@ async function connect(page) {
   });
 }
 async function choose(page, field, query) {
+  await openField(page, field);
   await page.locator(`#${field}`).fill(query);
   await page.locator('#suggestions [role=option]').first().click();
   if (
@@ -158,7 +160,9 @@ test('QR web link centers a known stop, selects it as origin and creates a downl
 }) => {
   await page.goto(`/?stop=${firstStop.id}`);
   await expect(page.locator('#stops-panel')).toBeVisible();
-  await expect(page.locator('#stop-select')).toHaveValue(firstStop.id);
+  await expect(page.locator('.stop-picker-summary')).toContainText(
+    firstStop.name.replace(' · demo', '')
+  );
   await expect(page.locator('#origin')).toHaveValue(firstStop.name);
   await expect(page.locator('.focused-stop')).toHaveCount(1);
   await expect(page.locator('.service-empty')).toContainText('No hay una combi activa');
@@ -185,6 +189,7 @@ test('voice text uses the same street and address search without selecting an ar
     }
     Object.assign(window, { SpeechRecognition: TestVoice });
   });
+  await openField(page, 'destination');
   await page.getByRole('button', { name: 'Dictar destino', exact: true }).click();
   await expect(page.locator('#destination')).toHaveValue('Avenida Reforma 534');
   await expect(page.locator('#suggestions')).toContainText('Avenida Reforma #534');

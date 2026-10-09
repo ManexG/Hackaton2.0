@@ -1,8 +1,9 @@
 import { distance, insideCoverage } from './planner.js';
 
-// The operator's pilot area may narrow service, but never extends the original
-// coverage polygon. Use this same decision on the server and on both clients.
+// City coverage replaces old pilot circles. Older corridor configurations still
+// support a narrower circle. Share the decision with the server and both clients.
 export function pilotZone(network) {
+  if (network.coverage.scope === 'city') return null;
   const zone = network.pilotZone;
   if (
     !zone ||

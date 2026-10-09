@@ -11,7 +11,7 @@ const escape = (text) =>
 function busIcon(route, mode) {
   return L.divIcon({
     className: `bus-marker ${mode}`,
-    html: `<div class="bus-bubble" style="--route-color:${route.color}"><svg viewBox="0 0 30 30" fill="none" aria-hidden="true"><path d="M6 22V9a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4v13H6Z" fill="white"/><rect x="8.5" y="8" width="13" height="7" rx="1.5" fill="${route.color}"/><path d="M15 8v7" stroke="white"/><circle cx="10" cy="19" r="1.5" fill="${route.color}"/><circle cx="20" cy="19" r="1.5" fill="${route.color}"/><path d="M9 22v3m12-3v3" stroke="white" stroke-width="3" stroke-linecap="round"/></svg><b>${route.id}</b></div>`,
+    html: `<div class="bus-bubble" style="--route-color:${route.color}"><span class="van-icon" style="color:${route.color}" aria-hidden="true"></span><b>${route.id}</b></div>`,
     iconSize: [92, 48],
     iconAnchor: [46, 24],
   });
@@ -50,7 +50,8 @@ export const MapView = forwardRef(function MapView(props, ref) {
               ? [p.origin.point, p.destination.point]
               : pilotZone(p.network)
                 ? [[p.network.pilotZone.lat, p.network.pilotZone.lng]]
-                : p.network.routes.flatMap((route) => route.segments.flat());
+                : p.network.coverage.initialBounds ||
+                  p.network.routes.flatMap((route) => route.segments.flat());
     const mobile = window.innerWidth <= 760;
     instance.fitBounds(L.latLngBounds(target), {
       paddingTopLeft: mobile ? [40, 82] : [100, 125],
@@ -125,13 +126,13 @@ export const MapView = forwardRef(function MapView(props, ref) {
       zoomControl: false,
       maxBounds: bounds,
       maxBoundsViscosity: 1,
-      minZoom: 14,
+      minZoom: 12,
       maxZoom: 18,
       zoomSnap: 0.25,
       fadeAnimation: false,
     });
     map.current = instance;
-    instance.fitBounds(bounds, { animate: false });
+    instance.fitBounds(network.coverage.initialBounds || bounds, { animate: false });
     instance.attributionControl.setPrefix(false);
     for (const [name, z] of [
       ['localMap', 150],

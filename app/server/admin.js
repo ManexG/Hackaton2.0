@@ -129,6 +129,38 @@ export function createManageHandler({
       return true;
     }
     const me = admin.authenticate(token); // todo lo demás exige sesión de administrador
+    if (path.startsWith('/community/')) {
+      const target = path.slice('/community'.length);
+      if (
+        !/^\/(reportes(?:\/\d+\/estado)?|colonias|rutas|admin\/(rutas(?:\/\d+\/trazar)?|paradas|zona)|export)$/.test(
+          target
+        ) ||
+        !['GET', 'POST', 'PATCH'].includes(method)
+      )
+        throw new ApiError(404, 'Función de administración no encontrada.');
+      const body = method === 'GET' ? undefined : JSON.stringify(await readBody(request));
+      const response = await community.fetch(
+        new Request('https://community.internal/api/community' + target + url.search, {
+          method,
+          headers: { 'Content-Type': 'application/json', 'X-Admin-Key': community.adminKey },
+          body,
+        })
+      );
+      if (target === '/export' && response.ok) {
+        send(response.status, {
+          text: await response.text(),
+          type: response.headers.get('content-type') || 'text/plain',
+        });
+      } else {
+        const data = await response.json();
+        send(
+          response.status,
+          response.ok ? data : { ...data, message: data.message || data.error }
+        );
+      }
+      if (response.ok && method !== 'GET') changed();
+      return true;
+    }
     let match;
     if (method === 'POST' && path === '/logout') {
       admin.logout(token);

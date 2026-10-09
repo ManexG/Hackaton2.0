@@ -5,6 +5,7 @@ import {
   BusFront,
   Check,
   ChevronDown,
+  ChevronUp,
   ChevronRight,
   Clock3,
   Coffee,
@@ -45,6 +46,7 @@ const icons = {
   'bus-front': BusFront,
   check: Check,
   'chevron-down': ChevronDown,
+  'chevron-up': ChevronUp,
   'chevron-right': ChevronRight,
   'clock-3': Clock3,
   coffee: Coffee,
@@ -79,6 +81,7 @@ const icons = {
   offline: WifiOff,
 };
 export function Icon({ name, className = '' }) {
+  if (name === 'bus-front') return <span className={`van-icon ${className}`} aria-hidden="true" />;
   const Component = icons[name];
   return <Component className={className} strokeWidth={1.8} aria-hidden="true" />;
 }

@@ -1,3 +1,4 @@
+import { openField } from '../support/travel.js';
 import { test, expect } from '@playwright/test';
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
@@ -39,6 +40,7 @@ test('choosing places confirms them and requires the explicit how-to-get-there a
     ['origin', 'Jugos Acapulco'],
     ['destination', 'Entronque av'],
   ]) {
+    await openField(page, field);
     await page.locator(`#${field}`).fill(query);
     await page.getByRole('option').first().click();
   }
@@ -48,7 +50,7 @@ test('choosing places confirms them and requires the explicit how-to-get-there a
   await page.getByRole('button', { name: /Ver cómo llegar/ }).click();
   await expect(page.locator('#results')).toContainText('No hay un viaje disponible ahora');
   await page.getByRole('button', { name: 'Ver por dónde pasan las rutas' }).click();
-  await expect(page.locator('.route-card')).toHaveCount(4);
+  await expect(page.locator('.route-card')).toHaveCount(8);
 });
 test('route tap opens its endpoints and selected confirmation instead of an unexplained toggle', async ({
   page,
@@ -60,7 +62,7 @@ test('route tap opens its endpoints and selected confirmation instead of an unex
   await expect(page.locator('.route-endpoints')).toContainText('Sale de: Jugos Acapulco');
   await expect(page.locator('.route-endpoints')).toContainText('Llega a: Entronque');
   await page.getByRole('button', { name: 'Volver a todas las rutas' }).click();
-  await expect(page.locator('.route-card')).toHaveCount(4);
+  await expect(page.locator('.route-card')).toHaveCount(8);
 });
 test('clean interface removes help and numbered onboarding while keeping a readable street map', async ({
   page,
@@ -117,8 +119,9 @@ test('missing model does not prevent local places, routes or stop browsing', asy
   await page.route('**/data/eta-model.json', (route) => route.fulfill({ status: 404, body: '' }));
   await page.reload();
   await expect(page.locator('.search-status')).toBeVisible();
+  await openField(page, 'destination');
   await page.locator('#destination').fill('Avenida Reforma 534');
   await expect(page.getByRole('option').first()).toContainText('#534');
   await page.getByRole('tab', { name: 'Ver rutas', exact: true }).click();
-  await expect(page.locator('.route-card')).toHaveCount(4);
+  await expect(page.locator('.route-card')).toHaveCount(8);
 });

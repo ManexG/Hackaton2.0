@@ -147,7 +147,12 @@ test('Cloudflare runtime: persistent SQLite, private accounts, real GPS API, SSE
         body: body === undefined ? undefined : JSON.stringify(body),
       });
     const routes = await (await manage('GET', '/routes')).json();
-    assert.equal(routes.routes.length, 4);
+    assert.equal(routes.routes.length, 8);
+    assert.equal((await call('/manage/community/reportes')).status, 401);
+    assert.equal((await manage('GET', '/community/reportes')).status, 200);
+    const exportResponse = await manage('GET', '/community/export?format=csv');
+    assert.equal(exportResponse.status, 200);
+    assert.ok((await exportResponse.json()).type.includes('csv'));
     const custom = {
       ...routes.routes[0],
       name: 'Ruta administrada CF',
@@ -310,7 +315,7 @@ test('Cloudflare runtime: persistent SQLite, private accounts, real GPS API, SSE
     assert.equal(communityFleet[0].lat, point[0]);
     assert.equal(communityFleet[0].en_zona, true);
     assert.equal(communityFleet[0].en_vivo, true);
-    assert.equal(communityFleet[0].zona.nombre, 'Piloto runtime');
+    assert.equal(communityFleet[0].zona, null);
     assert.ok(!JSON.stringify(fleet).includes(account.email));
     assert.ok(!JSON.stringify(fleet).includes(account.password));
     const updated = decoder.decode((await reader.read()).value);
@@ -347,7 +352,7 @@ test('Cloudflare runtime: persistent SQLite, private accounts, real GPS API, SSE
     );
     assert.equal((await call('/driver/profile', undefined, session.token)).status, 200);
     assert.equal((await (await call('/fleet')).json()).vehicles.length, 1);
-    assert.equal((await (await call('/fleet')).json()).pilotZone.nombre, 'Piloto runtime');
+    assert.equal((await (await call('/fleet')).json()).pilotZone, null);
     reader = (await call('/events')).body.getReader();
     let firstEvent = '';
     while (!firstEvent.includes('event: fleet'))

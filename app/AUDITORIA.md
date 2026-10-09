@@ -59,9 +59,9 @@ Las pruebas de escritura usan servidores y cuentas aislados. Las cuentas reales 
 
 ## Evidencia de publicación y consumo de datos
 
-- La [verificación del commit final](https://github.com/ManexG/Hackaton2.0/actions/runs/37885031875) completó las 100 pruebas en GitHub.
-- La [compilación y publicación Android](https://github.com/ManexG/Hackaton2.0/actions/runs/37885034888) terminó correctamente. La [Release v1.8.1](https://github.com/ManexG/Hackaton2.0/releases/tag/v1.8.1) contiene el APK firmado, novedades y suma SHA-256.
-- APK publicado: versión 1.8.1, código Android 10, SHA-256 `8fd9b40990acc235b70ab161a41cbdb94f6e7bde728e792f545b03409d0e4149`. La firma coincide con el certificado de las instalaciones anteriores.
+- La [verificación del commit final](https://github.com/ManexG/Hackaton2.0/actions/runs/37887096861) completó las 102 pruebas en GitHub.
+- La [compilación y publicación Android](https://github.com/ManexG/Hackaton2.0/actions/runs/37887099669) terminó correctamente. La [Release v1.8.3](https://github.com/ManexG/Hackaton2.0/releases/tag/v1.8.3) contiene el APK firmado, novedades y suma SHA-256.
+- APK publicado: versión 1.8.3, código Android 12, SHA-256 `4abf673ca9d5392de0617019a14ce730706fdc41365b1f1c25827e65b6a3c0d9`. La firma coincide con el certificado de las instalaciones anteriores.
 - Primera visita a la web pública, con un contexto nuevo de Edge y sin choferes activos: la suma de `ResourceTiming.transferSize` de los recursos de la página bajó de 820 578 a aproximadamente 393 000 bytes, un 52 %. Se esperó a que el campo de origen y el service worker estuvieran disponibles y cuatro segundos adicionales en ambas mediciones. Esta cifra excluye el documento, transferencias de fondo del service worker y el flujo SSE; no representa todo el consumo del teléfono. La recarga siguiente reutilizó los recursos guardados, pero sigue necesitando datos para las consultas y servicios en vivo. No se atribuye una mejora de latencia a esta medición: también depende de la conexión y del servidor.
 
 Los modelos, la cámara y la administración pueden añadir descargas cuando se usan. Los iconos de semáforo, mapa y catálogo funcionan localmente después de la primera carga; la información en vivo sigue necesitando conexión.
@@ -70,7 +70,7 @@ Los modelos, la cámara y la administración pueden añadir descargas cuando se 
 
 - Las rutas y tarifas son de demostración. El modelo se entrenó con datos ficticios; no tiene tráfico, lluvia ni estado actual de semáforos. Las caminatas no son indicaciones peatonales verificadas.
 - El chofer debe mantener la app abierta. El seguimiento continuo con pantalla bloqueada requiere una implementación Android específica y otra validación.
-- Ningún dispositivo desconectado puede conocer una Release que nunca consultó. Las instalaciones anteriores a 1.8.1 requieren una actualización inicial manual.
+- Ningún dispositivo desconectado puede conocer una Release que nunca consultó. Las instalaciones 1.7 y anteriores requieren una actualización inicial manual a la versión actual.
 - La caché puede ser eliminada por el sistema o el usuario; el almacenamiento tiene límites. La voz, cámara y GPS dependen de permisos, hardware y servicios del dispositivo.
 - Android lint conserva avisos de recursos generados por Capacitor, iconos y versiones de herramientas/dependencias. No quedaron errores que impidan compilar. No se modificaron dependencias nativas mayores ni archivos internos de paquetes para ocultar avisos.
 - La firma de la demo conserva el certificado de desarrollo anterior para permitir instalación sobre los APK existentes. La distribución definitiva y Google Play requieren definir la firma de producción.

@@ -24,6 +24,7 @@ export function CercaApp({ network: originalNetwork, catalog }) {
   const [destination, setDestination] = useState(null);
   const [text, setText] = useState({ origin: '', destination: '' });
   const [active, setActive] = useState(null);
+  const [expandedField, setExpandedField] = useState('origin');
   const [trip, setTrip] = useState(null);
   const [selectedId, setSelectedId] = useState(null);
   const [selectedRoute, setSelectedRoute] = useState(null);
@@ -150,6 +151,7 @@ export function CercaApp({ network: originalNetwork, catalog }) {
     if (field === 'origin') setOrigin(place);
     else setDestination(place);
     setText((current) => ({ ...current, [field]: place.name }));
+    setExpandedField(nextOrigin && nextDestination ? null : nextOrigin ? 'destination' : 'origin');
     setActive(null);
     setSelectedId(null);
     setSelectedRoute(null);
@@ -173,6 +175,7 @@ export function CercaApp({ network: originalNetwork, catalog }) {
     });
   }
   function editField(field, value) {
+    setExpandedField(field);
     cancelSearch();
     resetTrip();
     setText((current) => ({ ...current, [field]: value }));
@@ -181,6 +184,7 @@ export function CercaApp({ network: originalNetwork, catalog }) {
     setActive(field);
   }
   function focusField(field) {
+    setExpandedField(field);
     setActive(field);
     if (drawer !== 'lateral') setDrawer('expanded');
   }
@@ -240,6 +244,7 @@ export function CercaApp({ network: originalNetwork, catalog }) {
       return;
     }
     const field = !origin ? 'origin' : 'destination';
+    setExpandedField(field);
     if (!text[field].trim()) {
       setToast(field === 'origin' ? 'Elige tu punto de partida.' : 'Elige a dónde quieres ir.');
       document.getElementById(field)?.focus();
@@ -335,7 +340,7 @@ export function CercaApp({ network: originalNetwork, catalog }) {
     setDrawer('normal');
   }
   function pickOnMap() {
-    const target = active ?? (origin ? 'destination' : 'origin');
+    const target = active ?? expandedField ?? (origin ? 'destination' : 'origin');
     setPinMode(target);
     setDrawer('collapsed');
     setActive(null);
@@ -379,7 +384,7 @@ export function CercaApp({ network: originalNetwork, catalog }) {
   function showCoverage() {
     map.current?.fit(network.coverage.polygon);
     setToast(
-      'Cobertura de prueba alrededor de tus dos puntos. El buscador y los viajes permanecen dentro de esta zona.'
+      'Puedes buscar en Lázaro Cárdenas, La Orilla y Las Guacamayas. Las rutas son ejemplos y las llegadas requieren combis en servicio.'
     );
   }
   const debugState = useRef({
@@ -493,6 +498,11 @@ export function CercaApp({ network: originalNetwork, catalog }) {
                     destination={destination}
                     text={text}
                     active={active}
+                    expanded={expandedField}
+                    onExpand={(field) => {
+                      setExpandedField(field);
+                      setActive(null);
+                    }}
                     online={online}
                     loading={loadingSearch}
                     connected={connectivity.online}
@@ -568,7 +578,7 @@ export function CercaApp({ network: originalNetwork, catalog }) {
                   <p className="search-status" aria-live="polite">
                     {origin && destination
                       ? 'Todo listo. Pulsa «Ver cómo llegar».'
-                      : 'Busca una calle, negocio o parada dentro de la zona.'}
+                      : 'Busca una calle, negocio o parada de Lázaro Cárdenas.'}
                   </p>
                 )}
                 <ExplorePlaces
@@ -680,7 +690,7 @@ export function CercaApp({ network: originalNetwork, catalog }) {
               <Icon name="map-pin" />
               Lázaro Cárdenas
             </strong>
-            <button onClick={showCoverage}>Ver zona disponible</button>
+            <button onClick={showCoverage}>Ver toda la ciudad</button>
           </div>
           <div className="map-controls">
             <button aria-label="Acercar mapa" onClick={() => map.current?.getMap()?.zoomIn()}>

@@ -4,9 +4,19 @@ import { createTransitServer } from '../server/index.js';
 
 const windows = [{ days: [0, 1, 2, 3, 4, 5, 6], start: '06:00', end: '22:00' }];
 const first = { name: 'Admin Uno', email: 'uno@example.test', password: 'clave-de-prueba-123' };
+const servers = new Map();
+test.afterEach(async () => {
+  for (const [server, closed] of servers) {
+    if (server.listening) server.close();
+    server.closeAllConnections();
+    await closed;
+  }
+  servers.clear();
+});
 
 async function start(fetcher) {
   const { server, admin } = createTransitServer({ dbPath: ':memory:', fetcher });
+  servers.set(server, new Promise((resolve) => server.once('close', resolve)));
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
   const base = `http://127.0.0.1:${server.address().port}`;
   const call = async (method, path, body, token) => {
@@ -41,6 +51,37 @@ test('admin endpoints require an administrator session and login is validated', 
   await call('POST', '/api/manage/logout', {}, token);
   assert.equal((await call('GET', '/api/manage/me', undefined, token)).status, 401);
   server.close();
+});
+
+test('legacy community administration requires a verified admin session and never exposes the operator key', async () => {
+  const { call, token } = await start();
+  assert.equal((await call('GET', '/api/manage/community/reportes')).status, 401);
+  assert.equal(
+    (
+      await call('POST', '/api/manage/community/admin/rutas', {
+        nombre: 'No autorizado',
+        color: '#335566',
+      })
+    ).status,
+    401
+  );
+  const routes = await call('GET', '/api/manage/community/rutas', undefined, token);
+  assert.equal(routes.status, 200);
+  assert.ok(Array.isArray(routes.data));
+  const created = await call(
+    'POST',
+    '/api/manage/community/admin/rutas',
+    { nombre: 'Solo equipo autorizado', color: '#335566', fuente: 'prueba' },
+    token
+  );
+  assert.equal(created.status, 201);
+  const exported = await call('GET', '/api/manage/community/export?format=csv', undefined, token);
+  assert.equal(exported.status, 200);
+  assert.ok(exported.data.type.includes('csv'));
+  assert.equal(typeof exported.data.text, 'string');
+  assert.equal((await call('POST', '/api/manage/community/auth/registro', {}, token)).status, 404);
+  await call('POST', '/api/manage/logout', {}, token);
+  assert.equal((await call('GET', '/api/manage/community/reportes', undefined, token)).status, 401);
 });
 
 test('administrators can add admins but not delete themselves or the last one', async () => {
@@ -109,7 +150,7 @@ test('route CRUD: demo routes are editable, hideable and restorable; new routes 
   const list = await call('GET', '/api/manage/routes', undefined, t);
   assert.deepEqual(
     list.data.routes.map((r) => r.id),
-    ['R01', 'R02', 'R03', 'R04']
+    ['R01', 'R02', 'R03', 'R04', 'R05', 'R06', 'R07', 'R08']
   );
   assert.ok(list.data.routes.every((r) => r.demo && !r.edited));
   const r01 = list.data.routes[0];
@@ -147,11 +188,11 @@ test('route CRUD: demo routes are editable, hideable and restorable; new routes 
     t
   );
   assert.equal(created.status, 201);
-  assert.equal(created.data.id, 'R05');
+  assert.equal(created.data.id, 'R09');
   assert.equal(created.data.demo, false);
   const reversed = await call(
     'PUT',
-    '/api/manage/routes/R05',
+    '/api/manage/routes/R09',
     { ...created.data, segments: null, stops: [...created.data.stops].reverse() },
     t
   );
@@ -183,12 +224,12 @@ test('route CRUD: demo routes are editable, hideable and restorable; new routes 
   const driver = await call(
     'POST',
     '/api/manage/drivers',
-    { name: 'Ch', email: 'c@example.test', unit: 'U1', routeId: 'R05', windows },
+    { name: 'Ch', email: 'c@example.test', unit: 'U1', routeId: 'R09', windows },
     t
   );
-  assert.equal((await call('DELETE', '/api/manage/routes/R05', undefined, t)).status, 409);
+  assert.equal((await call('DELETE', '/api/manage/routes/R09', undefined, t)).status, 409);
   await call('PATCH', '/api/manage/drivers/' + driver.data.driver.id, { routeId: 'R01' }, t);
-  assert.equal((await call('DELETE', '/api/manage/routes/R05', undefined, t)).status, 200);
+  assert.equal((await call('DELETE', '/api/manage/routes/R09', undefined, t)).status, 200);
   assert.equal((await call('DELETE', '/api/manage/routes/R01', undefined, t)).status, 409);
   assert.equal((await call('DELETE', '/api/manage/routes/R04', undefined, t)).status, 200);
   assert.equal(
@@ -198,7 +239,7 @@ test('route CRUD: demo routes are editable, hideable and restorable; new routes 
   const restored = await call('POST', '/api/manage/routes/restore-demo', {}, t);
   assert.deepEqual(
     restored.data.routes.map((r) => r.id),
-    ['R01', 'R02', 'R03', 'R04']
+    ['R01', 'R02', 'R03', 'R04', 'R05', 'R06', 'R07', 'R08']
   );
   assert.equal(restored.data.routes[0].name, 'Corredor principal');
   server.close();

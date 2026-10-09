@@ -100,6 +100,12 @@ export function FleetStatus({ fleet, network }) {
 }
 export function StopPanel({ network, selected, fleet, onStop, onOrigin, onScan, onMessage }) {
   const [qr, setQr] = useState('');
+  const [choosing, setChoosing] = useState(true);
+  const [zone, setZone] = useState('Corredor principal');
+  useEffect(() => {
+    if (selected) setChoosing(false);
+  }, [selected?.id]);
+  const zones = [...new Set(network.stops.map((stop) => stop.zone || 'Otras paradas'))];
   const webBase =
     fleet.snapshot?.publicAppUrl ||
     import.meta.env.VITE_PUBLIC_APP_URL ||
@@ -138,26 +144,68 @@ export function StopPanel({ network, selected, fleet, onStop, onOrigin, onScan, 
         </div>
         <Icon name="map-pin" />
       </div>
-      <label className="control-label" htmlFor="stop-select">
-        PARADA
-      </label>
-      <select
-        id="stop-select"
-        value={selected?.id ?? ''}
-        onChange={(event) => {
-          const stop = network.stops.find((item) => item.id === event.target.value);
-          if (stop) onStop(stop);
-        }}
+      <p className="stop-explanation">
+        Una parada es el punto donde subes, bajas o cambias de combi. Elige una para ver qué rutas
+        pasan y cuánto falta para que llegue una combi en servicio.
+      </p>
+      <button
+        type="button"
+        className="field-summary stop-picker-summary"
+        aria-expanded={choosing}
+        aria-controls="stop-zones"
+        onClick={() => setChoosing(!choosing)}
       >
-        <option value="" disabled>
-          Selecciona una parada
-        </option>
-        {network.stops.map((stop) => (
-          <option key={stop.id} value={stop.id}>
-            {cleanName(stop.name)}
-          </option>
+        <Icon name="map-pin" />
+        <span>
+          <small>{selected ? 'Parada elegida · toca para cambiar' : 'Busca por zona'}</small>
+          <strong>{selected ? cleanName(selected.name) : 'Elige dónde esperar'}</strong>
+        </span>
+        <Icon name={choosing ? 'chevron-up' : 'chevron-down'} />
+      </button>
+      <div id="stop-zones" className="stop-zones" hidden={!choosing}>
+        {zones.map((name) => (
+          <section className="stop-zone" key={name}>
+            <button
+              type="button"
+              className="zone-heading"
+              aria-expanded={zone === name}
+              aria-controls={`zone-${zones.indexOf(name)}`}
+              onClick={() => setZone(zone === name ? null : name)}
+            >
+              <span>{name}</span>
+              <Icon name={zone === name ? 'chevron-up' : 'chevron-down'} />
+            </button>
+            <div id={`zone-${zones.indexOf(name)}`} hidden={zone !== name}>
+              {network.stops
+                .filter((stop) => (stop.zone || 'Otras paradas') === name)
+                .map((stop) => (
+                  <button
+                    type="button"
+                    className="stop-choice"
+                    key={stop.id}
+                    aria-pressed={selected?.id === stop.id}
+                    onClick={() => {
+                      onStop(stop);
+                      setChoosing(false);
+                    }}
+                  >
+                    <Icon name="map-pin" />
+                    <span>
+                      <strong>{cleanName(stop.name)}</strong>
+                      <small>
+                        {network.routes
+                          .filter((route) => route.stops.includes(stop.id))
+                          .map((route) => route.id)
+                          .join(' · ')}
+                      </small>
+                    </span>
+                    {selected?.id === stop.id && <Icon name="check" />}
+                  </button>
+                ))}
+            </div>
+          </section>
         ))}
-      </select>
+      </div>
       <ScanStopButton onScan={onScan} onMessage={onMessage} />
       {selected && (
         <>
@@ -174,6 +222,16 @@ export function StopPanel({ network, selected, fleet, onStop, onOrigin, onScan, 
             <Icon name="navigation" />
             Salir desde esta parada
           </button>
+          <div className="stop-route-tags" aria-label="Rutas de esta parada">
+            {network.routes
+              .filter((route) => route.stops.includes(selected.id))
+              .map((route) => (
+                <span style={{ '--route-color': route.color }} key={route.id}>
+                  <i />
+                  {route.id} · {route.name}
+                </span>
+              ))}
+          </div>
           <div className="arrivals-heading">
             <h3>Próximas llegadas</h3>
             <span>ESTIMADAS</span>

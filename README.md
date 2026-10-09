@@ -10,7 +10,7 @@ Aplicación Android y web para consultar combis en el corredor de Jugos Acapulco
 - Enlaces y QR por parada, lector QR y búsqueda por voz en Android y navegadores compatibles.
 - Comunidad: reportes con fotos y GPS, apoyos, comentarios, perfil, estadísticas, trabajo de campo y administración, integrados desde la rama `Axel`.
 
-Las rutas, paradas intermedias y tarifas siguen siendo de prueba. El catálogo incluye 941 lugares, calles y direcciones de OpenStreetMap. La cobertura rodea el corredor indicado y no representa el límite oficial de la ciudad. No se crean choferes ni horarios ficticios.
+Las rutas, paradas intermedias y tarifas siguen siendo de prueba. El catálogo incluye 941 lugares, calles y direcciones de OpenStreetMap. La cobertura incluye la zona urbana de Lázaro Cárdenas, La Orilla y Las Guacamayas, con encuadre inicial en el corredor indicado y no representa el límite oficial de la ciudad. No se crean choferes ni horarios ficticios.
 
 ## Actualizaciones y funcionamiento sin señal
 
@@ -78,3 +78,5 @@ npm run test:cloudflare
 52 pruebas de datos, búsqueda, planificación, autenticación, horarios, GPS, SSE, QR, comunidad y zona piloto; 46 pruebas de interfaz; una prueba de integración con el runtime de Cloudflare que verifica cuentas, GPS, desactivación por SSE, CORS y persistencia de reportes y fotos al reiniciar. Las pruebas usan datos aislados. También se verifica una PWA compilada sin señal. Compilación y lint Android pasaron y el APK se instaló conservando los datos de la versión anterior en un Samsung SM-S938B. Detalles y límites en [app/AUDITORIA.md](app/AUDITORIA.md).
 
 Consulta [`app/LEEME.md`](app/LEEME.md) para uso, ejemplos, cobertura y formato de las rutas. Datos del mapa © [OpenStreetMap contributors, ODbL](https://www.openstreetmap.org/copyright).
+
+La versión 1.9.0 integra actualización dentro de Android, origen/destino plegables, paradas por zonas y panel de administración después de autenticar. [Cambios y uso de paradas](app/CAMBIOS-1.9.md).

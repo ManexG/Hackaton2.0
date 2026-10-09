@@ -27,7 +27,7 @@ Las modificaciones de asignación detienen el servicio; restablecer contraseña 
 
 El cliente envía versión y plataforma y recibe el bloqueo de actualización correspondiente. Las operaciones administrativas necesitan internet; no se almacenan en la caché pública. El servidor limita los cuerpos y los intentos de acceso. El panel se descarga cuando se abre, para ahorrar datos al pasajero.
 
-El cambio obligatorio de contraseña del chofer en su primer acceso sigue pendiente en el trabajo original del equipo. No se añadió seguimiento GPS en segundo plano. La gestión de administrador no sustituye la moderación de comunidad que aún utiliza la clave de operador.
+El cambio obligatorio de contraseña del chofer en su primer acceso sigue pendiente en el trabajo original del equipo. No se añadió seguimiento GPS en segundo plano. Desde 1.9.0 la pestaña Reportes y paradas integra moderación, importación y exportación de comunidad usando la sesión de administración. La clave de operador se agrega internamente en el servidor; no se entrega al cliente.
 
 ## Verificación
 

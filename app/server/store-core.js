@@ -8,8 +8,9 @@ import {
 } from 'node:crypto';
 import { promisify } from 'node:util';
 import { Buffer } from 'node:buffer';
-import { distance, insideCoverage } from '../src/planner.js';
+import { distance } from '../src/planner.js';
 import { GPS_MAX_AGE, projectOnRoute, serviceEnd, validateWindows } from '../src/transit.js';
+import { inServiceZone } from '../src/serviceZone.js';
 export class ApiError extends Error {
   status;
   constructor(status, message) {
@@ -56,6 +57,10 @@ export class TransitStoreCore {
       routeId: row.route_id,
       windows: JSON.parse(row.windows),
       active: Boolean(row.active),
+      location:
+        row.latitude !== null && row.longitude !== null
+          ? { point: [row.latitude, row.longitude], timestamp: row.updated_at }
+          : null,
     };
   }
   provision(input) {
@@ -164,7 +169,7 @@ export class TransitStoreCore {
       throw new ApiError(422, 'Necesitamos una ubicación reciente con precisión de 100 m o mejor.');
     if (!activate && fix.timestamp <= row.updated_at)
       throw new ApiError(422, 'La ubicación recibida es anterior a la última señal.');
-    if (!insideCoverage(fix.point, this.network)) {
+    if (!inServiceZone(fix.point, this.network)) {
       this.pause(id);
       throw new ApiError(403, 'La ubicación está fuera de la zona. Se desactivó tu servicio.');
     }
@@ -218,11 +223,19 @@ export class TransitStoreCore {
     return this.profile(this.row(id));
   }
   expire(now = Date.now()) {
-    return (
+    let changed =
       this.db
         .prepare('UPDATE drivers SET active=0 WHERE active=1 AND (updated_at<? OR service_end<=?)')
-        .run(now - GPS_MAX_AGE, now).changes > 0
-    );
+        .run(now - GPS_MAX_AGE, now).changes > 0;
+    for (const row of this.db
+      .prepare('SELECT id,latitude,longitude FROM drivers WHERE active=1')
+      .all()) {
+      if (!inServiceZone([row.latitude, row.longitude], this.network)) {
+        this.pause(row.id);
+        changed = true;
+      }
+    }
+    return changed;
   }
   snapshot(now = Date.now()) {
     this.expire(now);
@@ -230,8 +243,17 @@ export class TransitStoreCore {
     return {
       serverTime: now,
       publicAppUrl: this.publicAppUrl,
+      pilotZone: this.network.pilotZone ?? null,
       vehicles: rows
-        .filter((row) => row.active && row.latitude !== null && row.longitude !== null)
+        .filter(
+          (row) =>
+            row.active &&
+            row.latitude !== null &&
+            row.longitude !== null &&
+            inServiceZone([row.latitude, row.longitude], this.network) &&
+            row.updated_at <= now + 15_000 &&
+            this.network.routes.some((route) => route.id === row.route_id)
+        )
         .map((row) => ({
           id: row.id,
           unit: row.unit,

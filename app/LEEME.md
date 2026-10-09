@@ -1,4 +1,4 @@
-# Las Palmas Rutas 1.6 · React + Capacitor + GPS + Comunidad
+# Las Palmas Rutas 1.7 · React + Capacitor + GPS + Comunidad
 
 Aplicación Android y web de movilidad para el corredor indicado en Lázaro Cárdenas. Usa **React 19, JavaScript, Vite 8, Leaflet y Capacitor 8**. La publicación en **Cloudflare Workers** guarda cuentas y GPS en un **Durable Object con SQLite** y comparte las posiciones mediante **SSE**. También se conserva el servidor alternativo de Node.js 24 para uso local o alojamiento propio.
 
@@ -39,6 +39,8 @@ Los botones de micrófono permiten dictar el origen o destino. El texto pasa al 
 En **Entrar como chofer**, inicia sesión con una cuenta creada por el responsable. Cada cuenta tiene una unidad, una ruta y un horario asignados desde el servidor. No puede cambiar su asignación desde la app.
 
 El chofer elige el sentido de salida y pulsa **Activar mi servicio**. Se solicita una ubicación precisa y el servidor valida el horario y la cobertura. Al activarse, los pasajeros reciben su posición GPS. **Desactivar servicio** y **Cerrar sesión** detienen la publicación.
+
+La actualización de Axel `3b38961` añade un aviso claro de dentro/fuera de la zona y distancia a su centro para el chofer. Los pasajeros ven la unidad, ruta y edad de la señal de cada combi disponible. Si el operador configura un área piloto en Comunidad, limita el servicio dentro del perímetro original; nunca permite salir de él. Las señales caducan a los 45 segundos y no generan llegadas fuera de la zona o del horario.
 
 Esta versión requiere mantener la app abierta para compartir GPS. El seguimiento con pantalla bloqueada está pendiente de definir. La señal se actualiza como máximo cada 5 segundos y la combi deja de aparecer si pasan 45 segundos sin señal, termina su horario o sale de la zona/ruta. Después de una pérdida prolongada debe activarse de nuevo.
 
@@ -104,7 +106,7 @@ npm run android:sync
 npm run android:open
 ```
 
-Configura primero `VITE_PUBLIC_API_URL` y `VITE_PUBLIC_APP_URL` para conectar el APK al servidor publicado. El identificador es `mx.cerca.combis.demo`; versión **1.6**, código **7**. El APK de depuración se genera en `android/app/build/outputs/apk/debug/app-debug.apk`.
+Configura primero `VITE_PUBLIC_API_URL` y `VITE_PUBLIC_APP_URL` para conectar el APK al servidor publicado. El identificador es `mx.cerca.combis.demo`; versión **1.7**, código **8**. El APK de depuración se genera en `android/app/build/outputs/apk/debug/app-debug.apk`.
 
 ## Verificar
 

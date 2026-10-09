@@ -15,7 +15,9 @@ import { predictJourneys } from './transit.js';
 import { stopFromLink } from './stopLinks.js';
 import { distance, insideCoverage, normalize, searchPlaces } from './planner.js';
 import { geocodeInCoverage } from './geocoding.js';
-export function CercaApp({ network, catalog }) {
+export function CercaApp({ network: originalNetwork, catalog }) {
+  const fleet = useFleet(originalNetwork);
+  const network = fleet.network;
   const [origin, setOrigin] = useState(null);
   const [destination, setDestination] = useState(null);
   const [text, setText] = useState({ origin: '', destination: '' });
@@ -29,7 +31,6 @@ export function CercaApp({ network, catalog }) {
     new URLSearchParams(location.search).get('driver') === '1' ? 'driver' : 'passenger'
   );
   const [selectedStop, setSelectedStop] = useState(null);
-  const fleet = useFleet(network);
   const [drawer, setDrawer] = useState('normal');
   const [pinMode, setPinMode] = useState(null);
   const [toast, setToast] = useState('');
@@ -609,7 +610,7 @@ export function CercaApp({ network, catalog }) {
                   onMessage={setToast}
                 />
               </section>
-              <FleetStatus fleet={fleet} />
+              <FleetStatus fleet={fleet} network={network} />
               <div className="driver-entry">
                 <p>¿Trabajas como chofer?</p>
                 <button

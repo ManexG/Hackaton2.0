@@ -178,7 +178,9 @@ export class FleetService extends DurableObject {
             .catch(() => ({}));
           this.throttle(data.email, request.headers.get('CF-Connecting-IP') ?? 'local');
         }
-        return await this.community.fetch(request);
+        const response = await this.community.fetch(request);
+        if (response.ok && ['POST', 'PATCH', 'DELETE'].includes(request.method)) this.broadcast();
+        return response;
       }
       if (request.method === 'GET' && url.pathname === '/api/health')
         return json(200, { ok: true, hosting: 'cloudflare' });

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { api, apiBase, isSnapshot } from './liveApi.js';
 import { currentVehicles } from './transit.js';
 export function useFleet(network) {
@@ -61,5 +61,20 @@ export function useFleet(network) {
     };
   }, []);
   const now = clock + offset;
-  return { snapshot, status, now, vehicles: currentVehicles(snapshot, network, now) };
+  const zoneKey = JSON.stringify(
+    snapshot && Object.hasOwn(snapshot, 'pilotZone')
+      ? snapshot.pilotZone
+      : (network.pilotZone ?? null)
+  );
+  const serviceNetwork = useMemo(
+    () => ({ ...network, pilotZone: JSON.parse(zoneKey) }),
+    [network, zoneKey]
+  );
+  return {
+    snapshot,
+    status,
+    now,
+    network: serviceNetwork,
+    vehicles: currentVehicles(snapshot, serviceNetwork, now),
+  };
 }

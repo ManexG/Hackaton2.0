@@ -126,6 +126,7 @@ export function createTransitServer(options = {}) {
         );
         response.writeHead(result.status, Object.fromEntries(result.headers));
         response.end(Buffer.from(await result.arrayBuffer()));
+        if (result.ok && ['POST', 'PATCH', 'DELETE'].includes(request.method)) broadcast();
         return;
       }
       if (request.method === 'GET' && url.pathname === '/api/health') {

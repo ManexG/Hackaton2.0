@@ -12,6 +12,7 @@ import {
   validateWindows,
 } from '../src/transit.js';
 import { stopFromLink, stopWebLink } from '../src/stopLinks.js';
+import { inServiceZone, serviceZoneStatus } from '../src/serviceZone.js';
 const network = JSON.parse(
   readFileSync(new URL('../public/data/network.demo.json', import.meta.url), 'utf8')
 );
@@ -49,6 +50,29 @@ test('availability removes stale, expired and out-of-zone vehicles', () => {
     currentVehicles({ serverTime: now, vehicles, services: [], publicAppUrl: '' }, network, now),
     [valid]
   );
+});
+test('pilot circle never expands coverage and invalid or remote signals produce no arrivals', () => {
+  const valid = vehicle('R01');
+  const scoped = {
+    ...network,
+    pilotZone: { nombre: 'Piloto', lat: valid.point[0], lng: valid.point[1], radio_m: 1000000 },
+  };
+  assert.equal(inServiceZone(valid.point, scoped), true);
+  assert.equal(inServiceZone([19.43, -99.13], scoped), false);
+  assert.equal(serviceZoneStatus([19.43, -99.13], scoped).inCoverage, false);
+  for (const invalid of [
+    vehicle('R01', { point: [19.43, -99.13] }),
+    vehicle('R01', { updatedAt: now - 45001 }),
+    vehicle('R01', { updatedAt: now + 15001 }),
+    vehicle('R01', { serviceEndAt: now }),
+  ]) {
+    assert.deepEqual(stopArrivals(network.routes[0].stops[1], scoped, [invalid], now), []);
+    assert.deepEqual(currentVehicles({ vehicles: [invalid] }, scoped, now), []);
+  }
+  const narrow = { ...scoped, pilotZone: { ...scoped.pilotZone, radio_m: 100 } };
+  assert.deepEqual(stopArrivals(network.routes[0].stops[0], narrow, [valid], now, -1), []);
+  assert.equal(serviceZoneStatus(valid.point, narrow).distanceMeters, 0);
+  assert.deepEqual(stopArrivals(network.routes[0].stops.at(-1), narrow, [valid], now), []);
 });
 test('GPS projects onto the actual route and estimates are based on distance along its geometry', () => {
   const route = network.routes[0],

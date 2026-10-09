@@ -65,6 +65,45 @@ const metrosEntre = (lat1, lng1, lat2, lng2) => {
 /** OSRM devuelve [lon, lat]; nosotros guardamos [lat, lng]. Redondeamos siempre. */
 const aLatLng = (lon, lat) => [Number(lat.toFixed(GRADOS)), Number(lon.toFixed(GRADOS))];
 
+// ---------- Zona piloto ----------
+// El centro y el radio salen de la tabla `zona`, que edita el ayuntamiento desde
+// /admin. Que viva en el servidor (y no en una constante del código) permite
+// cambiar el área real sin desplegar nada.
+
+// Cuánto tiempo se considera reciente una posición. El chofer manda cada 10 s,
+// así que 5 min es conservador: si dejó de reportar, ya no está en la calle.
+const SENAL_VIVA_S = 60;
+const SENAL_MAX_S = 300;
+
+async function zonaPiloto(env) {
+  const z = await env.DB.prepare('SELECT nombre, lat, lng, radio_m FROM zona ORDER BY id DESC LIMIT 1').first();
+  if (!z || !isFinite(Number(z.lat)) || !isFinite(Number(z.lng))) return null;
+  return {
+    nombre: z.nombre,
+    lat: Number(z.lat),
+    lng: Number(z.lng),
+    radio_m: isFinite(Number(z.radio_m)) ? Number(z.radio_m) : 1500,
+  };
+}
+
+/**
+ * ¿Está este punto dentro de la zona piloto?
+ * Si no hay zona configurada devuelve null: sin referencia no se puede afirmar
+ * que alguien esté "fuera", así que no se marca como tal.
+ */
+function dentroDeZona(lat, lng, zona) {
+  if (!zona || !isFinite(lat) || !isFinite(lng)) return null;
+  const metros = Math.round(metrosEntre(zona.lat, zona.lng, lat, lng));
+  return { en_zona: metros <= zona.radio_m, distancia_zona_m: metros, zona };
+}
+
+/** Antigüedad de la última señal, en segundos. Infinity si nunca-reportó. */
+const edadDe = (ts) => {
+  if (!ts) return Infinity;
+  const t = Date.parse(ts);
+  return isFinite(t) ? Math.max(0, Math.round((Date.now() - t) / 1000)) : Infinity;
+};
+
 /** Mueve un punto al asfalto. Devuelve { lat, lng, ajuste_m }. */
 async function ajustarAlAsfalto(lat, lng) {
   const url = `${OSRM}/nearest/v1/driving/${lng.toFixed(GRADOS)},${lat.toFixed(GRADOS)}?number=1`;
@@ -348,7 +387,49 @@ if (pathname === '/api/zona' && req.method === 'GET') {
           `SELECT v.id, v.nombre, v.sentido, v.ultima_posicion, v.ultima_ts, r.id AS ruta_id, r.nombre AS ruta, r.color
            FROM vehiculos v LEFT JOIN rutas r ON r.id = v.ruta_id
            WHERE v.activo = 1`).all();
-        return json(results);
+
+        // Antes de exigir que reporten, se descartan las señales viejas. Sin esto
+        // una combi que dejó de reportar hace horas se quedaba en el mapa para
+        // siempre, porque nada marcaba activo = 0.
+        const recientes = [];
+        for (const v of results) {
+          const edad_s = edadDe(v.ultima_ts);
+          if (edad_s > SENAL_MAX_S) continue; // se oculta en silencio
+          if (!v.ultima_posicion) continue;
+          let pos = null;
+          try { pos = JSON.parse(v.ultima_posicion); } catch { pos = null; }
+          if (!pos || !isFinite(pos.lat) || !isFinite(pos.lng)) continue;
+          recientes.push({ ...v, edad_s });
+        }
+
+        if (!recientes.length) return json([]);
+
+        // Una sola consulta de zona para todas, en vez de una por combi.
+        const zona = await zonaPiloto(env);
+
+        return json(
+          recientes.map((v) => {
+            const pos = JSON.parse(v.ultima_posicion);
+            const donde = dentroDeZona(pos.lat, pos.lng, zona);
+            return {
+              id: v.id,
+              nombre: v.nombre,
+              sentido: v.sentido,
+              ruta_id: v.ruta_id,
+              ruta: v.ruta,
+              color: v.color,
+              lat: pos.lat,
+              lng: pos.lng,
+              ultimo_ts: v.ultima_ts,
+              edad_s: v.edad_s,
+              en_vivo: v.edad_s <= SENAL_VIVA_S,
+              // nulls si no hay zona configurada: la interfaz no puede afirmar nada.
+              en_zona: donde?.en_zona ?? null,
+              distancia_zona_m: donde?.distancia_zona_m ?? null,
+              zona: zona ? { nombre: zona.nombre, lat: zona.lat, lng: zona.lng, radio_m: zona.radio_m } : null,
+            };
+          })
+        );
       }
 
       // El chofer registra su combi una vez; luego solo manda posición.
@@ -382,6 +463,18 @@ if (pathname === '/api/zona' && req.method === 'GET') {
            FROM vehiculos v LEFT JOIN rutas r ON r.id = v.ruta_id
            WHERE v.usuario_id = ? AND v.activo = 1 ORDER BY v.id LIMIT 1`).bind(u.id).first();
         return json(v ?? null);
+      }
+
+      // "Detener" en la app del chofer: además de parar el temporizador del
+      // navegador, marca la combi como inactiva. Antes solo se paraba en el
+      // celular y la combi seguía apareciendo en los mapas hasta que su señal
+      // se viejaba por antigüedad.
+      if (pathname === '/api/vehiculos/detener' && req.method === 'POST') {
+        const u = await getUser(req, env);
+        if (!u) return json({ error: 'Inicia sesión' }, 401);
+        const r = await env.DB.prepare('UPDATE vehiculos SET activo = 0 WHERE usuario_id = ? AND activo = 1')
+          .bind(u.id).run();
+        return json({ ok: true, desactivadas: r.meta?.changes ?? 0 });
       }
 
       // ---------- Puntos y observaciones de campo ----------
@@ -471,6 +564,12 @@ if (pathname === '/api/zona' && req.method === 'GET') {
            WHERE v.activo = 1 AND v.ultima_posicion IS NOT NULL AND v.ruta_id = ?`)
           .bind(parada.ruta_id).all();
 
+        // Se descartan las señales viejas aquí también: si no, la parada podría
+        // "ver" una combi que dejó de reportar hace horas.
+        const combisVivos = {
+          results: combis.results.filter((c) => edadDe(c.ultima_ts) <= SENAL_MAX_S),
+        };
+
         const posDe = (c) => {
           try {
             const p = JSON.parse(c.ultima_posicion);
@@ -498,8 +597,8 @@ if (pathname === '/api/zona' && req.method === 'GET') {
             : Math.round(metrosEntre(p.lat, p.lng, parada.lat, parada.lng));
         };
 
-        const ordenada = combis.results
-          .map((c) => ({ ...c, metros: cerca(c) }))
+        const ordenada = combisVivos.results
+          .map((c) => ({ ...c, pos: posDe(c), metros: cerca(c) }))
           .sort((a, b) => a.metros - b.metros);
 
         const c = ordenada[0];
@@ -509,7 +608,7 @@ if (pathname === '/api/zona' && req.method === 'GET') {
             parada: paradaLimpia,
             vehiculo: null,
             estimado_min: null,
-            criterio: combis.results.length
+            criterio: combisVivos.results.length
               ? 'sin posiciones recientes de combis en esta ruta'
               : 'ninguna combi de esta ruta está reportando ahora',
           });
@@ -532,9 +631,31 @@ if (pathname === '/api/zona' && req.method === 'GET') {
           : 'distancia en línea recta a velocidad supuesta de 22 m/s; la ruta no tiene trazo por calles'
         ) + notaEspera;
 
+        // Si la combi está fuera de la zona piloto, no se da un tiempo estimado:
+        // antes producía cosas como "llega en 246 min" para un vehículo a 324 km,
+        // que suena a que viene camino cuando en realidad no está en la ciudad.
+        const zona = await zonaPiloto(env);
+        const donde = c.pos ? dentroDeZona(c.pos.lat, c.pos.lng, zona) : null;
+
+        if (donde && !donde.en_zona) {
+          const km = Math.round(donde.distancia_zona_m / 100) / 10;
+          return json({
+            parada: paradaLimpia,
+            vehiculo: { id: c.id, nombre: c.nombre, color: c.color, metros: c.metros, en_zona: false },
+            estimado_min: null,
+            criterio: `${c.nombre} reporta, pero está fuera de la zona piloto (${zona.nombre}), a ${km} km. No hay tiempo estimado porque no está en la ciudad.`,
+          });
+        }
+
         return json({
           parada: paradaLimpia,
-          vehiculo: { id: c.id, nombre: c.nombre, color: c.color, metros: c.metros },
+          vehiculo: {
+            id: c.id,
+            nombre: c.nombre,
+            color: c.color,
+            metros: c.metros,
+            en_zona: donde ? donde.en_zona : null,
+          },
           estimado_min: estimado,
           criterio,
         });

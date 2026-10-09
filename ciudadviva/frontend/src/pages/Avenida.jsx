@@ -13,12 +13,15 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
-import { Download, LocateFixed } from 'lucide-react';
+import { Download, LocateFixed, Bus } from 'lucide-react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { api, CATEGORIAS_POR_CLAVE, esc } from '../api.js';
 
 const CENTRO_LC = [17.958, -102.21];
+
+// "a 210 m" o "a 325 km", para que el número se lea de un vistazo.
+const distanciaCorta = (m) => (m < 1000 ? `${Math.round(m)} m` : `${Math.round(m / 100) / 10} km`);
 
 export function Avenida() {
   const contenedor = useRef(null);
@@ -30,6 +33,26 @@ export function Avenida() {
   const [rutas, setRutas] = useState([]);
   const [combis, setCombis] = useState([]);
   const [paradas, setParadas] = useState([]);
+  const [zona, setZona] = useState(null);
+
+  // La zona piloto la configura el ayuntamiento desde /admin. Mientras no llegue
+  // se usa el centro fijo, solo como respaldo.
+  useEffect(() => {
+    api
+      .zona()
+      .then((z) => {
+        if (!z) return;
+        setZona(z);
+        mapa.current?.setView([z.lat, z.lng], 14);
+      })
+      .catch(() => {});
+  }, []);
+
+  // "Centrar" usa la zona real del servidor.
+  const centrar = () => {
+    const destino = zona ? [zona.lat, zona.lng] : CENTRO_LC;
+    mapa.current?.setView(destino, zona ? 14 : 15);
+  };
 
   useEffect(() => {
     const nodo = contenedor.current;
@@ -48,6 +71,22 @@ export function Avenida() {
       delete nodo.dataset.iniciado;
     };
   }, []);
+
+  // El círculo de la zona piloto. Línea punteada y relleno muy tenue para que
+  // diga dónde acaba la zona sin tapar las rutas.
+  useEffect(() => {
+    if (!zona || !mapa.current) return;
+    const circulo = L.circle([zona.lat, zona.lng], {
+      radius: zona.radio_m ?? 1500,
+      color: '#174b3b',
+      weight: 2,
+      dashArray: '6 6',
+      fillColor: '#174b3b',
+      fillOpacity: 0.04,
+      interactive: false,
+    }).addTo(mapa.current);
+    return () => circulo.remove();
+  }, [zona]);
 
   useEffect(() => {
     api
@@ -98,13 +137,12 @@ export function Avenida() {
         if (!capaCombis.current) return;
         capaCombis.current.clearLayers();
         for (const v of activos) {
-          if (!v.ultima_posicion) continue;
-          const pos = JSON.parse(v.ultima_posicion);
+          // La API ya devuelve lat/lng sueltos (y filtró las señales viejas).
           const color = v.color || '#238361';
           // Burbuja con el número de la ruta: se identifica la combi sin
           // tocarla. Sigue el patrón del mapa del equipo de diseño.
           const glifo = `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="15" rx="3.5" fill="#fff"/><rect x="6.5" y="6" width="11" height="6" rx="1.2" fill="${color}"/><path d="M12 6v6" stroke="#fff" stroke-width="1.6"/><circle cx="8" cy="19.4" r="1.7" fill="${color}"/><circle cx="16" cy="19.4" r="1.7" fill="${color}"/><path d="M8.5 21.5v1.5M15.5 21.5v1.5" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/></svg>`;
-          L.marker([pos.lat, pos.lng], {
+          L.marker([v.lat, v.lng], {
             icon: L.divIcon({
               className: 'marker-combi',
               // Ancho fijo: Leaflet impone el tamaño del icono en línea, así que
@@ -127,7 +165,6 @@ export function Avenida() {
     return () => clearInterval(t);
   }, []);
 
-  const ultimo = combis.map((c) => c.ultima_ts).filter(Boolean).sort().at(-1);
 
   return (
     <section data-testid="avenida">
@@ -142,7 +179,7 @@ export function Avenida() {
           recortar los controles de zoom. */}
       <div ref={contenedor} style={{ height: '70vh' }} />
 
-      <button onClick={() => mapa.current?.setView(CENTRO_LC, 15)}>
+      <button onClick={centrar}>
         <LocateFixed /> Centrar en la zona piloto
       </button>
 
@@ -157,13 +194,39 @@ export function Avenida() {
         ))}
       </ul>
 
-      <p data-testid="estado-combis">
-        {(() => {
-          const n = combis.filter((c) => c.ultima_posicion).length;
-          return `${n} ${n === 1 ? 'combi reporta' : 'combis reportan'}`;
-        })()}
-        {ultimo && ` · última señal ${new Date(ultimo).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' })}`}
-      </p>
+      {/* Lista de combis en lugar de un simple contador. Antes solo decía
+          "1 combi reporta", y si esa combi estaba fuera del área visible del
+          mapa no había forma de saber que existía. Las señales viejas ya
+          llegan filtradas: desaparecen solas sin dejar rastro. */}
+      <section data-testid="combis-vivas">
+        <h2>
+          <Bus /> Combis reportando
+          {zona ? ` · ${zona.nombre}` : ''}
+        </h2>
+        {combis.length === 0 ? (
+          <p className="aviso">Ahora mismo no hay combis reportando.</p>
+        ) : (
+          <ul className="lista-combis">
+            {combis.map((c) => (
+              <li key={c.id} data-en-zona={String(c.en_zona)}>
+                <span className="punto-combi" style={{ background: c.color || '#238361' }} aria-hidden="true" />
+                <div>
+                  <strong>{c.nombre}</strong>
+                  <small>{c.ruta || 'Sin ruta'}</small>
+                  <span className={c.en_vivo ? 'senal-viva' : 'senal-vieja'}>
+                    {c.en_vivo ? 'En vivo' : `Última señal hace ${Math.round(c.edad_s / 60)} min`}
+                  </span>
+                  {c.en_zona === false && (
+                    <span className="senal-fuera">
+                      Fuera de la zona, a {distanciaCorta(c.distancia_zona_m)}
+                    </span>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </section>
   );
 }

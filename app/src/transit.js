@@ -1,5 +1,6 @@
-import { distance, insideCoverage, planJourneys } from './planner.js';
+import { distance, planJourneys } from './planner.js';
 import { modelTravel } from './etaModel.js';
+import { inServiceZone } from './serviceZone.js';
 export const GPS_MAX_AGE = 45_000;
 // All service windows use the city's timezone, including on phones in another timezone.
 export function localTime(now) {
@@ -106,7 +107,7 @@ export function currentVehicles(snapshot, network, now) {
     snapshot?.vehicles.filter(
       (vehicle) =>
         network.routes.some((route) => route.id === vehicle.routeId) &&
-        insideCoverage(vehicle.point, network) &&
+        inServiceZone(vehicle.point, network) &&
         now - vehicle.updatedAt <= GPS_MAX_AGE &&
         vehicle.updatedAt <= now + 15_000 &&
         vehicle.serviceEndAt > now
@@ -114,13 +115,15 @@ export function currentVehicles(snapshot, network, now) {
   );
 }
 export function stopArrivals(stopId, network, vehicles, now, direction, notBeforeSeconds = 0) {
+  const stop = network.stops.find((item) => item.id === stopId);
+  if (!stop || !inServiceZone(stop.point, network)) return [];
   return vehicles
     .flatMap((vehicle) => {
       const route = network.routes.find((route) => route.id === vehicle.routeId);
       if (
         !route ||
         !route.stops.includes(stopId) ||
-        !insideCoverage(vehicle.point, network) ||
+        !inServiceZone(vehicle.point, network) ||
         now - vehicle.updatedAt > GPS_MAX_AGE ||
         vehicle.updatedAt > now + 15_000 ||
         (!route.bidirectional && vehicle.direction === -1)
@@ -130,6 +133,13 @@ export function stopArrivals(stopId, network, vehicles, now, direction, notBefor
         projected = projectOnRoute(vehicle.point, route);
       if (projected.away > 200) return [];
       const target = metrics.stopMeters[route.stops.indexOf(stopId)];
+      const pathInZone = (a, b) =>
+        metrics.points.every(
+          (point, index) =>
+            metrics.meters[index] < Math.min(a, b) ||
+            metrics.meters[index] > Math.max(a, b) ||
+            inServiceZone(point, network)
+        );
       const speed =
         vehicle.speed != null && vehicle.speed >= 1.5
           ? Math.max(2, Math.min(vehicle.speed, 12))
@@ -169,18 +179,26 @@ export function stopArrivals(stopId, network, vehicles, now, direction, notBefor
         .flatMap((wanted) => {
           const ahead = (target - projected.along) * vehicle.direction;
           let prediction;
-          if (wanted === vehicle.direction && ahead >= -25)
+          if (wanted === vehicle.direction && ahead >= -25) {
+            if (!pathInZone(projected.along, target)) return [];
             prediction =
               Math.abs(target - projected.along) < 25
                 ? { seconds: 0, minSeconds: 0, maxSeconds: 0, experimental: false }
                 : travel(projected.along, target);
-          else if (!route.bidirectional) return [];
+          } else if (!route.bidirectional) return [];
           else if (wanted !== vehicle.direction) {
             const turn = vehicle.direction === 1 ? metrics.length : 0;
+            if (!pathInZone(projected.along, turn) || !pathInZone(turn, target)) return [];
             prediction = add(travel(projected.along, turn), 30, travel(turn, target));
           } else {
             const turn = vehicle.direction === 1 ? metrics.length : 0,
               other = vehicle.direction === 1 ? 0 : metrics.length;
+            if (
+              !pathInZone(projected.along, turn) ||
+              !pathInZone(turn, other) ||
+              !pathInZone(other, target)
+            )
+              return [];
             prediction = add(
               travel(projected.along, turn),
               30,
@@ -198,6 +216,7 @@ export function stopArrivals(stopId, network, vehicles, now, direction, notBefor
           };
           if (prediction.seconds + 10 < notBeforeSeconds) {
             if (!route.bidirectional) return [];
+            if (!pathInZone(0, metrics.length)) return [];
             const turns = Math.ceil((notBeforeSeconds - 10 - prediction.seconds) / cycle.seconds);
             prediction = add(prediction, {
               ...cycle,
@@ -230,6 +249,8 @@ export function predictJourneys(origin, destination, network, vehicles, now) {
   const journeys = planJourneys(origin, destination, available, 420, true);
   const predictions = [];
   for (const journey of journeys) {
+    if (journey.legs.some((leg) => leg.geometry.some((point) => !inServiceZone(point, network))))
+      continue;
     const first = network.stops.find((stop) => stop.id === journey.legs[0].from);
     let elapsed = distance(origin.point, first.point) / 1.25;
     const arrivals = [];

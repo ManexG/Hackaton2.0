@@ -38,6 +38,21 @@
 .service-schedule { display: flex; gap: 10px; margin-top: 20px; padding: 18px 0; border-bottom: 1px solid #e1e7d7; }.service-schedule > svg { width: 18px; height: 18px; color: #829571; flex-shrink: 0; }.service-schedule strong { font-size: 12px; }.service-schedule p { font-size: 11px; line-height: 1.8; margin: 6px 0; color: #75856d; }.service-schedule small { font-size: 9px; color: #8a967d; }
 .driver-service-state { padding: 20px 15px; margin: 20px 0 14px; border-radius: 12px; background: #eeeee4; }.driver-service-state > .tiny-dot { background: #a8a58f; margin-right: 8px; }.driver-service-state strong { font-size: 12px; }.driver-service-state p { font-size: 10px; color: #7e856f; line-height: 1.7; margin: 8px 0 0 14px; }.driver-service-state.active { background: #e7f1dd; }.driver-service-state.active > .tiny-dot { background: #63884a; }
 .service-toggle.pause { background: #a05e4b; }.service-toggle.pause:hover { background: #8c4d3e; }
+.driver-zone-status { display: flex; gap: 12px; padding: 16px; margin: 14px 0; border: 1px solid #b6c6aa; border-radius: 10px; background: #f3f6ee; font-size: 1rem; line-height: 1.5; }
+.driver-zone-status svg { width: 24px; height: 24px; flex-shrink: 0; }
+.driver-zone-status strong { display: block; }
+.driver-zone-status p { margin: 8px 0 0; font-size: .9rem; overflow-wrap: anywhere; }
+.driver-zone-status.inside { background: #eaf3e3; color: #24551f; }
+.driver-zone-status.outside { background: #fff0df; color: #773a1a; border-color: #d49a6a; }
+.reporting-fleet { margin: 18px 0; }
+.reporting-fleet h3 { font-size: 1rem; margin-bottom: 12px; }
+.reporting-fleet ul { list-style: none; padding: 0; margin: 0; }
+.reporting-fleet li { display: flex; gap: 12px; padding: 14px 0; border-top: 1px solid #dce4d5; border-left: 4px solid var(--route-color); padding-left: 12px; }
+.reporting-fleet svg { width: 24px; height: 24px; color: var(--route-color); flex-shrink: 0; }
+.reporting-fleet :is(strong, span, small) { display: block; line-height: 1.5; overflow-wrap: anywhere; }
+.reporting-fleet strong { font-size: 1rem; }
+.reporting-fleet span { font-size: .9rem; }
+.reporting-fleet small, .arrival-availability-note { font-size: .85rem; line-height: 1.6; color: #536647; }
 .driver-error { background: #f9ede6; border: 1px solid #edcfbc; color: #934b35; font-size: 12px; line-height: 1.7; padding: 14px; border-radius: 9px; margin-top: 16px; }
 @media (max-width: 760px) {
   .role-switch { padding: 5px 0 12px; }.role-switch > span { font-size: 10px; }.role-switch > button { min-height: 40px; }

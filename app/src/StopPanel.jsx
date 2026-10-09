@@ -45,27 +45,55 @@ export function ScanStopButton({ onScan, onMessage }) {
     </button>
   );
 }
-export function FleetStatus({ fleet }) {
+export function FleetStatus({ fleet, network }) {
   return (
-    <div className={`fleet-status ${fleet.status}`} role="status">
-      <Icon name={fleet.status === 'connected' ? 'radio' : 'offline'} />
-      <div>
-        <strong>
-          {fleet.status === 'connected'
-            ? `${fleet.vehicles.length} combi${fleet.vehicles.length === 1 ? '' : 's'} en servicio`
-            : fleet.status === 'connecting'
-              ? 'Conectando con las combis…'
-              : fleet.status === 'unconfigured'
-                ? 'Servicio pendiente de conexión'
-                : 'Reconectando con el servicio'}
-        </strong>
-        <span>
-          {fleet.status === 'connected'
-            ? 'Ubicaciones GPS · sin registro para pasajeros'
-            : 'Puedes seguir buscando lugares y consultar las rutas.'}
-        </span>
+    <>
+      <div className={`fleet-status ${fleet.status}`} role="status">
+        <Icon name={fleet.status === 'connected' ? 'radio' : 'offline'} />
+        <div>
+          <strong>
+            {fleet.status === 'connected'
+              ? `${fleet.vehicles.length} combi${fleet.vehicles.length === 1 ? '' : 's'} en servicio`
+              : fleet.status === 'connecting'
+                ? 'Conectando con las combis…'
+                : fleet.status === 'unconfigured'
+                  ? 'Servicio pendiente de conexión'
+                  : 'Reconectando con el servicio'}
+          </strong>
+          <span>
+            {fleet.status === 'connected'
+              ? 'Ubicaciones GPS · sin registro para pasajeros'
+              : 'Puedes seguir buscando lugares y consultar las rutas.'}
+          </span>
+        </div>
       </div>
-    </div>
+      {fleet.vehicles.length > 0 && (
+        <section className="reporting-fleet" aria-label="Combis reportando">
+          <h3>Combis en la zona</h3>
+          <ul>
+            {fleet.vehicles.map((vehicle) => {
+              const route = network.routes.find((item) => item.id === vehicle.routeId);
+              return (
+                <li key={vehicle.id} style={{ '--route-color': route?.color || '#24551f' }}>
+                  <Icon name="bus-front" />
+                  <div>
+                    <strong>{vehicle.unit}</strong>
+                    <span>
+                      {vehicle.routeId} · {route?.name}
+                    </span>
+                    <small>
+                      {fleet.status === 'connected' ? 'En vivo' : 'Última ubicación'} · señal hace{' '}
+                      {Math.max(0, Math.floor((fleet.now - vehicle.updatedAt) / 1000))} s · Dentro
+                      de la zona
+                    </small>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
+    </>
   );
 }
 export function StopPanel({ network, selected, fleet, onStop, onOrigin, onScan, onMessage }) {
@@ -190,6 +218,12 @@ export function StopPanel({ network, selected, fleet, onStop, onOrigin, onScan, 
                   : 'No hay una combi activa acercándose a esta parada.'}
               </p>
             </div>
+          )}
+          {!arrivals.length && (
+            <p className="arrival-availability-note">
+              Solo calculamos llegadas de combis dentro de la zona, en horario y con señal GPS
+              reciente.
+            </p>
           )}
           <p className="walking-note">
             La llegada se estima con la última señal GPS, el sentido y el recorrido. Puede cambiar

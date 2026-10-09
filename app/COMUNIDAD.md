@@ -1,6 +1,6 @@
-# Integración de Axel · Las Palmas Rutas 1.6
+# Integración de Axel · Las Palmas Rutas 1.7
 
-Procedencia: rama [Axel, commit fcad9cc](https://github.com/ManexG/Hackaton2.0/tree/fcad9cc22bc4a93d2f1c90846396a0ac37a36853). El repositorio conserva sus archivos originales en `ciudadviva/`. La app que se publica y compila está en `app/`, con React y JavaScript. No se utiliza el servidor público del compañero ni se trasladan sus datos o credenciales.
+Procedencia: rama [Axel, commit 3b38961](https://github.com/ManexG/Hackaton2.0/tree/3b389614c88b77e21234c627979a81b94e06919f), incluida su actualización de detección de zona y disponibilidad GPS sobre la integración inicial `fcad9cc`. El repositorio conserva sus archivos originales en `ciudadviva/`. La app que se publica y compila está en `app/`, con React y JavaScript. No se utiliza el servidor público del compañero ni se trasladan sus datos o credenciales.
 
 ## Uso
 
@@ -20,6 +20,16 @@ La API adaptada vive en `/api/community/*`. `server/community/axel-api.js` conse
 La clave de Administración es el secreto existente `CERCA_ADMIN_TOKEN`. Se escribe en el panel y se envía mediante `X-Admin-Key`; no se conserva en almacenamiento del navegador, enlaces, Git ni APK. Las exportaciones y cambios de estado exigen esa clave. Los tokens de vecinos se guardan como hashes en el servidor y caducan a los siete días. El cliente conserva el token de vecino para enviar sus borradores; cerrar sesión lo invalida. Nunca se guardan contraseñas en el cliente.
 
 El servicio de chofer sigue siendo el existente: misma cuenta, unidad, ruta asignada, horario y señal GPS reciente. No se usa la flota simulada del prototipo de Axel. Las consultas de vehículos y llegadas de comunidad se adaptan a ese servicio. Los reportes, puntos y rutas importadas deben quedar dentro de la cobertura autorizada.
+
+## Cambios de Axel 3b38961
+
+El chofer ve si su última ubicación reciente está dentro o fuera de la zona de servicio, con su distancia al centro. Estar fuera detiene su servicio y no produce posiciones públicas ni tiempos de llegada. Los pasajeros ven una lista de unidades dentro de la zona con ruta y antigüedad de señal. Se conserva el límite de frescura de **45 segundos** de Las Palmas, más estricto que el prototipo original.
+
+El área piloto opcional se toma de la última fila de `zona`, cargada por el operador. Ejemplo de formato: `{"zona":{"nombre":"Área piloto","lat":17.964,"lng":-102.200,"radio_m":1500}}`. Su radio debe ser positivo y su centro debe estar dentro de la cobertura original. El área efectiva es la intersección del círculo y el polígono; no amplía el mapa. Sin configuración se utiliza el polígono original. El mapa muestra el círculo y los cambios llegan por SSE; las llegadas y viajes tampoco pueden requerir un recorrido que salga de esa área.
+
+`GET /api/community/vehiculos/activos` admite el contrato nuevo de Axel (`lat`, `lng`, `ultimo_ts`, `edad_s`, `en_vivo`, `en_zona`, `distancia_zona_m`, `zona`), conservando los campos anteriores para compatibilidad. Solo devuelve señales válidas y recientes. `POST /api/community/vehiculos/detener` exige la sesión real del chofer, marca su unidad inactiva y avisa a los pasajeros inmediatamente. Las cuentas de vecino no pueden usarlo para detener combis.
+
+El service worker consulta HTML y datos públicos con `cache: 'reload'` para evitar reutilizar respuestas HTTP viejas al publicar una actualización. Los recursos con nombre de hash siguen disponibles sin señal; GPS y sesiones nunca se cachean.
 
 ## Importar rutas
 

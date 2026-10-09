@@ -103,6 +103,15 @@ test('authenticated driver shares GPS through the real server and a guest immedi
   await expect(page.locator('.driver-service-state')).toContainText('Tu combi está en servicio');
   await expect(guest.locator('.fleet-status')).toContainText('1 combi en servicio');
   await expect(guest.locator('.bus-marker')).toHaveCount(1);
+  await expect(page.getByTestId('driver-zone')).toContainText(
+    'Estás dentro de la zona de servicio'
+  );
+  await expect(guest.getByRole('region', { name: 'Combis reportando', exact: true })).toContainText(
+    account.unit
+  );
+  await expect(guest.getByRole('region', { name: 'Combis reportando', exact: true })).toContainText(
+    'En vivo'
+  );
   await choose(guest, 'origin', 'Jugos Acapulco');
   await choose(guest, 'destination', 'Entronque av');
   await expect(guest.locator('.journey-card.selected')).toContainText('R01');
@@ -115,10 +124,33 @@ test('authenticated driver shares GPS through the real server and a guest immedi
   await page.getByRole('button', { name: 'Desactivar servicio', exact: true }).click();
   await expect(guest.locator('.fleet-status')).toContainText('0 combis en servicio');
   await expect(guest.locator('.bus-marker')).toHaveCount(0);
+  await expect(guest.getByRole('region', { name: 'Combis reportando', exact: true })).toHaveCount(
+    0
+  );
   await expect(guest.locator('.journey-card')).toHaveCount(0);
   await page.getByRole('button', { name: 'Cerrar sesión', exact: true }).click();
   await expect(page.locator('#driver-email')).toBeVisible();
   await guest.close();
+});
+test('a driver in another city gets a clear zone warning and produces no public combi or arrival', async ({
+  page,
+  context,
+}) => {
+  store.provision(account);
+  await context.grantPermissions(['geolocation']);
+  await context.setGeolocation({ latitude: 19.43, longitude: -99.13, accuracy: 5 });
+  await page.getByRole('button', { name: 'Entrar como chofer', exact: true }).click();
+  await page.locator('#driver-email').fill(account.email);
+  await page.locator('#driver-password').fill(account.password);
+  await page.getByRole('button', { name: 'Ingresar como chofer', exact: true }).click();
+  await page.getByRole('button', { name: 'Activar mi servicio', exact: true }).click();
+  await expect(page.getByTestId('driver-zone')).toContainText('Estás fuera de la zona de servicio');
+  await expect(page.getByTestId('driver-zone')).toContainText('no se calculan llegadas');
+  await expect(page.locator('.driver-service-state')).toContainText('Tu servicio está desactivado');
+  expect(store.snapshot().vehicles).toHaveLength(0);
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: '../Las-Palmas-chofer-fuera-de-zona.png' });
 });
 test('QR web link centers a known stop, selects it as origin and creates a downloadable code', async ({
   page,

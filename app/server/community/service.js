@@ -2,6 +2,7 @@ import axelApi from './axel-api.js';
 import migrations from './migrations.json' with { type: 'json' };
 import { insideCoverage, distance, validateNetwork } from '../../src/planner.js';
 import { stopArrivals } from '../../src/transit.js';
+import { serviceZoneStatus, pilotZone } from '../../src/serviceZone.js';
 
 const json = (data, status = 200) => Response.json(data, { status });
 
@@ -115,6 +116,20 @@ export class CommunityService {
       stops: [...this.baseNetwork.stops],
       places: [...this.baseNetwork.places],
     };
+    const row = this.db
+      .prepare('SELECT nombre,lat,lng,radio_m FROM zona ORDER BY id DESC LIMIT 1')
+      .get();
+    network.pilotZone = row
+      ? pilotZone({
+          ...network,
+          pilotZone: {
+            ...row,
+            lat: Number(row.lat),
+            lng: Number(row.lng),
+            radio_m: Number(row.radio_m),
+          },
+        })
+      : null;
     for (const route of this.db
       .prepare('SELECT * FROM rutas WHERE activa=1 AND trazo IS NOT NULL')
       .all()) {
@@ -215,6 +230,13 @@ export class CommunityService {
     url.pathname = path;
     const request = new Request(url, original);
     if (path === '/api/network') return json(this.refreshNetwork());
+    if (path === '/api/vehiculos/detener' && request.method === 'POST') {
+      const driver = this.store.authenticate(
+        request.headers.get('Authorization')?.replace(/^Bearer /, '') ?? ''
+      );
+      this.store.pause(driver.id);
+      return json({ ok: true, desactivadas: driver.active ? 1 : 0 });
+    }
     const qr = path.match(/^\/api\/paradas\/qr\/([A-Za-z0-9-]+)$/);
     if (qr && request.method === 'GET') {
       const network = this.refreshNetwork();
@@ -242,6 +264,14 @@ export class CommunityService {
           ruta: this.store.network.routes.find((r) => r.id === v.routeId)?.name,
           color: this.store.network.routes.find((r) => r.id === v.routeId)?.color,
           sentido: v.direction === 1 ? 'ida' : 'regreso',
+          lat: v.point[0],
+          lng: v.point[1],
+          ultimo_ts: new Date(v.updatedAt).toISOString(),
+          edad_s: Math.max(0, Math.round((snapshot.serverTime - v.updatedAt) / 1000)),
+          en_vivo: true,
+          en_zona: serviceZoneStatus(v.point, this.store.network).inZone,
+          distancia_zona_m: serviceZoneStatus(v.point, this.store.network).distanceMeters,
+          zona: this.store.network.pilotZone ?? null,
           ultima_posicion: JSON.stringify({
             lat: v.point[0],
             lng: v.point[1],
@@ -264,7 +294,7 @@ export class CommunityService {
         : null;
       return json({
         parada: row,
-        vehiculo: next ? { id: next.vehicle.id, nombre: next.vehicle.unit } : null,
+        vehiculo: next ? { id: next.vehicle.id, nombre: next.vehicle.unit, en_zona: true } : null,
         estimado_min: next ? Math.ceil(next.seconds / 60) : null,
         criterio: next
           ? 'Estimación según GPS reciente, horario y distancia por la ruta.'

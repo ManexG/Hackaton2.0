@@ -3,12 +3,76 @@ import assert from 'node:assert/strict';
 import { createTransitServer } from '../server/index.js';
 import { readFileSync } from 'node:fs';
 import { stopFromLink } from '../src/stopLinks.js';
+import { stopArrivals } from '../src/transit.js';
 
 const network = JSON.parse(
   readFileSync(new URL('../public/data/network.demo.json', import.meta.url))
 );
 const point = network.stops[0].point;
 const secret = 'isolated-community-admin-test-secret';
+test('Axel update: configured pilot zone, live metadata, explicit server stop and no out-of-zone ETA', async () =>
+  withService(async (call, store, base) => {
+    const headers = { 'X-Admin-Key': secret };
+    const zone = { nombre: 'Piloto de prueba aislado', lat: point[0], lng: point[1], radio_m: 350 };
+    assert.equal((await call('/admin/zona', { ...zone, radio_m: 0 }, { headers })).status, 400);
+    assert.equal((await call('/admin/zona', { ...zone, lat: 0, lng: 0 }, { headers })).status, 400);
+    assert.equal((await call('/admin/zona', zone, { headers })).status, 201);
+    assert.equal((await (await fetch(base + '/api/network')).json()).pilotZone.nombre, zone.nombre);
+    store.provision({
+      name: 'Chofer Axel aislado',
+      email: 'zone-driver@example.test',
+      password: 'isolated-zone-driver-password',
+      unit: 'ZONE-01',
+      routeId: 'R01',
+      windows: [
+        { days: [0, 1, 2, 3, 4, 5, 6], start: '00:00', end: '12:00' },
+        { days: [0, 1, 2, 3, 4, 5, 6], start: '12:00', end: '00:00' },
+      ],
+    });
+    const session = await store.login('zone-driver@example.test', 'isolated-zone-driver-password');
+    const driverHeaders = { Authorization: `Bearer ${session.token}` };
+    const fix = { point, accuracy: 5, speed: 0, timestamp: Date.now(), direction: 1 };
+    store.update(session.driver.id, fix, true);
+    const vehicles = await (await call('/vehiculos/activos')).json();
+    assert.equal(vehicles.length, 1);
+    assert.equal(vehicles[0].en_zona, true);
+    assert.equal(vehicles[0].en_vivo, true);
+    assert.equal(vehicles[0].lat, point[0]);
+    assert.equal(vehicles[0].lng, point[1]);
+    assert.ok(vehicles[0].edad_s < 5);
+    assert.equal(vehicles[0].distancia_zona_m, 0);
+    assert.equal(vehicles[0].zona.nombre, zone.nombre);
+    const snapshot = store.snapshot();
+    assert.deepEqual(
+      stopArrivals(
+        network.routes[0].stops.at(-1),
+        store.network,
+        snapshot.vehicles,
+        snapshot.serverTime
+      ),
+      []
+    );
+    assert.equal((await call('/vehiculos/detener', {})).status, 401);
+    const stopped = await call('/vehiculos/detener', {}, { headers: driverHeaders });
+    assert.equal(stopped.status, 200);
+    assert.equal((await stopped.json()).desactivadas, 1);
+    assert.deepEqual(await (await call('/vehiculos/activos')).json(), []);
+    assert.equal(store.authenticate(session.token).active, false);
+    const remote = network.stops.find((stop) => stop.id === network.routes[0].stops.at(-1)).point;
+    assert.throws(
+      () => store.update(session.driver.id, { ...fix, point: remote, timestamp: Date.now() }, true),
+      /fuera de la zona/
+    );
+    assert.deepEqual(store.snapshot().vehicles, []);
+    // A changed pilot zone also removes a previously valid active driver immediately.
+    store.update(session.driver.id, { ...fix, timestamp: Date.now() }, true);
+    assert.equal(
+      (await call('/admin/zona', { ...zone, lat: remote[0], lng: remote[1] }, { headers })).status,
+      201
+    );
+    assert.deepEqual(store.snapshot().vehicles, []);
+    assert.equal(store.authenticate(session.token).active, false);
+  }));
 async function withService(callback) {
   const service = createTransitServer({ dbPath: ':memory:', adminToken: secret });
   await new Promise((resolve) => service.server.listen(0, '127.0.0.1', resolve));

@@ -14,12 +14,33 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
-import { Radio, Square, Bus, UserPlus, Check } from 'lucide-react';
+import { Radio, Square, Bus, UserPlus, Check, MapPin, MapPinOff } from 'lucide-react';
 import { api, posicionActual } from '../api.js';
 import { useSesion } from '../sesion.jsx';
 import { ErrorBox } from '../components/EstadosUI.jsx';
 
 const INTERVALO_MS = 10000; // cada cuánto se manda la posición al servidor
+
+/**
+ * Distancia de un punto al centro de la zona piloto.
+ * Se usa la misma fórmula que el backend para que chofer y mapa coincidan.
+ */
+export function medirZona(lat, lng, zona) {
+  if (!zona || !isFinite(lat) || !isFinite(lng)) return null;
+  const R = 6371000;
+  const rad = (d) => (d * Math.PI) / 180;
+  const p1 = rad(lat), p2 = rad(zona.lat);
+  const dp = p2 - p1, dl = rad(lng - zona.lng);
+  const x = Math.sin(dp / 2) ** 2 + Math.cos(p1) * Math.cos(p2) * Math.sin(dl / 2) ** 2;
+  const metros = 2 * R * Math.asin(Math.sqrt(x));
+  return {
+    metros: Math.round(metros),
+    en_zona: metros <= (zona.radio_m ?? 1500),
+  };
+}
+
+/** "a 210 m" o "a 325 km", para que el número se lea de un vistazo. */
+const distanciaCorta = (m) => (m < 1000 ? `${Math.round(m)} m` : `${Math.round(m / 100) / 10} km`);
 
 export function Chofer() {
   const { usuario, registrar } = useSesion();
@@ -87,6 +108,16 @@ export function Chofer() {
   };
 
   // ---------- Ubicación ----------
+  // Distancia al centro de la zona piloto, para decirle al chofer si está
+  // dentro o fuera. Sin esto, quien prueba la app desde otro estado ve su
+  // combi "reportando" sin entender que nadie la está viendo en el mapa.
+  const [zona, setZona] = useState(null);
+  const [donde, setDonde] = useState(null);
+
+  useEffect(() => {
+    api.zona().then(setZona).catch(() => {});
+  }, []);
+
   const enviar = async () => {
     const pos = await posicionActual();
     await api.enviarPosicion({
@@ -95,6 +126,9 @@ export function Chofer() {
       velocidad: pos.velocidad != null ? Math.max(0, pos.velocidad) : null,
     });
     setEnviados((n) => n + 1);
+    if (zona && isFinite(pos.lat) && isFinite(pos.lng)) {
+      setDonde(medirZona(pos.lat, pos.lng, zona));
+    }
   };
 
   const compartir = async () => {
@@ -108,10 +142,20 @@ export function Chofer() {
     }
   };
 
-  const detener = () => {
+  const detener = async () => {
     clearInterval(timer.current);
     timer.current = null;
     setCompartiendo(false);
+    // También se le dice al servidor. Si solo se parara el temporizador del
+    // navegador, la combi seguiría en los mapas hasta que su señal se viejara.
+    try {
+      await api.detenerVehiculo();
+    } catch {
+      /* si falla, la señal se vieja sola y desaparece en 5 minutos */
+    }
+    setVehiculo(null);
+    setDonde(null);
+    setEnviados(0);
   };
 
   useEffect(() => () => clearInterval(timer.current), []);
@@ -249,6 +293,25 @@ export function Chofer() {
           <p data-testid="chofer-activo">
             <strong>Compartiendo ubicación</strong> · {enviados} puntos enviados
           </p>
+
+          {/* Si el chofer está fuera de la zona, se le dice. Durante una prueba
+              puede estar en cualquier parte, y sin esto ve "reportando" sin
+              saber que nadie lo está viendo en el mapa. */}
+          {donde && !donde.en_zona && (
+            <p className="aviso aviso-alerta" data-testid="chofer-fuera-zona">
+              <MapPinOff /> Estás <strong>fuera de la zona piloto</strong>
+              {zona?.nombre ? ` (${zona.nombre})` : ''}, a {distanciaCorta(donde.metros)} de su
+              centro. Tu combi se está reportando, pero no aparecerá en el mapa de los
+              vecinos.
+            </p>
+          )}
+          {donde && donde.en_zona && (
+            <p className="aviso aviso-ok">
+              <MapPin /> En la zona piloto{zona?.nombre ? ` (${zona.nombre})` : ''} · a{' '}
+              {distanciaCorta(donde.metros)} del centro
+            </p>
+          )}
+
           <p className="aviso">
             Deja esta pantalla abierta mientras manejas. Puedes minimizedarla en el navegador.
           </p>

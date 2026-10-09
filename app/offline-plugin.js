@@ -54,7 +54,7 @@ self.addEventListener('fetch', event => {
     event.respondWith((async () => {
       const cache = await caches.open(CACHE);
       try {
-        const response = await fetch(request);
+        const response = await fetch(request, { cache: 'reload' });
         if (response.ok) await cache.put(request.url, response.clone()).catch(() => {});
         return response;
       } catch {
@@ -64,7 +64,7 @@ self.addEventListener('fetch', event => {
     return;
   }
   if (request.mode === 'navigate') {
-    event.respondWith(fetch(request).catch(async () => {
+    event.respondWith(fetch(request, { cache: 'reload' }).catch(async () => {
       const saved = await (await caches.open(CACHE)).match('/index.html');
       // Cloudflare redirects /index.html to /. Navigation requests can reject
       // that cached redirected response, so return a fresh response with its body.

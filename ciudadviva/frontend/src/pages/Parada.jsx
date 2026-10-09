@@ -123,13 +123,22 @@ export function Parada() {
 
       {llegada?.vehiculo ? (
         <div data-testid="llegada">
-          <p>
-            <Bus /> {llegada.vehiculo.nombre} · a {llegada.vehiculo.metros} m
-          </p>
-          {llegada.estimado_min != null && (
-            <p style={{ fontSize: soloQR ? '2rem' : '1.4rem', fontWeight: 800 }}>
-              {llegada.estimado_min === 1 ? 'Llega en 1 min' : `Llega en unos ${llegada.estimado_min} min`}
+          {/* Combi fuera de la zona: se dice sin dar un tiempo, porque antes
+              producía "llega en 246 min" para un vehículo a 324 km, que suena
+              a que viene camino cuando en realidad no está en la ciudad. */}
+          {llegada.estimado_min == null ? (
+            <p className="aviso aviso-alerta" data-testid="llegada-fuera-zona">
+              <Bus /> Hay una combi reportando, pero <strong>está fuera de la zona piloto</strong>.
             </p>
+          ) : (
+            <>
+              <p>
+                <Bus /> {llegada.vehiculo.nombre} · a {llegada.vehiculo.metros} m
+              </p>
+              <p style={{ fontSize: soloQR ? '2rem' : '1.4rem', fontWeight: 800 }}>
+                {llegada.estimado_min === 1 ? 'Llega en 1 min' : `Llega en unos ${llegada.estimado_min} min`}
+              </p>
+            </>
           )}
           <small>{llegada.criterio}</small>
         </div>

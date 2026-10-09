@@ -168,6 +168,22 @@ test('Cloudflare runtime: persistent SQLite, private accounts, real GPS API, SSE
     const initial = await (await call('/fleet')).json();
     assert.equal(initial.publicAppUrl, 'https://cerca-test.workers.dev/');
     assert.equal(initial.vehicles.length, 0);
+    const point = network.stops.find((stop) => stop.id === network.routes[0].stops[0]).point;
+    assert.equal(
+      (
+        await community('/admin/zona', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Admin-Key': admin },
+          body: JSON.stringify({
+            nombre: 'Piloto runtime',
+            lat: point[0],
+            lng: point[1],
+            radio_m: 500,
+          }),
+        })
+      ).status,
+      201
+    );
     const events = await call('/events');
     assert.equal(events.headers.get('Content-Type'), 'text/event-stream');
     reader = events.body.getReader();
@@ -176,7 +192,6 @@ test('Cloudflare runtime: persistent SQLite, private accounts, real GPS API, SSE
     while (!eventText.includes('event: fleet'))
       eventText += decoder.decode((await reader.read()).value);
     assert.match(eventText, /"vehicles":\[\]/);
-    const point = network.stops.find((stop) => stop.id === network.routes[0].stops[0]).point;
     const fix = { point, accuracy: 5, speed: 0, timestamp: Date.now(), direction: 1 };
     assert.equal(
       (await call('/driver/service', { active: true, ...fix, routeId: 'R04' }, session.token))
@@ -189,6 +204,10 @@ test('Cloudflare runtime: persistent SQLite, private accounts, real GPS API, SSE
     const communityFleet = await (await community('/vehiculos/activos')).json();
     assert.equal(communityFleet.length, 1);
     assert.equal(communityFleet[0].nombre, account.unit);
+    assert.equal(communityFleet[0].lat, point[0]);
+    assert.equal(communityFleet[0].en_zona, true);
+    assert.equal(communityFleet[0].en_vivo, true);
+    assert.equal(communityFleet[0].zona.nombre, 'Piloto runtime');
     assert.ok(!JSON.stringify(fleet).includes(account.email));
     assert.ok(!JSON.stringify(fleet).includes(account.password));
     const updated = decoder.decode((await reader.read()).value);
@@ -218,7 +237,53 @@ test('Cloudflare runtime: persistent SQLite, private accounts, real GPS API, SSE
     );
     assert.equal((await call('/driver/profile', undefined, session.token)).status, 200);
     assert.equal((await (await call('/fleet')).json()).vehicles.length, 1);
-    assert.equal((await call('/driver/service', { active: false }, session.token)).status, 200);
+    assert.equal((await (await call('/fleet')).json()).pilotZone.nombre, 'Piloto runtime');
+    reader = (await call('/events')).body.getReader();
+    let firstEvent = '';
+    while (!firstEvent.includes('event: fleet'))
+      firstEvent += decoder.decode((await reader.read()).value);
+    assert.equal(
+      (
+        await community('/vehiculos/detener', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${session.token}` },
+        })
+      ).status,
+      200
+    );
+    let stoppedEvent = '';
+    while (!stoppedEvent.includes('event: fleet')) {
+      let timeout;
+      try {
+        const event = await Promise.race([
+          reader.read(),
+          new Promise((_, reject) => {
+            timeout = setTimeout(
+              () => reject(new Error('Stop did not broadcast to passengers')),
+              5000
+            );
+          }),
+        ]);
+        stoppedEvent += decoder.decode(event.value);
+      } finally {
+        clearTimeout(timeout);
+      }
+    }
+    assert.match(stoppedEvent, /"vehicles":\[\]/);
+    assert.equal((await (await call('/fleet')).json()).vehicles.length, 0);
+    await reader.cancel();
+    reader = undefined;
+    assert.equal(
+      (
+        await call(
+          '/driver/service',
+          { active: true, ...fix, point: [19.43, -99.13], timestamp: Date.now() },
+          session.token
+        )
+      ).status,
+      403
+    );
+    assert.equal((await (await call('/fleet')).json()).vehicles.length, 0);
     assert.equal((await call('/auth/logout', {}, session.token)).status, 200);
     assert.equal((await call('/driver/profile', undefined, session.token)).status, 401);
     const restored = await call('/auth/login', {

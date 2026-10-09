@@ -4,6 +4,7 @@ import { Geolocation } from '@capacitor/geolocation';
 import { Icon } from './Icon.jsx';
 import { api, ConnectionError } from './liveApi.js';
 import { scheduleLabel, serviceEnd } from './transit.js';
+import { serviceZoneStatus, shortDistance } from './serviceZone.js';
 function savedSession() {
   try {
     const value = JSON.parse(sessionStorage.getItem('cerca.driver') ?? 'null');
@@ -19,6 +20,7 @@ export function DriverPanel({ network, fleet, onMessage }) {
   const [busy, setBusy] = useState(false),
     [error, setError] = useState('');
   const [direction, setDirection] = useState(1);
+  const [lastFix, setLastFix] = useState(null);
   const watch = useRef(null);
   const generation = useRef(0),
     sessionRef = useRef(session),
@@ -74,6 +76,7 @@ export function DriverPanel({ network, fleet, onMessage }) {
     try {
       const value = await api('/auth/login', { body: { email, password } });
       persist(value);
+      setLastFix(null);
       setPassword('');
       onMessage('Sesión de chofer iniciada. Tu servicio comienza cuando lo actives.');
     } catch (reason) {
@@ -124,11 +127,13 @@ export function DriverPanel({ network, fleet, onMessage }) {
     )
       return;
     uploading.current = true;
+    const fix = locationFix(position);
+    setLastFix(fix);
     lastSent.current = Date.now();
     try {
       const driver = await api('/driver/location', {
         token: current.token,
-        body: locationFix(position),
+        body: fix,
       });
       if (run === generation.current) {
         persist({ ...current, driver });
@@ -162,6 +167,7 @@ export function DriverPanel({ network, fleet, onMessage }) {
         return;
       }
       const fix = await currentFix();
+      setLastFix(fix);
       const driver = await api('/driver/service', {
         token: session.token,
         body: { ...fix, active: true },
@@ -212,6 +218,7 @@ export function DriverPanel({ network, fleet, onMessage }) {
     try {
       await api('/auth/logout', { token: session.token, body: {} });
       persist(null);
+      setLastFix(null);
     } catch (reason) {
       persist(null);
       onMessage(
@@ -222,6 +229,12 @@ export function DriverPanel({ network, fleet, onMessage }) {
     }
   }
   const route = network.routes.find((route) => route.id === session?.driver.routeId);
+  const position = lastFix ?? session?.driver.location;
+  const recent =
+    position &&
+    fleet.now - position.timestamp <= 45_000 &&
+    position.timestamp <= fleet.now + 15_000;
+  const where = recent ? serviceZoneStatus(position.point, network) : null;
   return (
     <section className="driver-panel" aria-label="Acceso de chofer">
       <div className="section-heading">
@@ -319,6 +332,33 @@ export function DriverPanel({ network, fleet, onMessage }) {
                 ? 'Tu ubicación se comparte con los pasajeros.'
                 : 'Tu ubicación no se muestra en el mapa.'}
             </p>
+          </div>
+          <div
+            className={`driver-zone-status ${where ? (where.inZone ? 'inside' : 'outside') : ''}`}
+            role="status"
+            data-testid="driver-zone"
+          >
+            <Icon name="map-pin" />
+            <div>
+              <strong>
+                {where
+                  ? where.inZone
+                    ? 'Estás dentro de la zona de servicio'
+                    : 'Estás fuera de la zona de servicio'
+                  : 'Ubicación por confirmar'}
+              </strong>
+              <p>
+                {where
+                  ? `${where.name} · a ${shortDistance(where.distanceMeters)} del centro.`
+                  : 'Al activar tu servicio comprobaremos tu ubicación con el GPS.'}
+              </p>
+              {where && !where.inZone && (
+                <p>
+                  Tu combi no se muestra a los pasajeros y no se calculan llegadas. Acércate a la
+                  zona para activar tu servicio.
+                </p>
+              )}
+            </div>
           </div>
           <button
             className={`primary-button service-toggle ${session.driver.active ? 'pause' : ''}`}

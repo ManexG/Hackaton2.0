@@ -1,6 +1,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import L from 'leaflet';
 import { addStreetMap } from './streetMap.js';
+import { pilotZone } from './serviceZone.js';
 import { distance, insideCoverage } from './planner.js';
 const escape = (text) =>
   text.replace(
@@ -47,7 +48,9 @@ export const MapView = forwardRef(function MapView(props, ref) {
               ]
             : p.origin && p.destination
               ? [p.origin.point, p.destination.point]
-              : p.network.routes.flatMap((route) => route.segments.flat());
+              : pilotZone(p.network)
+                ? [[p.network.pilotZone.lat, p.network.pilotZone.lng]]
+                : p.network.routes.flatMap((route) => route.segments.flat());
     const mobile = window.innerWidth <= 760;
     instance.fitBounds(L.latLngBounds(target), {
       paddingTopLeft: mobile ? [40, 82] : [100, 125],
@@ -152,6 +155,17 @@ export const MapView = forwardRef(function MapView(props, ref) {
       fillOpacity: 0.08,
       interactive: false,
     }).addTo(instance);
+    const zone = pilotZone(network);
+    if (zone)
+      L.circle([zone.lat, zone.lng], {
+        pane: 'coverage',
+        radius: zone.radio_m,
+        color: '#24551f',
+        weight: 2,
+        dashArray: '6 6',
+        fillOpacity: 0.035,
+        interactive: false,
+      }).addTo(instance);
     L.polygon(
       [
         [

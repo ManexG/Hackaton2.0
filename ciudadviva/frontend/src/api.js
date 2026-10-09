@@ -230,6 +230,8 @@ export const api = {
   registrarVehiculo: (nombre, ruta_id, sentido) => pedir('/api/vehiculos', { method: 'POST', body: { nombre, ruta_id, sentido } }),
   /** La combi del chofer conectado (o null). Permite recuperar la pantalla. */
   misVehiculos: () => pedir('/api/mis-vehiculos'),
+  /** Deja de compartir: la combi se marca inactiva en el servidor. */
+  detenerVehiculo: () => pedir('/api/vehiculos/detener', { method: 'POST' }),
   enviarPosicion: ({ lat, lng, velocidad, sentido }) => pedir('/api/vehiculos/posicion', { method: 'POST', body: { lat, lng, velocidad, sentido } }),
   vehiculosActivos: () => pedir('/api/vehiculos/activos'),
   rutas: () => pedir('/api/rutas'),

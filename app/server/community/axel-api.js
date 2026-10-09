@@ -416,7 +416,11 @@ export default {
 
       if (isAdmin(req, env) && pathname === '/api/admin/zona' && req.method === 'POST') {
         const { nombre, lat, lng, radio_m, descripcion } = await req.json().catch(() => ({}));
-        if (!nombre || !env.INSIDE([Number(lat), Number(lng)])) {
+        if (
+          !nombre ||
+          !env.INSIDE([Number(lat), Number(lng)]) ||
+          (radio_m != null && (!Number.isFinite(Number(radio_m)) || Number(radio_m) <= 0))
+        ) {
           return json({ error: 'nombre, lat y lng son obligatorios' }, 400);
         }
         const r = await env.DB.prepare(
@@ -426,7 +430,7 @@ export default {
             String(nombre).slice(0, 120),
             Number(lat),
             Number(lng),
-            isFinite(Number(radio_m)) ? Number(radio_m) : null,
+            radio_m == null ? 1500 : Number(radio_m),
             (descripcion || '').toString().slice(0, 500)
           )
           .run();

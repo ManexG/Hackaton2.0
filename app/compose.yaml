@@ -1,0 +1,30 @@
+services:
+  cerca:
+    build: .
+    restart: unless-stopped
+    environment:
+      PUBLIC_APP_URL: https://${CERCA_DOMAIN}/
+      ALLOWED_ORIGINS: https://${CERCA_DOMAIN},https://localhost,http://localhost
+      DATABASE_PATH: /data/cerca.sqlite
+    volumes:
+      - cerca-data:/data
+    expose:
+      - "8787"
+  https:
+    image: caddy:2
+    restart: unless-stopped
+    environment:
+      CERCA_DOMAIN: ${CERCA_DOMAIN}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - cerca
+volumes:
+  cerca-data:
+  caddy-data:
+  caddy-config:

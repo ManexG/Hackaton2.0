@@ -45,6 +45,10 @@ export default {
       headers.set('Access-Control-Allow-Methods', 'GET,POST,PATCH,OPTIONS');
     }
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers });
+    // TODO(cloudflare-admin): /api/manage/* (administración por sesión de administrador) aún NO está
+    // portado a Cloudflare: hoy responde 404 aquí. Ver CLOUDFLARE-ADMIN.md. Cuando se porte, este
+    // prefijo debe pasar al Durable Object SIN exigir CERCA_ADMIN_TOKEN (la sesión la valida AdminCore).
+    // Además añadir PUT y DELETE a Access-Control-Allow-Methods (arriba).
     // Check the current deployment's secret at the gateway, before invoking the persistent object.
     if (url.pathname.startsWith('/api/admin/')) {
       const admin = env.CERCA_ADMIN_TOKEN,
@@ -85,6 +89,10 @@ export class FleetService extends DurableObject {
     };
     this.store = new TransitStoreCore(db, network, env.PUBLIC_APP_URL ?? '');
     this.community = new CommunityService(this.store, env.CERCA_ADMIN_TOKEN ?? '');
+    // TODO(cloudflare-admin): instanciar aquí la administración (ver CLOUDFLARE-ADMIN.md, paso 1-3):
+    //   this.admin = new AdminCore(db, network, this.store);
+    //   this.community.transform = (base) => this.admin.applyTo(base);
+    //   this.community.refreshNetwork();
     // Eviction/redeployment must preserve driver availability; snapshot expires stale GPS.
     ctx.storage.sql.exec(
       'CREATE TABLE IF NOT EXISTS login_attempts (key TEXT PRIMARY KEY, count INTEGER NOT NULL, reset INTEGER NOT NULL)'

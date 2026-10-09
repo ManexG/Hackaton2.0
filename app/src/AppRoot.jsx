@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useState } from 'react';
 import { CercaApp } from './App.jsx';
 import { api } from './community/api.js';
 const CommunityPanel = lazy(() => import('./community/CommunityPanel.jsx'));
+const AdminPanel = lazy(() => import('./admin/AdminPanel.jsx'));
 export function AppRoot({ network, catalog, refreshNetwork }) {
   const [route, setRoute] = useState(location.hash.replace(/^#/, ''));
   const [qrError, setQrError] = useState('');
@@ -47,6 +48,10 @@ export function AppRoot({ network, catalog, refreshNetwork }) {
             </button>
           )}
         </div>
+      ) : route.startsWith('/gestion') ? (
+        <Suspense fallback={<div className="boot">Cargando administración…</div>}>
+          <AdminPanel network={network} refreshNetwork={refreshNetwork} />
+        </Suspense>
       ) : (
         route && (
           <Suspense fallback={<div className="boot">Cargando comunidad…</div>}>

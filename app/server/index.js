@@ -4,6 +4,8 @@ import { fileURLToPath } from 'node:url';
 import { extname, resolve, sep } from 'node:path';
 import { TransitStore, ApiError } from './store.js';
 import { CommunityService } from './community/service.js';
+import { AdminCore } from './admin-core.js';
+import { createManageHandler } from './admin.js';
 import { validateNetwork } from '../src/planner.js';
 const root = fileURLToPath(new URL('../', import.meta.url));
 export function createTransitServer(options = {}) {
@@ -38,6 +40,9 @@ export function createTransitServer(options = {}) {
     store,
     options.adminToken ?? process.env.CERCA_ADMIN_TOKEN ?? ''
   );
+  const admin = new AdminCore(store.db, network, store);
+  community.transform = (base) => admin.applyTo(base);
+  community.refreshNetwork();
   const clients = new Set();
   const attempts = new Map();
   function broadcast() {
@@ -54,6 +59,13 @@ export function createTransitServer(options = {}) {
     for (const [key, value] of attempts) if (value.reset < now) attempts.delete(key);
   }, 10_000);
   interval.unref();
+  const manage = createManageHandler({
+    admin,
+    store,
+    community,
+    broadcast,
+    fetcher: options.fetcher,
+  });
   async function body(request) {
     if (!request.headers['content-type']?.startsWith('application/json'))
       throw new ApiError(415, 'Envía los datos en formato JSON.');
@@ -83,7 +95,7 @@ export function createTransitServer(options = {}) {
       response.setHeader('Access-Control-Allow-Origin', origin);
       response.setHeader('Vary', 'Origin');
       response.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Admin-Key');
-      response.setHeader('Access-Control-Allow-Methods', 'GET,POST,PATCH,OPTIONS');
+      response.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
     }
     if (request.method === 'OPTIONS') {
       response.writeHead(204).end();
@@ -109,6 +121,7 @@ export function createTransitServer(options = {}) {
         return;
       }
       const token = request.headers.authorization?.replace(/^Bearer /, '') ?? '';
+      if (await manage(request, url, send)) return;
       if (url.pathname.startsWith('/api/community/') || url.pathname === '/api/network') {
         const chunks = [];
         let length = 0;
@@ -250,7 +263,7 @@ export function createTransitServer(options = {}) {
     for (const client of clients) client.end();
     store.close();
   });
-  return { server, store };
+  return { server, store, admin };
 }
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const { server } = createTransitServer();

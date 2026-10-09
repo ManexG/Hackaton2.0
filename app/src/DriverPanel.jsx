@@ -277,6 +277,9 @@ export function DriverPanel({ network, fleet, onMessage }) {
             Tu cuenta, ruta y horario los asigna la persona responsable del servicio. Los pasajeros
             pueden usar Las Palmas Rutas sin registrarse.
           </p>
+          <a className="walking-note" href="#/gestion">
+            Acceso de administración
+          </a>
         </form>
       ) : (
         <>

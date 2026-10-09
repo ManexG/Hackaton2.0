@@ -1,4 +1,4 @@
-# Hackaton2.0 · Cerca
+# Hackaton2.0 · Las Palmas Rutas
 
 Aplicación Android y web para consultar combis en el corredor de Jugos Acapulco al entronque de la avenida Lázaro Cárdenas. El proyecto está en [`app/`](app/): **React, TypeScript, Vite, Leaflet y Capacitor**, alojado en **Cloudflare Workers + Durable Objects con SQLite + SSE**. Se conserva un servidor alternativo de Node.js 24.
 
@@ -10,6 +10,14 @@ Aplicación Android y web para consultar combis en el corredor de Jugos Acapulco
 - Enlaces y QR por parada, lector QR y búsqueda por voz en Android y navegadores compatibles.
 
 Las rutas, paradas intermedias y tarifas siguen siendo de prueba. El catálogo incluye 941 lugares, calles y direcciones de OpenStreetMap. La cobertura rodea el corredor indicado y no representa el límite oficial de la ciudad. No se crean choferes ni horarios ficticios.
+
+## Interfaz y modelo del equipo
+
+Flujo de tres pasos: desde dónde sales, a dónde vas y **Ver cómo llegar**. Las selecciones se confirman, las instrucciones quedan abiertas y tocar una ruta muestra directamente su inicio, término y paradas. El acceso de choferes está separado y se indica claramente el modo pasajero.
+
+Texto base de 18 px, opción de 22 px persistente, botones grandes, ayuda paso a paso con lectura por voz y vistas de mapa/instrucciones con acciones explícitas en celular. Se incorporan los logos proporcionados de **Las Palmas Rutas**. Las pruebas incluyen ampliación de texto, teclado y pantallas móviles; queda pendiente validarlo de nuevo con personas mayores y un teléfono físico.
+
+El modelo original de la rama **prediction-model**, commit **4266afc**, está integrado en las llegadas a paradas y la clasificación de viajes. Sus árboles se exportan a JSON para evaluarlos en React y Capacitor sin un servidor Python. Se verifica paridad con 260 entradas y las tres salidas originales de scikit-learn. **Fue entrenado con datos ficticios** y se muestra como experimental; no hay observaciones reales de lluvia o semáforos. Procedencia y reproducción en [app/MODELO.md](app/MODELO.md). Se conservan intactos los archivos originales en `model/`.
 
 ## Ejecutar
 
@@ -41,7 +49,7 @@ npm run android:sync
 npm run android:open
 ```
 
-El proyecto nativo está en `app/android/`. Versión 1.3, código 4. En esta versión el chofer debe mantener la app abierta para compartir GPS; el seguimiento con pantalla bloqueada queda pendiente de definir.
+El proyecto nativo está en `app/android/`. Versión 1.4, código 5. En esta versión el chofer debe mantener la app abierta para compartir GPS; el seguimiento con pantalla bloqueada queda pendiente de definir.
 
 ## Verificar
 
@@ -55,6 +63,6 @@ npm run cloudflare:check
 npm run test:cloudflare
 ```
 
-30 pruebas de datos, búsqueda, planificación, autenticación, horarios, GPS, SSE y QR; 21 pruebas de interfaz; una prueba de integración con el runtime de Cloudflare que verifica cuentas, GPS, SSE, CORS y persistencia al reiniciar. Las pruebas usan datos aislados. Se verificó la compilación Android; no se probó en un teléfono físico.
+35 pruebas de datos, búsqueda, planificación, autenticación, horarios, GPS, SSE y QR; 28 pruebas de interfaz; una prueba de integración con el runtime de Cloudflare que verifica cuentas, GPS, SSE, CORS y persistencia al reiniciar. Las pruebas usan datos aislados. Se verificó la compilación Android; no se probó en un teléfono físico.
 
 Consulta [`app/LEEME.md`](app/LEEME.md) para uso, ejemplos, cobertura y formato de las rutas. Datos del mapa © [OpenStreetMap contributors, ODbL](https://www.openstreetmap.org/copyright).

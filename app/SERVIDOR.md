@@ -1,4 +1,4 @@
-# Alojar Cerca y conectar Android
+# Alojar Las Palmas Rutas y conectar Android
 
 Para alojar web, API y SQLite directamente en Cloudflare, sigue [CLOUDFLARE.md](CLOUDFLARE.md). Las instrucciones siguientes corresponden al servidor Node alternativo.
 
@@ -93,13 +93,13 @@ Estas dos variables son direcciones públicas, no contraseñas. Se incorporan al
 
 ## Predicciones
 
-La llegada usa la distancia sobre el trazado, el sentido y la velocidad GPS cuando es válida. Si no existe una velocidad utilizable se aproxima con 5 m/s. Añade 15 segundos por parada intermedia y 30 segundos por cambio de sentido en rutas de ida y vuelta. Los retornos estimados suponen que el chofer continúa el recorrido durante su horario. No incorpora tráfico en vivo ni aprendizaje automático.
+La llegada usa la distancia sobre el trazado, el sentido y la velocidad GPS cuando es válida. Si no existe una velocidad utilizable se aproxima con 5 m/s. Añade 15 segundos por parada intermedia y 30 segundos por cambio de sentido en rutas de ida y vuelta. Los retornos estimados suponen que el chofer continúa el recorrido durante su horario. Cuando se carga el modelo experimental, sustituye el cálculo geométrico para distancias, horas y velocidades dentro de su dominio. No se suman los 15 segundos por parada a una predicción del modelo, para evitar contar detenciones dos veces. No incorpora tráfico en vivo. Consulta [MODELO.md](MODELO.md).
 
 Las recomendaciones comparan candidatos hacia el origen y destino elegidos, incluyendo caminatas a paradas de hasta 420 m y hasta dos trasbordos. Cada tramo necesita una combi activa con una llegada estimada que permita alcanzarla, y debe terminar antes de su cierre de servicio. La espera del trasbordo se calcula según esas llegadas. No se presenta una recomendación si faltan combis disponibles.
 
 ## QR
 
-Cada QR contiene `https://TU_DOMINIO/?stop=IDENTIFICADOR`. La cámara normal del teléfono puede abrir ese enlace en la web. Cerca centra el mapa, abre la parada y la coloca como origen, sin exigir registro.
+Cada QR contiene `https://TU_DOMINIO/?stop=IDENTIFICADOR`. La cámara normal del teléfono puede abrir ese enlace en la web. Las Palmas Rutas centra el mapa, abre la parada y la coloca como origen, sin exigir registro.
 
 También hay un lector de QR en la app y una descarga del QR por parada. El lector valida que el enlace pertenezca al dominio configurado y que la parada exista. La app Android admite `cerca://stop/IDENTIFICADOR` para enlaces nativos. Los QR generados con una dirección local solo funcionan en ese equipo; configura la URL pública antes de imprimirlos.
 

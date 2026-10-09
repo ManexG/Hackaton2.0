@@ -1,8 +1,20 @@
-# Cerca 1.3 · React + Capacitor + GPS + Cloudflare
+# Las Palmas Rutas 1.4 · React + Capacitor + GPS + Cloudflare
 
 Aplicación Android y web de movilidad para el corredor indicado en Lázaro Cárdenas. Usa **React 19, TypeScript, Vite 8, Leaflet y Capacitor 8**. La publicación en **Cloudflare Workers** guarda cuentas y GPS en un **Durable Object con SQLite** y comparte las posiciones mediante **SSE**. También se conserva el servidor alternativo de Node.js 24 para uso local o alojamiento propio.
 
 La configuración y los comandos para publicar en `workers.dev` están en [CLOUDFLARE.md](CLOUDFLARE.md). El almacenamiento en Cloudflare es independiente del SQLite local; no se suben automáticamente cuentas ni datos del equipo.
+
+## Interfaz para viajar con menos pasos
+
+La identidad **Estás en: Pasajero** aparece al entrar. El acceso **Entrar como chofer** está en una sección separada y tiene un botón para volver al pasajero.
+
+1. Indica **desde dónde sales**, usando **Mi ubicación**, una búsqueda o el mapa.
+2. Indica **a dónde vas** y toca la coincidencia correcta. La selección se confirma y la pantalla se desplaza al siguiente paso.
+3. Pulsa **Ver cómo llegar**. El viaje no se calcula automáticamente al tocar una sugerencia. Si no hay servicio, se ofrece consultar por dónde pasan las rutas.
+
+**Ver rutas** abre directamente el detalle de la ruta elegida, con confirmación, origen, término, sentido y paradas. **Volver a todas las rutas** regresa a la lista. En celular, **Ver mapa de las rutas** y **Volver a las instrucciones** separan ambas vistas sin un panel que haya que descubrir o arrastrar.
+
+Texto base de 18 px, control **Letra más grande** a 22 px con preferencia guardada, botones de al menos 48 px, contraste más alto y etiquetas escritas. **Ayuda** explica los tres pasos y puede leerlos en voz alta cuando el navegador lo permite. Se respeta la preferencia de movimiento reducido. Estas mejoras necesitan volver a probarse con personas mayores; las pruebas automatizadas no sustituyen esa evaluación.
 
 ## Pasajero
 
@@ -18,7 +30,7 @@ Los botones de micrófono permiten dictar el origen o destino. El texto pasa al 
 
 ## Chofer
 
-En **Soy chofer**, inicia sesión con una cuenta creada por el responsable. Cada cuenta tiene una unidad, una ruta y un horario asignados desde el servidor. No puede cambiar su asignación desde la app.
+En **Entrar como chofer**, inicia sesión con una cuenta creada por el responsable. Cada cuenta tiene una unidad, una ruta y un horario asignados desde el servidor. No puede cambiar su asignación desde la app.
 
 El chofer elige el sentido de salida y pulsa **Activar mi servicio**. Se solicita una ubicación precisa y el servidor valida el horario y la cobertura. Al activarse, los pasajeros reciben su posición GPS. **Desactivar servicio** y **Cerrar sesión** detienen la publicación.
 
@@ -38,7 +50,7 @@ npm run server
 
 Abre `http://127.0.0.1:8787/`. Para editar React deja abierto el servidor y ejecuta `npm run dev` en otra terminal. No abras `index.html` directamente.
 
-**[SERVIDOR.md](SERVIDOR.md)** explica cómo alojar la web con HTTPS, crear cuentas, asignar horarios, configurar la dirección pública del APK y generar QR para otros teléfonos. Todavía no se ha configurado un dominio ni publicado un servidor externo. El APK compilado sin dirección pública permite explorar la interfaz y los datos locales; muestra que el servicio está pendiente de conexión.
+**[SERVIDOR.md](SERVIDOR.md)** explica cómo alojar la web con HTTPS, crear cuentas, asignar horarios, configurar la dirección pública del APK y generar QR para otros teléfonos. La web ya está publicada en https://cerca-combis.alanedgardo4.workers.dev/. El APK entregado se conecta a esa API. Las cuentas se crean cuando el responsable define choferes, rutas y horarios.
 
 ## Ejemplos de búsqueda
 
@@ -68,7 +80,7 @@ El catálogo de lugares y las calles locales están separados en `public/data/pl
 
 El motor considera caminatas de hasta 420 m hacia las paradas y hasta dos trasbordos. Cada tramo necesita una combi activa cuya llegada permita alcanzarla y finalizar antes del fin de su servicio. La posición se proyecta sobre el trazado para calcular la distancia recorrida, el sentido y la llegada.
 
-Las estimaciones suponen continuidad del recorrido de ida y vuelta y usan velocidades, detenciones y giros aproximados. No incorporan tráfico en vivo ni aprendizaje automático. Las caminatas son distancias en línea recta, no indicaciones peatonales verificadas. Consulta los detalles en `SERVIDOR.md`.
+Las estimaciones suponen continuidad del recorrido de ida y vuelta y usan velocidades, detenciones y giros aproximados. Incorporan el modelo experimental del equipo para llegadas y duración de tramos; no incorporan tráfico en vivo. Consulta [MODELO.md](MODELO.md) para procedencia, entradas, límites y reproducción. Las caminatas son distancias en línea recta, no indicaciones peatonales verificadas. Consulta los detalles en `SERVIDOR.md`.
 
 ## Conexión y voz
 
@@ -86,7 +98,7 @@ npm run android:sync
 npm run android:open
 ```
 
-Configura primero `VITE_PUBLIC_API_URL` y `VITE_PUBLIC_APP_URL` para conectar el APK al servidor publicado. El identificador es `mx.cerca.combis.demo`; versión **1.2**, código **3**. El APK de depuración se genera en `android/app/build/outputs/apk/debug/app-debug.apk`.
+Configura primero `VITE_PUBLIC_API_URL` y `VITE_PUBLIC_APP_URL` para conectar el APK al servidor publicado. El identificador es `mx.cerca.combis.demo`; versión **1.4**, código **5**. El APK de depuración se genera en `android/app/build/outputs/apk/debug/app-debug.apk`.
 
 ## Verificar
 
@@ -96,9 +108,9 @@ npm run test:ui
 npm run build
 ```
 
-Hay 30 pruebas de datos, búsqueda, planificación, autenticación, horarios, GPS, disponibilidad, SSE y enlaces QR; y 21 pruebas de interfaz, incluidas dos ventanas con servidor real y GPS controlado. Las cuentas y posiciones de prueba existen únicamente en pruebas aisladas, no en el servidor de la app.
+Hay 35 pruebas de datos, búsqueda, planificación, autenticación, horarios, GPS, disponibilidad, SSE y enlaces QR; y 28 pruebas de interfaz, incluidas dos ventanas con servidor real y GPS controlado. Las cuentas y posiciones de prueba existen únicamente en pruebas aisladas, no en el servidor de la app.
 
-Las pruebas de interfaz usan Microsoft Edge y un puerto propio para evitar conflictos con otros proyectos. Se verificó la compilación Android. No se instaló ni se probó en un teléfono físico. El contenedor y HTTPS se comprobarán al alojarlos.
+Las pruebas de interfaz usan Microsoft Edge y un puerto propio para evitar conflictos con otros proyectos. Se verificó la compilación Android. No se instaló ni se probó en un teléfono físico. La web pública, HTTPS, QR y SSE se verifican en Cloudflare; el contenedor Node se conserva como alternativa.
 
 ## Archivos
 

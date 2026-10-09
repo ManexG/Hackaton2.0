@@ -7,6 +7,8 @@ async function choose(page: Page, field: 'origin' | 'destination', query: string
   await page.locator(`#${field}`).fill(query);
   await expect(page.locator('#suggestions [role=option]').first()).toBeVisible();
   await page.locator('#suggestions [role=option]').first().click();
+  // Complete the explicit third step when both places have been chosen.
+  if (await page.locator('#origin').inputValue() && await page.locator('#destination').inputValue()) await page.getByRole('button', { name: /Ver cómo llegar/ }).click();
 }
 test.beforeEach(async ({ page }) => {
   errors.set(page, []); page.on('pageerror', error => errors.get(page)!.push(error.message));
@@ -42,7 +44,7 @@ test('editing destination clears stale recommendations and recalculates new rout
   await choose(page, 'origin', 'Jugos Acapulco'); await choose(page, 'destination', 'Entronque av');
   await expect(page.locator('.journey-card.selected')).toContainText('R01');
   await page.locator('#destination').fill('Mercado'); await expect(page.locator('.journey-card')).toHaveCount(0); await expect(page.locator('.selected-leg')).toHaveCount(0);
-  await page.locator('#suggestions [role=option]').first().click(); await expect(page.locator('.journey-card.selected')).toContainText('R02');
+  await page.locator('#suggestions [role=option]').first().click(); await page.getByRole('button', { name: /Ver cómo llegar/ }).click(); await expect(page.locator('.journey-card.selected')).toContainText('R02');
   await expect(page.locator('.destination-context')).toContainText('Mercado del Sol');
   expect(await page.evaluate(() => (window as any).cercaDemo.getState().selectedJourney.legs.at(-1).to)).toBe('mercado');
 });
@@ -57,7 +59,7 @@ test('finds indexed businesses and Spanish category words', async ({ page }) => 
   await page.locator('#destination').fill('Pollo Feliz'); await expect(page.locator('#suggestions')).toContainText('Pollo Feliz');
   await page.locator('#destination').fill('farmacias'); await expect(page.locator('#suggestions [role=option]')).not.toHaveCount(0);
   await page.locator('#destination').fill('Oxxo'); await expect(page.locator('#suggestions [role=option]')).not.toHaveCount(0);
-  await page.locator('#suggestions [role=option]').first().click(); await expect(page.locator('#destination')).toHaveValue('Oxxo'); await expect(page.locator('#results')).toBeVisible();
+  await page.locator('#suggestions [role=option]').first().click(); await expect(page.locator('#destination')).toHaveValue('Oxxo'); await page.getByRole('button', { name: /Ver cómo llegar/ }).click(); await expect(page.locator('#results')).toBeVisible();
 });
 test('nearby category cards choose a destination and its own journey', async ({ page }) => {
   await choose(page, 'origin', 'Jugos Acapulco'); await page.getByRole('button', { name: 'Comer', exact: true }).click();
@@ -76,7 +78,7 @@ test('online lookup runs only on explicit action and filters out-of-zone results
   await expect(page.locator('.no-suggestions')).toBeVisible(); expect(requests).toBe(0);
   await page.getByRole('button', { name: 'Buscar dirección o negocio en línea' }).click();
   await expect(page.locator('#suggestions')).toContainText('Negocio exacto de prueba'); await expect(page.locator('#suggestions')).not.toContainText('Resultado fuera de zona');
-  await page.locator('#suggestions [role=option]').first().click(); await expect(page.locator('.journey-card.selected')).toContainText('R02'); expect(requests).toBe(1);
+  await page.locator('#suggestions [role=option]').first().click(); await page.getByRole('button', { name: /Ver cómo llegar/ }).click(); await expect(page.locator('.journey-card.selected')).toContainText('R02'); expect(requests).toBe(1);
 });
 test('stale remote search cannot overwrite an edited destination', async ({ page }) => {
   await page.route('https://nominatim.openstreetmap.org/search?**', async route => { await new Promise(resolve => setTimeout(resolve, 800)); await route.fulfill({ json: [{ place_id: 9003, name: 'Resultado antiguo', lat: '17.9593', lon: '-102.2022', display_name: 'Resultado antiguo' }] }).catch(() => {}); });
@@ -95,14 +97,14 @@ test('outside GPS is rejected and map stays in coverage', async ({ page, context
   await page.evaluate(() => (window as any).cercaDemo.map.panTo([19.4326, -99.1332], { animate: false })); await page.waitForTimeout(500);
   expect(await page.evaluate(() => { const { map, network } = (window as any).cercaDemo; const p = map.getCenter(); const [sw, ne] = network.coverage.bounds; return p.lat >= sw[0] && p.lat <= ne[0] && p.lng >= sw[1] && p.lng <= ne[1]; })).toBe(true);
 });
-test('mobile side drawer and destination-specific transfer', async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 }); await page.getByRole('button', { name: 'Abrir buscador lateral' }).click(); await expect(page.locator('.sidebar')).toHaveClass(/lateral/);
-  await choose(page, 'origin', 'Jugos Acapulco'); await choose(page, 'destination', 'Café del Puerto'); await expect(page.locator('.sidebar')).not.toHaveClass(/lateral/); await expect(page.locator('.bus-marker.selected')).toHaveCount(2);
+test('mobile instructions and destination-specific transfer', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 }); await expect(page.locator('#origin')).toBeVisible();
+  await choose(page, 'origin', 'Jugos Acapulco'); await choose(page, 'destination', 'Café del Puerto'); await expect(page.locator('.app-shell')).toHaveAttribute('data-mobile-view', 'instructions'); await expect(page.locator('.bus-marker.selected')).toHaveCount(2);
   await page.evaluate(() => { const panel = document.querySelector('.panel-scroll')!; const results = document.querySelector('#results')!; panel.scrollTop = (results as HTMLElement).offsetTop - 40; });
   await page.waitForTimeout(900); expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false); await page.screenshot({ path: '../cerca-react-android.png' });
 });
 test('swap recalculates return journey for chosen endpoints', async ({ page }) => {
-  await choose(page, 'origin', 'Jugos Acapulco'); await choose(page, 'destination', 'Entronque av'); await page.getByRole('button', { name: 'Intercambiar origen y destino' }).click();
+  await choose(page, 'origin', 'Jugos Acapulco'); await choose(page, 'destination', 'Entronque av'); await page.getByRole('button', { name: 'Intercambiar origen y destino' }).click(); await page.getByRole('button', { name: /Ver cómo llegar/ }).click();
   await expect(page.locator('#origin')).toHaveValue('Entronque av. Lázaro Cárdenas'); await expect(page.locator('.journey-card.selected')).toContainText('Sin trasbordos');
   expect(await page.evaluate(() => (window as any).cercaDemo.getState().selectedJourney.legs[0].from)).toBe('entronque');
 });

@@ -20,3 +20,5 @@ android/.kotlin/
 .wrangler/
 .dev.vars
 .dev.vars.*
+
+.model-venv/

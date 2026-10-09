@@ -3,6 +3,7 @@ import QRCode from 'qrcode';
 import { Icon } from './Icon';
 import { stopArrivals } from './transit';
 import { stopWebLink } from './stopLinks';
+import { arrivalRangeLabel } from './etaModel';
 import type { Fleet } from './useFleet';
 import type { Network, Stop } from './types';
 
@@ -13,7 +14,7 @@ export function ScanStopButton({ onScan, onMessage }: { onScan: (text: string) =
     setScanning(true);
     try {
       const { CapacitorBarcodeScanner, CapacitorBarcodeScannerTypeHint, CapacitorBarcodeScannerAndroidScanningLibrary } = await import('@capacitor/barcode-scanner');
-      const result = await CapacitorBarcodeScanner.scanBarcode({ hint: CapacitorBarcodeScannerTypeHint.QR_CODE, scanInstructions: 'Apunta al QR de una parada de Cerca', scanButton: false, scanText: 'Leer parada', cameraDirection: 1, android: { scanningLibrary: CapacitorBarcodeScannerAndroidScanningLibrary.ZXING }, web: { showCameraSelection: false, scannerFPS: 10 } });
+      const result = await CapacitorBarcodeScanner.scanBarcode({ hint: CapacitorBarcodeScannerTypeHint.QR_CODE, scanInstructions: 'Apunta al QR de una parada de Las Palmas Rutas', scanButton: false, scanText: 'Leer parada', cameraDirection: 1, android: { scanningLibrary: CapacitorBarcodeScannerAndroidScanningLibrary.ZXING }, web: { showCameraSelection: false, scannerFPS: 10 } });
       if (result.ScanResult) onScan(result.ScanResult);
     } catch { onMessage('No pudimos leer el QR. Permite la cámara o elige la parada de la lista.'); }
     finally { setScanning(false); }
@@ -35,9 +36,10 @@ export function StopPanel({ network, selected, fleet, onStop, onOrigin, onScan, 
     {selected && <><div className="selected-stop"><span className="stop-symbol"><Icon name="map-pin" /></span><div><small>ESTÁS CONSULTANDO</small><h3>{cleanName(selected.name)}</h3></div></div><button className="secondary-button" onClick={() => onOrigin(selected)}><Icon name="navigation" />Salir desde esta parada</button>
       <div className="arrivals-heading"><h3>Próximas llegadas</h3><span>ESTIMADAS</span></div><div className="arrivals-list" aria-label="Llegadas a la parada">{arrivals.map(arrival => {
         const route = network.routes.find(route => route.id === arrival.vehicle.routeId)!;
-        return <div className="arrival-card" key={arrival.vehicle.id} style={{ '--route-color': route.color } as CSSProperties}><span className="arrival-route"><Icon name="bus-front" />{route.id}</span><div><strong>{arrival.vehicle.unit}</strong><small>Hacia {cleanName(network.stops.find(stop => stop.id === arrival.destination)!.name)}</small><small>Señal hace {Math.max(0, Math.floor((fleet.now - arrival.vehicle.updatedAt) / 1000))} s</small></div><b>{arrival.seconds < 30 ? 'Llegando' : `${Math.ceil(arrival.seconds / 60)} min`}</b></div>;
+        return <div className="arrival-card" key={arrival.vehicle.id} style={{ '--route-color': route.color } as CSSProperties}><span className="arrival-route"><Icon name="bus-front" />{route.id}</span><div><strong>{arrival.vehicle.unit}</strong><small>Hacia {cleanName(network.stops.find(stop => stop.id === arrival.destination)!.name)}</small><small>Señal hace {Math.max(0, Math.floor((fleet.now - arrival.vehicle.updatedAt) / 1000))} s</small></div><b>{arrival.seconds < 30 ? 'Llegando' : `${Math.ceil(arrival.seconds / 60)} min`}{arrival.experimental && <small className="arrival-range">{arrivalRangeLabel(arrival)}</small>}</b></div>;
       })}</div>{!arrivals.length && <div className="service-empty"><Icon name="clock-3" /><p>{fleet.status !== 'connected' ? 'Las llegadas estarán disponibles al conectar con el servicio.' : 'No hay una combi activa acercándose a esta parada.'}</p></div>}
       <p className="walking-note">La llegada se estima con la última señal GPS, el sentido y el recorrido. Puede cambiar por tráfico o detenciones.</p>
+      {arrivals.some(arrival => arrival.experimental) && <p className="model-note"><strong>Estimación experimental.</strong> El modelo se entrenó con viajes ficticios. No incluye lluvia ni semáforos reales.</p>}
       <details className="stop-qr"><summary><Icon name="qr" />QR de esta parada<Icon name="chevron-down" /></summary>{qr ? <><img src={qr} alt={`QR para abrir ${cleanName(selected.name)}`} width="220" height="220" /><p>Abre la web centrada en esta parada, sin iniciar sesión.</p><a className="secondary-button" href={qr} download={`cerca-parada-${selected.id}.png`}>Descargar QR</a><a className="stop-link" href={link}>Abrir enlace de la parada</a>{/localhost|127\.0\.0\.1/.test(webBase) && <p className="small-note">Este enlace funciona en este equipo. Los QR para otros teléfonos se generan al configurar la dirección pública.</p>}</> : <p>El QR para compartir estará disponible cuando se configure la dirección pública de la web.</p>}</details>
     </>}
   </section>;

@@ -28,7 +28,7 @@ interface Props {
 }
 const escape = (text: string) => text.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
 function busIcon(route: Route, mode: 'selected' | 'muted' | 'idle') {
-  return L.divIcon({ className: `bus-marker ${mode}`, html: `<div class="bus-bubble" style="--route-color:${route.color}"><svg viewBox="0 0 30 30" fill="none" aria-hidden="true"><path d="M6 22V9a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4v13H6Z" fill="white"/><rect x="8.5" y="8" width="13" height="7" rx="1.5" fill="${route.color}"/><path d="M15 8v7" stroke="white"/><circle cx="10" cy="19" r="1.5" fill="${route.color}"/><circle cx="20" cy="19" r="1.5" fill="${route.color}"/><path d="M9 22v3m12-3v3" stroke="white" stroke-width="3" stroke-linecap="round"/></svg><b>${route.id}</b></div>`, iconSize: [66, 37], iconAnchor: [33, 18] });
+  return L.divIcon({ className: `bus-marker ${mode}`, html: `<div class="bus-bubble" style="--route-color:${route.color}"><svg viewBox="0 0 30 30" fill="none" aria-hidden="true"><path d="M6 22V9a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4v13H6Z" fill="white"/><rect x="8.5" y="8" width="13" height="7" rx="1.5" fill="${route.color}"/><path d="M15 8v7" stroke="white"/><circle cx="10" cy="19" r="1.5" fill="${route.color}"/><circle cx="20" cy="19" r="1.5" fill="${route.color}"/><path d="M9 22v3m12-3v3" stroke="white" stroke-width="3" stroke-linecap="round"/></svg><b>${route.id}</b></div>`, iconSize: [92, 48], iconAnchor: [46, 24] });
 }
 
 export const MapView = forwardRef<MapHandle, Props>(function MapView(props, ref) {
@@ -63,6 +63,7 @@ export const MapView = forwardRef<MapHandle, Props>(function MapView(props, ref)
   function simulate() {
     const journey = state.current.journey;
     if (!journey) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { fit(); state.current.onMessage('Tu recorrido ya está resaltado en el mapa.'); return; }
     if (simulating.current) { stopSimulation(); return; }
     simulating.current = true;
     preview.current = L.circleMarker(journey.legs[0].geometry[0], { radius: 9, color: '#ffffff', weight: 3, fillColor: '#173e31', fillOpacity: 1, interactive: false }).addTo(map.current!);

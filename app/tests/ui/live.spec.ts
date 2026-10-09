@@ -21,7 +21,7 @@ async function connect(page: Page) {
     await route.fulfill({ response });
   });
 }
-async function choose(page: Page, field: string, query: string) { await page.locator(`#${field}`).fill(query); await page.locator('#suggestions [role=option]').first().click(); }
+async function choose(page: Page, field: string, query: string) { await page.locator(`#${field}`).fill(query); await page.locator('#suggestions [role=option]').first().click(); if (await page.locator('#origin').inputValue() && await page.locator('#destination').inputValue()) await page.getByRole('button', { name: /Ver cómo llegar/ }).click(); }
 test.beforeEach(async ({ page }) => {
   const service = createTransitServer({ dbPath: ':memory:', publicAppUrl: 'http://127.0.0.1:5184/', allowedOrigins: ['http://127.0.0.1:5184'] });
   server = service.server; store = service.store;
@@ -43,7 +43,7 @@ test('authenticated driver shares GPS through the real server and a guest immedi
   store.provision(account);
   await context.grantPermissions(['geolocation']); await context.setGeolocation({ latitude: firstStop.point[0], longitude: firstStop.point[1], accuracy: 5 });
   const guest = await context.newPage(); await connect(guest); await guest.goto('/');
-  await page.getByRole('button', { name: 'Soy chofer', exact: true }).click();
+  await page.getByRole('button', { name: 'Entrar como chofer', exact: true }).click();
   await page.locator('#driver-email').fill(account.email); await page.locator('#driver-password').fill(account.password);
   await page.getByRole('button', { name: 'Ingresar como chofer', exact: true }).click();
   await expect(page.locator('.driver-assignment')).toContainText('R01'); await expect(page.locator('.driver-assignment')).toContainText(account.unit);
@@ -79,9 +79,9 @@ test('voice text uses the same street and address search without selecting an ar
   await expect(page.locator('.journey-card')).toHaveCount(0);
 });
 test('mobile guest can enter and leave driver access without mandatory registration or horizontal overflow', async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 }); await page.getByRole('button', { name: 'Abrir buscador lateral' }).click();
-  await page.getByRole('button', { name: 'Soy chofer', exact: true }).click(); await expect(page.locator('#driver-email')).toBeVisible();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByRole('button', { name: 'Entrar como chofer', exact: true }).click(); await expect(page.locator('#driver-email')).toBeVisible();
   await page.screenshot({ path: '../cerca-android-acceso.png' });
-  await page.getByRole('button', { name: 'Soy pasajero', exact: true }).click(); await expect(page.locator('.plan-welcome')).toBeVisible();
+  await page.getByRole('button', { name: 'Volver a viajar como pasajero', exact: true }).click(); await expect(page.locator('.plan-welcome')).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
 });

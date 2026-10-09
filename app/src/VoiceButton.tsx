@@ -33,5 +33,5 @@ export function VoiceButton({ label, onText, onMessage }: { label: string; onTex
     instance.onend = () => { if (mounted.current) setListening(false); };
     try { setListening(true); instance.start(); } catch { setListening(false); onMessage('No pudimos iniciar el micrófono.'); }
   }
-  return <button type="button" className={`voice-button ${listening ? 'listening' : ''}`} aria-label={listening ? 'Detener micrófono' : `Dictar ${label}`} aria-pressed={listening} onClick={() => { void start(); }}><Icon name={listening ? 'square' : 'mic'} /></button>;
+  return <button type="button" className={`voice-button ${listening ? 'listening' : ''}`} aria-label={listening ? 'Detener micrófono' : `Dictar ${label}`} aria-pressed={listening} onClick={() => { void start(); }}><Icon name={listening ? 'square' : 'mic'} />{listening ? 'Detener' : 'Hablar'}</button>;
 }

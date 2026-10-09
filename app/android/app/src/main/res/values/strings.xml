@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Cerca · Combis</string>
-    <string name="title_activity_main">Cerca · Combis</string>
+    <string name="app_name">Las Palmas Rutas</string>
+    <string name="title_activity_main">Las Palmas Rutas</string>
     <string name="package_name">mx.cerca.combis.demo</string>
     <string name="custom_url_scheme">mx.cerca.combis.demo</string>
 </resources>

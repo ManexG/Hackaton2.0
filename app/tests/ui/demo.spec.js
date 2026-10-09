@@ -57,7 +57,7 @@ test.beforeEach(async ({ page }) => {
   );
   await page.goto('/');
   await openSection(page, 'Buscar viaje');
-  await expect(page.locator('.search-status')).toBeVisible();
+  await expect(page.locator('#origin')).toBeVisible();
 });
 test.afterEach(async ({ page }) => {
   expect(errors.get(page)).toEqual([]);
@@ -68,7 +68,7 @@ test('starts without a default origin, destination, or recommended route', async
   await expect(page.locator('.journey-card')).toHaveCount(0);
   await expect(page.locator('.selected-leg')).toHaveCount(0);
   await expect(page.locator('.bus-marker.selected')).toHaveCount(0);
-  await expect(page.locator('.nearby-place')).toHaveCount(5);
+  await expect(page.locator('.nearby-place')).toHaveCount(0);
   await page.waitForTimeout(1000);
   await page.screenshot({ path: '../cerca-react-inicio.png' });
 });
@@ -278,7 +278,7 @@ test('bundled streets and catalog work when internet map tiles fail', async ({ p
   await page.route('https://tile.openstreetmap.org/**', (route) => route.abort());
   await page.reload();
   await openSection(page, 'Buscar viaje');
-  await expect(page.locator('.search-status')).toBeVisible();
+  await expect(page.locator('#origin')).toBeVisible();
   await expect.poll(() => page.locator('.leaflet-localMap-pane path').count()).toBeGreaterThan(0);
   await openField(page, 'destination');
   await page.locator('#destination').fill('Avenida Reforma 534');

@@ -11,7 +11,8 @@
 
 /* Bottom sheet */
 .app-shell > .sidebar { grid-column: 1; grid-row: 2; align-self: end; justify-self: center; width: min(600px, 100%); height: var(--sheet-h); max-height: 100%; display: flex; flex-direction: column; position: relative; z-index: 30; padding: 0; border: 1px solid #c9d8bf; border-bottom: 0; border-radius: 22px 22px 0 0; background: var(--paper); box-shadow: 0 -8px 32px #1d3a2428; transform: none; transition: height .2s ease; animation: none; }
-.app-shell > .sidebar[hidden] { display: none; }
+.app-shell[data-sheet=closed] > .sidebar { visibility: hidden; pointer-events: none; border-width: 0; overflow: hidden; transition: height .26s ease, visibility 0s linear .26s; }
+.app-shell > .sidebar { overflow: hidden; }
 .app-shell[data-dragging=true] > .sidebar { transition: none; }
 .sheet-header { flex-shrink: 0; border-bottom: 1px solid #dbe5d2; }
 .sheet-handle { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 34px; height: 34px; padding: 0; touch-action: none; cursor: grab; border-radius: 22px 22px 0 0; }
@@ -30,28 +31,51 @@
 .bottom-nav button.active { background: var(--green); color: #fff; box-shadow: 0 2px 6px #24492b30; }
 
 /* Map overlays: compact, so a large share of the map stays visible with the sheet open */
-.app-shell .map-action-bar { top: 10px; left: 12px; right: 12px; flex-wrap: nowrap; flex-direction: row; align-items: center; gap: 8px; padding: 4px 12px; }
-.app-shell .map-action-bar strong { font-size: .9rem; white-space: nowrap; }
-.app-shell .map-action-bar button { min-height: 40px; font-size: .85rem; white-space: nowrap; }
-.app-shell .map-controls { top: 68px; right: 12px; padding: 4px; }
+.app-shell .map-controls { top: 12px; right: 12px; padding: 4px; }
 .app-shell .map-controls button { width: 48px; min-width: 48px; height: 48px; min-height: 48px; padding: 0; justify-content: center; }
 .app-shell .map-controls button span { display: none; }
-.app-shell .map-notice { top: 68px; left: 12px; right: 76px; }
-.app-shell .map-summary { left: 12px; right: 12px; padding: 10px 12px; }
+.app-shell .map-notice { top: 12px; left: 12px; right: 76px; }
 .app-shell .map-bottom { bottom: 14px; left: 12px; right: 12px; }
 .app-shell .map-legend { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
 .app-shell .map-legend button { flex: 0 0 auto; min-width: 56px; }
-.app-shell .map-summary { bottom: 92px; }
-.app-shell[data-sheet=open] :is(.map-summary, .map-bottom) { display: none; }
 .app-shell .leaflet-control-attribution { position: static; font-size: 10px !important; }
 .toast { bottom: calc(var(--nav-h) + var(--sheet-h) + var(--safe-bottom) + 12px); z-index: 60; }
 @media (min-width: 761px) {
   .app-shell > .sidebar { width: min(560px, 60%); }
-  .app-shell .map-summary { max-width: 640px; right: auto; }
-  .app-shell .map-controls { top: 76px; }
-}
+  }
 @media (max-width: 360px) {
   .bottom-nav button span { font-size: .8rem; }
-  .app-shell .map-action-bar strong { display: none; }
-}
+  }
 @media (prefers-reduced-motion: reduce) { .app-shell > .sidebar { transition: none; } }
+
+/* Transitions: panels, steps and map overlays ease in and out instead of switching abruptly */
+.app-shell .map-bottom { transition: opacity .22s ease, transform .22s ease; }
+.app-shell[data-sheet=open] .map-bottom { opacity: 0; transform: translateY(14px); pointer-events: none; }
+path.route-path { transition: stroke-opacity .3s ease, stroke-width .3s ease; }
+.bottom-nav button { transition: background-color .2s ease, color .2s ease, box-shadow .2s ease; }
+.map-controls button, .header-actions button, .field-summary { transition: background-color .15s ease; }
+.step-nav { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 0 12px; color: var(--muted); font-weight: 750; }
+.step-nav button { display: flex; align-items: center; gap: 6px; min-height: 44px; padding: 6px 10px; color: var(--green); font-weight: 750; text-decoration: underline; text-underline-offset: 3px; }
+.step-nav button svg { width: 18px; height: 18px; }
+#app .sidebar .fields.has-open .journey-field.is-compact, .fields.has-open + .swap-button { display: none; }
+#app .sidebar .field-editor:not([hidden]) { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding-top: 8px; }
+#app .sidebar .field-editor .location-button { width: 100%; margin: 0; min-height: 48px; }
+#app .sidebar .field-editor .field-input { flex: 1 1 0; min-width: 0; }
+#app .sidebar .field-editor .field-utilities { flex: 0 0 auto; margin: 0; }
+#app .sidebar .field-editor .voice-button { min-height: 58px; }
+#app .sidebar .field-editor #suggestions { flex: 0 0 100%; margin-top: 4px; }
+.app-shell [hidden] { display: none !important; }
+.toast { transition: opacity .3s ease, transform .3s ease; }
+.toast.leaving { opacity: 0; transform: translate(-50%, 10px); pointer-events: none; }
+@keyframes v4-rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes v4-toast-in { from { opacity: 0; transform: translate(-50%, 14px); } to { opacity: 1; transform: translate(-50%, 0); } }
+@keyframes v4-fade { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: no-preference) {
+  .toast { animation: v4-toast-in .3s ease-out; }
+  .sidebar section:not([hidden]), .driver-content:not([hidden]), .step-nav, .journey-card, .route-card, .nearby-place, .empty-state, .search-status, .stop-panel, .fleet-status, .field-summary, .map-notice { animation: v4-rise .26s ease-out both; }
+  #suggestions { animation: v4-fade .2s ease-out; }
+  #suggestions [role=option] { animation: v4-rise .22s ease-out both; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .toast, .app-shell .map-bottom, path.route-path { transition: none; }
+}

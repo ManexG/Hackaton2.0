@@ -17,7 +17,7 @@ test.beforeEach(async ({ page }) => {
   );
   await page.goto('/');
   await openSection(page, 'Buscar viaje');
-  await expect(page.locator('.search-status')).toBeVisible();
+  await expect(page.locator('#origin')).toBeVisible();
 });
 test('passenger identity is explicit; driver login has a clearly labelled return', async ({
   page,
@@ -151,7 +151,7 @@ test('missing model does not prevent local places, routes or stop browsing', asy
   await page.route('**/data/eta-model.json', (route) => route.fulfill({ status: 404, body: '' }));
   await page.reload();
   await openSection(page, 'Buscar viaje');
-  await expect(page.locator('.search-status')).toBeVisible();
+  await expect(page.locator('#origin')).toBeVisible();
   await openField(page, 'destination');
   await page.locator('#destination').fill('Avenida Reforma 534');
   await expect(page.getByRole('option').first()).toContainText('#534');

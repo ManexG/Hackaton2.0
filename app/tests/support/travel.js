@@ -1,7 +1,10 @@
 export async function openField(page, field) {
   if (!(await page.locator('.sidebar').isVisible())) await openSection(page, 'Buscar viaje');
-  if (!(await page.locator(`#${field}`).isVisible()))
-    await page.locator(`.field-summary[aria-controls="${field}-editor"]`).click();
+  if (await page.locator(`#${field}`).isVisible()) return;
+  const summary = page.locator(`.field-summary[aria-controls="${field}-editor"]`);
+  // Only one step is shown at a time: switch with the step navigation or the summary card.
+  if (await summary.isVisible()) await summary.click();
+  else await page.locator('.step-nav button').click();
 }
 
 // The map fills the screen; sections open as a bottom sheet from the bottom navigation.

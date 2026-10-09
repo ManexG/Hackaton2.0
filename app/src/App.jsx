@@ -17,6 +17,8 @@ import { stopFromLink } from './stopLinks.js';
 import { distance, insideCoverage, normalize, searchPlaces } from './planner.js';
 import { geocodeInCoverage } from './geocoding.js';
 import { OfflineNotice, useConnectivity } from './connectivity.jsx';
+const TOAST_MS = 3200;
+const TOAST_FADE_MS = 300;
 export function CercaApp({ network: originalNetwork, catalog }) {
   const connectivity = useConnectivity();
   const fleet = useFleet(originalNetwork);
@@ -42,6 +44,7 @@ export function CercaApp({ network: originalNetwork, catalog }) {
   const [dragHeight, setDragHeight] = useState(null);
   const [pinMode, setPinMode] = useState(null);
   const [toast, setToast] = useState('');
+  const [toastLeaving, setToastLeaving] = useState(false);
   const [largeText, setLargeText] = useState(() => {
     try {
       return localStorage.getItem('las-palmas-large-text') === 'true';
@@ -85,6 +88,9 @@ export function CercaApp({ network: originalNetwork, catalog }) {
     }
   }, [largeText]);
   useEffect(() => {
+    panel.current?.scrollTo({ top: 0 });
+  }, [expandedField]);
+  useEffect(() => {
     if (!trip) return;
     const frame = requestAnimationFrame(() => {
       const results = document.getElementById('results');
@@ -95,10 +101,19 @@ export function CercaApp({ network: originalNetwork, catalog }) {
     return () => cancelAnimationFrame(frame);
   }, [trip]);
   useEffect(() => {
+    setToastLeaving(false);
     if (!toast) return;
-    const timer = setTimeout(() => setToast(''), 5200);
-    return () => clearTimeout(timer);
+    const fade = setTimeout(() => setToastLeaving(true), TOAST_MS - TOAST_FADE_MS);
+    const timer = setTimeout(() => setToast(''), TOAST_MS);
+    return () => {
+      clearTimeout(fade);
+      clearTimeout(timer);
+    };
   }, [toast]);
+  function dismissToast() {
+    setToastLeaving(true);
+    setTimeout(() => setToast(''), TOAST_FADE_MS);
+  }
   useEffect(() => {
     function dismiss(event) {
       if (!event.target.closest('.search-box')) setActive(null);
@@ -159,6 +174,12 @@ export function CercaApp({ network: originalNetwork, catalog }) {
     setTab('plan');
     setTrip(null);
     setDrawer('normal');
+    if (nextOrigin && nextDestination)
+      requestAnimationFrame(() =>
+        requestAnimationFrame(() =>
+          document.querySelector('.find-journey')?.scrollIntoView({ block: 'nearest' })
+        )
+      );
     setToast(
       nextOrigin && nextDestination
         ? 'Origen y destino elegidos. Pulsa «Ver cómo llegar».'
@@ -166,14 +187,6 @@ export function CercaApp({ network: originalNetwork, catalog }) {
           ? 'Origen elegido. Ahora indica a dónde quieres ir.'
           : 'Destino elegido. Ahora indica desde dónde sales.'
     );
-    requestAnimationFrame(() => {
-      if (latest.current.tab !== 'plan') return;
-      const next =
-        nextOrigin && nextDestination
-          ? document.querySelector('.find-journey')
-          : document.getElementById(nextOrigin ? 'destination' : 'origin')?.closest('.field');
-      next?.scrollIntoView({ block: 'center' });
-    });
   }
   function editField(field, value) {
     setExpandedField(field);
@@ -423,9 +436,7 @@ export function CercaApp({ network: originalNetwork, catalog }) {
   }
   function showCoverage() {
     map.current?.fit(network.routes.flatMap((route) => route.segments.flat()));
-    setToast(
-      'Puedes buscar en todo el municipio de Lázaro Cárdenas. Las rutas son ejemplos y las llegadas requieren combis en servicio.'
-    );
+    setToast('Mostrando todo el municipio.');
   }
   const debugState = useRef({
     origin,
@@ -489,7 +500,8 @@ export function CercaApp({ network: originalNetwork, catalog }) {
         <aside
           className="sidebar"
           aria-label={sheetTitle}
-          hidden={drawer === 'collapsed'}
+          aria-hidden={drawer === 'collapsed'}
+          inert={drawer === 'collapsed'}
           onKeyDown={(event) => event.key === 'Escape' && !active && closeSheet()}
         >
           <SheetHeader
@@ -508,7 +520,7 @@ export function CercaApp({ network: originalNetwork, catalog }) {
                 aria-label="Buscar viaje"
                 hidden={tab !== 'plan'}
               >
-                <div className="task-intro">
+                <div className="task-intro" hidden={Boolean(expandedField)}>
                   <h2>¿A dónde quieres ir?</h2>
                   <p>Elige tu origen y tu destino.</p>
                 </div>
@@ -544,6 +556,7 @@ export function CercaApp({ network: originalNetwork, catalog }) {
                   <button
                     className="map-pick-button"
                     type="button"
+                    hidden={!expandedField}
                     onPointerDown={(event) => event.stopPropagation()}
                     onClick={pickOnMap}
                   >
@@ -552,6 +565,7 @@ export function CercaApp({ network: originalNetwork, catalog }) {
                   <button
                     className="primary-button find-journey"
                     type="submit"
+                    hidden={Boolean(expandedField)}
                     disabled={loadingSearch}
                   >
                     {loadingSearch ? 'Buscando tu destino…' : 'Ver cómo llegar'}
@@ -595,19 +609,21 @@ export function CercaApp({ network: originalNetwork, catalog }) {
                       <Icon name="arrow-right" />
                     </button>
                   </div>
-                ) : (
+                ) : expandedField ? null : (
                   <p className="search-status" aria-live="polite">
                     {origin && destination
                       ? 'Todo listo. Pulsa «Ver cómo llegar».'
                       : 'Busca una calle, negocio o parada de Lázaro Cárdenas.'}
                   </p>
                 )}
-                <ExplorePlaces
-                  network={network}
-                  fleet={fleet}
-                  origin={origin}
-                  onSelect={(place) => choosePlace('destination', place)}
-                />
+                {expandedField !== 'origin' && (
+                  <ExplorePlaces
+                    network={network}
+                    fleet={fleet}
+                    origin={origin}
+                    onSelect={(place) => choosePlace('destination', place)}
+                  />
+                )}
               </section>
               <section id="routes-panel" role="region" aria-label="Rutas" hidden={tab !== 'routes'}>
                 <RouteExplorer
@@ -691,13 +707,6 @@ export function CercaApp({ network: originalNetwork, catalog }) {
             onStop={selectStop}
             sheetInset={drawer === 'collapsed' ? 0 : restingPx}
           />
-          <div className="map-action-bar">
-            <strong>
-              <Icon name="map-pin" />
-              Lázaro Cárdenas
-            </strong>
-            <button onClick={showCoverage}>Ver todo el municipio</button>
-          </div>
           <div className="map-controls">
             <button aria-label="Acercar mapa" onClick={() => map.current?.getMap()?.zoomIn()}>
               <Icon name="plus" />
@@ -710,6 +719,15 @@ export function CercaApp({ network: originalNetwork, catalog }) {
             <button aria-label="Ver recorrido completo" onClick={() => map.current?.fit()}>
               <Icon name="locate-fixed" />
               <span>Centrar</span>
+            </button>
+            <button
+              className="municipality-button"
+              aria-label="Ver todo el municipio"
+              title="Ver todo el municipio"
+              onClick={showCoverage}
+            >
+              <Icon name="map" />
+              <span>Municipio</span>
             </button>
           </div>
           {(simulation || pinMode) && (
@@ -729,49 +747,6 @@ export function CercaApp({ network: originalNetwork, catalog }) {
               </button>
             </div>
           )}
-          <div id="map-summary" className="map-summary">
-            {selectedRoute ? (
-              <>
-                <div className="summary-icon" style={{ '--route-color': selectedRoute.color }}>
-                  <Icon name="check" />
-                </div>
-                <div>
-                  <span className="summary-eyebrow">RUTA SELECCIONADA</span>
-                  <strong>
-                    {selectedRoute.id} · {selectedRoute.name}
-                  </strong>
-                  <span>
-                    {reversed ? 'Sentido de regreso' : 'Sentido de ida'} ·{' '}
-                    {selectedRoute.stops.length} paradas de ejemplo
-                  </span>
-                </div>
-              </>
-            ) : tab === 'plan' && journey ? (
-              <>
-                <div className="summary-icon">
-                  <Icon name="bus-front" />
-                </div>
-                <div>
-                  <span className="summary-eyebrow">TU VIAJE SELECCIONADO</span>
-                  <strong>{journey.destination.name.replace(' · demo', '')}</strong>
-                  <span>
-                    {journey.legs.map((leg) => leg.routeId).join(' → ')} · {journey.totalMinutes}{' '}
-                    min aprox.
-                  </span>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="summary-icon">
-                  <Icon name="bus-front" />
-                </div>
-                <div>
-                  <strong>Todas las rutas del municipio</strong>
-                  <span>Toca una línea de color para ver sus paradas.</span>
-                </div>
-              </>
-            )}
-          </div>
           <div className="map-bottom">
             <div className="map-legend" aria-label="Rutas en el mapa">
               <span className="legend-label">Ver ruta:</span>
@@ -798,10 +773,10 @@ export function CercaApp({ network: originalNetwork, catalog }) {
         />
       </main>
       {toast && (
-        <div id="toast" className="toast" role="status">
+        <div id="toast" className={`toast ${toastLeaving ? 'leaving' : ''}`} role="status">
           <Icon name="info" />
           <span>{toast}</span>
-          <button aria-label="Cerrar mensaje" onClick={() => setToast('')}>
+          <button aria-label="Cerrar mensaje" onClick={dismissToast}>
             <Icon name="x" />
           </button>
         </div>

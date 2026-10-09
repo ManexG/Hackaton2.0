@@ -95,7 +95,24 @@ export function SearchFields(props) {
   }
   return (
     <div className="search-box">
-      <div className="fields">
+      {props.expanded && (
+        <div className="step-nav">
+          <span>Paso {props.expanded === 'origin' ? 1 : 2} de 2</span>
+          {props.expanded === 'destination' && (
+            <button type="button" onClick={() => props.onExpand('origin')}>
+              <Icon name="arrow-right-left" />
+              Cambiar origen
+            </button>
+          )}
+          {props.expanded === 'origin' && (
+            <button type="button" onClick={() => props.onExpand('destination')}>
+              Ir al destino
+              <Icon name="arrow-right" />
+            </button>
+          )}
+        </div>
+      )}
+      <div className={`fields ${props.expanded ? 'has-open' : ''}`}>
         {['origin', 'destination'].map((field, i) => (
           <div
             className={`field journey-field ${props[field] ? 'field-chosen' : ''} ${props.expanded === field ? 'is-open' : 'is-compact'}`}

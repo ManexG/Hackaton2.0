@@ -1,7 +1,7 @@
 import { useRef } from 'react';
 import { Icon } from './Icon.jsx';
-export const SHEET_PEEK = 0.4;
-export const SHEET_HALF = 0.5;
+export const SHEET_PEEK = 0.5;
+export const SHEET_HALF = 0.6;
 export const sheetHeights = () => ({
   peek: Math.round(window.innerHeight * SHEET_PEEK),
   half: Math.round(window.innerHeight * SHEET_HALF),

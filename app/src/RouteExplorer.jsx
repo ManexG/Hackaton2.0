@@ -32,12 +32,6 @@ export function RouteExplorer({
   const service = fleet.snapshot?.services.find((service) => service.routeId === selected?.id);
   return (
     <>
-      <div className="section-heading">
-        <div>
-          <h2>Elige la ruta que quieres conocer</h2>
-          <p>Toca una tarjeta para ver de dónde sale y a dónde llega.</p>
-        </div>
-      </div>
       <div id="route-list" hidden={!!selected}>
         {network.routes.map((route) => (
           <button
@@ -71,10 +65,6 @@ export function RouteExplorer({
       </div>
       {selected && (
         <>
-          <button className="secondary-button" onClick={onBack}>
-            <Icon name="arrow-right-left" />
-            Volver a todas las rutas
-          </button>
           <div
             id="route-detail"
             className="route-detail"
@@ -172,6 +162,10 @@ export function RouteExplorer({
             <p className="small-note">
               Toca una parada para ver cuándo llega la combi. Recorrido y tarifa de ejemplo.
             </p>
+            <button className="secondary-button back-to-routes" onClick={onBack}>
+              <Icon name="arrow-right-left" />
+              Volver a todas las rutas
+            </button>
           </div>
         </>
       )}

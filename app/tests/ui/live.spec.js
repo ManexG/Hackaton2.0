@@ -78,7 +78,7 @@ test('guest needs no account, sees no invented drivers or default recommendation
   await expect(page.locator('.journey-card')).toHaveCount(0);
   await expect(page.locator('.empty-state')).toContainText('No hay un viaje disponible ahora');
   await page.getByRole('button', { name: 'Cerrar panel y ver el mapa' }).click();
-  await page.locator('.map-legend [data-route=R01]').click();
+  await page.locator('.map-legend [data-route=R01]').dblclick();
   await expect(page.locator('.route-hours')).toContainText('Horario pendiente de asignación');
   await expect(page.locator('#route-detail .stop-list')).toContainText('Jugos Acapulco');
   await page.screenshot({ path: '../cerca-servicio-sin-choferes.png' });

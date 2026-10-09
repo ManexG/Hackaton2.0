@@ -201,9 +201,12 @@ export const MapView = forwardRef(function MapView(props, ref) {
         opacity: 0.52,
         className: `route-path route-${route.id}`,
       }).addTo(instance);
-      line.on('click', () => {
-        if (!state.current.pinMode) state.current.onRoute(route.id);
+      line.on('click', (event) => {
+        if (state.current.pinMode) return;
+        L.DomEvent.stopPropagation(event);
+        state.current.onRoute(route.id);
       });
+      line.on('dblclick', (event) => L.DomEvent.stopPropagation(event));
       line.bindTooltip(`${route.id} · ${escape(route.name)}`, { sticky: true, direction: 'top' });
       lines.current.set(route.id, line);
     }
@@ -222,7 +225,10 @@ export const MapView = forwardRef(function MapView(props, ref) {
       });
     }
     instance.on('click', (event) => {
-      if (!state.current.pinMode) return;
+      if (!state.current.pinMode) {
+        state.current.onClearHighlight?.();
+        return;
+      }
       const point = [event.latlng.lat, event.latlng.lng];
       if (insideCoverage(point, network)) state.current.onPick(point);
       else state.current.onMessage('Elige un punto dentro del perímetro de la demo.');
@@ -283,15 +289,16 @@ export const MapView = forwardRef(function MapView(props, ref) {
     selection.current.clearLayers();
     stops.current.clearLayers();
     endpoints.current.clearLayers();
-    const active = new Set(
-      selectedRoute ? [selectedRoute.id] : (journey?.legs.map((leg) => leg.routeId) ?? [])
-    );
+    const { highlightedRoute } = state.current;
+    const focusId = selectedRoute?.id ?? highlightedRoute;
+    const active = new Set(focusId ? [focusId] : (journey?.legs.map((leg) => leg.routeId) ?? []));
     for (const route of network.routes) {
       const selected = active.has(route.id);
       lines.current.get(route.id).setStyle({
-        opacity: selected ? (selectedRoute ? 1 : 0.24) : active.size ? 0.18 : 0.5,
-        weight: selected && selectedRoute ? 7 : 4,
+        opacity: selected ? (focusId ? 1 : 0.24) : active.size ? 0.18 : 0.5,
+        weight: selected && focusId ? 7 : 4,
       });
+      if (selected && focusId) lines.current.get(route.id).bringToFront();
     }
     if (journey && !selectedRoute) {
       for (const leg of journey.legs) {
@@ -393,6 +400,9 @@ export const MapView = forwardRef(function MapView(props, ref) {
     }
   }
   useEffect(() => {
+    redraw();
+  }, [props.highlightedRoute]);
+  useEffect(() => {
     stopSimulation();
     redraw();
     fit();
@@ -407,10 +417,9 @@ export const MapView = forwardRef(function MapView(props, ref) {
   ]);
   useEffect(() => {
     if (!map.current) return;
+    const focusId = props.selectedRoute?.id ?? props.highlightedRoute;
     const active = new Set(
-      props.selectedRoute
-        ? [props.selectedRoute.id]
-        : (props.journey?.legs.map((leg) => leg.routeId) ?? [])
+      focusId ? [focusId] : (props.journey?.legs.map((leg) => leg.routeId) ?? [])
     );
     const ids = new Set(props.vehicles.map((vehicle) => vehicle.id));
     for (const [id, marker] of buses.current)
@@ -440,6 +449,6 @@ export const MapView = forwardRef(function MapView(props, ref) {
         .unbindTooltip()
         .bindTooltip(escape(vehicle.unit + ' · ' + route.id + ' · GPS'), { direction: 'top' });
     }
-  }, [ready, props.vehicles, props.selectedRoute?.id, props.journey?.id]);
+  }, [ready, props.vehicles, props.selectedRoute?.id, props.highlightedRoute, props.journey?.id]);
   return <div id="map" ref={container} className={props.pinMode ? 'pin-mode' : ''} />;
 });

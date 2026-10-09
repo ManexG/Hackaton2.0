@@ -17,6 +17,7 @@ import { stopFromLink } from './stopLinks.js';
 import { distance, insideCoverage, normalize, searchPlaces } from './planner.js';
 import { geocodeInCoverage } from './geocoding.js';
 import { OfflineNotice, useConnectivity } from './connectivity.jsx';
+const DOUBLE_TAP_MS = 400;
 const TOAST_MS = 3200;
 const TOAST_FADE_MS = 300;
 export function CercaApp({ network: originalNetwork, catalog }) {
@@ -31,6 +32,8 @@ export function CercaApp({ network: originalNetwork, catalog }) {
   const [trip, setTrip] = useState(null);
   const [selectedId, setSelectedId] = useState(null);
   const [selectedRoute, setSelectedRoute] = useState(null);
+  const [highlightedRoute, setHighlightedRoute] = useState(null);
+  const lastTap = useRef({ id: null, at: 0 });
   const [reversed, setReversed] = useState(false);
   const [tab, setTab] = useState('plan');
   const [role, setRole] = useState(() =>
@@ -72,12 +75,19 @@ export function CercaApp({ network: originalNetwork, catalog }) {
   const activeRoutes = new Set(
     selectedRoute
       ? [selectedRoute.id]
-      : tab === 'plan'
-        ? (journey?.legs.map((leg) => leg.routeId) ?? [])
-        : []
+      : highlightedRoute
+        ? [highlightedRoute]
+        : tab === 'plan'
+          ? (journey?.legs.map((leg) => leg.routeId) ?? [])
+          : []
   );
   useEffect(() => {
     document.documentElement.style.setProperty('--sheet-h', `${sheetPx}px`);
+    // With the sheet closed the route chips sit above the navigation bar; keep popups clear of them.
+    document.documentElement.style.setProperty(
+      '--toast-lift',
+      drawer === 'collapsed' ? '86px' : '0px'
+    );
   });
   useEffect(() => {
     document.documentElement.classList.toggle('large-text', largeText);
@@ -279,6 +289,7 @@ export function CercaApp({ network: originalNetwork, catalog }) {
     setRole('passenger');
     setTab(next);
     setActive(null);
+    setHighlightedRoute(null);
     setDrawer('normal');
     if (next !== 'routes') setSelectedRoute(null);
   }
@@ -311,6 +322,7 @@ export function CercaApp({ network: originalNetwork, catalog }) {
     map.current?.stopSimulation();
     setRole('passenger');
     setSelectedRoute(null);
+    setHighlightedRoute(null);
     setDrawer('collapsed');
     setActive(null);
     requestAnimationFrame(() => map.current?.fit());
@@ -321,7 +333,20 @@ export function CercaApp({ network: originalNetwork, catalog }) {
     if (height < peek * 0.55) closeSheet();
     else setDrawer(height > (peek + half) / 2 ? 'expanded' : 'normal');
   }
+  // One tap highlights a route on the map; a second tap on it right away opens its information.
+  function tapRoute(id) {
+    const now = Date.now();
+    const again = lastTap.current.id === id && now - lastTap.current.at < DOUBLE_TAP_MS;
+    lastTap.current = { id, at: again ? 0 : now };
+    if (again) {
+      selectRoute(id);
+      return;
+    }
+    setHighlightedRoute(id);
+    if (!selectedRoute) setToast(`Ruta ${id} resaltada. Toca dos veces para ver su información.`);
+  }
   function selectRoute(id) {
+    setHighlightedRoute(null);
     map.current?.stopSimulation();
     setRole('passenger');
     setSelectedRoute(network.routes.find((route) => route.id === id));
@@ -482,10 +507,11 @@ export function CercaApp({ network: originalNetwork, catalog }) {
             <button
               className="text-size-button"
               aria-pressed={largeText}
+              aria-label={largeText ? 'Letra normal' : 'Letra más grande'}
+              title={largeText ? 'Letra normal' : 'Letra más grande'}
               onClick={() => setLargeText((value) => !value)}
             >
               <span aria-hidden="true">A+</span>
-              {largeText ? 'Letra normal' : 'Letra más grande'}
             </button>
             <button
               className="driver-button"
@@ -699,7 +725,9 @@ export function CercaApp({ network: originalNetwork, catalog }) {
             destination={destination}
             pinMode={pinMode}
             onPick={chooseMapPoint}
-            onRoute={selectRoute}
+            onRoute={tapRoute}
+            highlightedRoute={highlightedRoute}
+            onClearHighlight={() => setHighlightedRoute(null)}
             onMessage={setToast}
             onSimulation={setSimulation}
             vehicles={fleet.vehicles}
@@ -753,7 +781,7 @@ export function CercaApp({ network: originalNetwork, catalog }) {
               {network.routes.map((route) => (
                 <button
                   key={route.id}
-                  onClick={() => selectRoute(route.id)}
+                  onClick={() => tapRoute(route.id)}
                   aria-label={`Ver ruta ${route.id}`}
                   aria-pressed={activeRoutes.has(route.id)}
                   className={activeRoutes.has(route.id) ? 'active' : ''}

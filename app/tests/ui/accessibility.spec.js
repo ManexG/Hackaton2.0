@@ -115,11 +115,11 @@ test('sheet opens from the bottom bar, never covers more than half the screen an
   const sheet = page.locator('.sidebar');
   await expect(sheet).toBeVisible();
   const height = async () => (await sheet.boundingBox()).height;
-  await expect.poll(height).toBeLessThanOrEqual(844 / 2 + 1);
+  await expect.poll(height).toBeLessThanOrEqual(844 * 0.6 + 1);
   await page.getByRole('button', { name: /Arrastra para cambiar/ }).focus();
   await page.keyboard.press('ArrowUp');
-  await expect.poll(height).toBeGreaterThan(844 * 0.45);
-  await expect.poll(height).toBeLessThanOrEqual(844 / 2 + 1);
+  await expect.poll(height).toBeGreaterThan(844 * 0.55);
+  await expect.poll(height).toBeLessThanOrEqual(844 * 0.6 + 1);
   await page.keyboard.press('ArrowDown');
   await expect(sheet).toBeHidden();
   await openSection(page, 'Rutas');
@@ -157,4 +157,25 @@ test('missing model does not prevent local places, routes or stop browsing', asy
   await expect(page.getByRole('option').first()).toContainText('#534');
   await openSection(page, 'Rutas');
   await expect(page.locator('.route-card')).toHaveCount(8);
+});
+test('one tap highlights a route on the map and a double tap opens its information', async ({
+  page,
+}) => {
+  await page.getByRole('button', { name: 'Cerrar panel y ver el mapa' }).click();
+  const legend = page.locator('.map-legend [data-route=R02]');
+  await legend.click();
+  await expect(legend).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('.sidebar')).toBeHidden();
+  await expect(page.locator('.route-R02')).toHaveCSS('stroke-opacity', '1');
+  await expect(page.locator('.route-R01')).not.toHaveCSS('stroke-opacity', '1');
+  await page.waitForTimeout(500);
+  await legend.dblclick();
+  await expect(page.locator('#route-detail')).toBeVisible();
+  await expect(page.locator('.sheet-title')).toContainText('Rutas');
+  await expect(page.getByText('Elige la ruta que quieres conocer')).toHaveCount(0);
+  const back = page.getByRole('button', { name: 'Volver a todas las rutas' });
+  await expect(back).toBeVisible();
+  const detail = await page.locator('#route-detail').boundingBox();
+  const button = await back.boundingBox();
+  expect(button.y).toBeGreaterThan(detail.y + detail.height / 2);
 });

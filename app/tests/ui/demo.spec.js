@@ -222,7 +222,7 @@ test('stale remote search cannot overwrite an edited destination', async ({ page
 });
 test('explorer displays route endpoints and reverse direction', async ({ page }) => {
   await page.getByRole('button', { name: 'Cerrar panel y ver el mapa' }).click();
-  await page.locator('.map-legend [data-route=R02]').click();
+  await page.locator('.map-legend [data-route=R02]').dblclick();
   await expect(page.locator('#routes-panel')).toBeVisible();
   await expect(page.locator('.stop-list li').first()).toContainText('Jugos Acapulco');
   await expect(page.locator('.stop-list li').last()).toContainText('Plaza del Encuentro');

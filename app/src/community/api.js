@@ -1,5 +1,7 @@
 import { Capacitor } from '@capacitor/core';
 import { Geolocation } from '@capacitor/geolocation';
+import { APP_VERSION } from '../version.js';
+import { publicPath, readPublic, savePublic, invalidatePublic } from '../offlineCache.js';
 
 const base = (import.meta.env.VITE_PUBLIC_API_URL || '/api').replace(/\/$/, '') + '/community';
 export const categories = [
@@ -15,19 +17,35 @@ export const statuses = {
   aprobado: 'Resuelto',
   no_aprobado: 'No aplica',
 };
+let memorySession;
+const usableSession = (value) =>
+  value &&
+  typeof value.token === 'string' &&
+  ((typeof value.email === 'string' && typeof value.nombre === 'string') ||
+    (value.driver &&
+      typeof value.driver.email === 'string' &&
+      typeof value.driver.name === 'string'));
 export function session() {
   try {
-    return (
-      JSON.parse(localStorage.getItem('las-palmas.community') || 'null') ||
-      JSON.parse(sessionStorage.getItem('cerca.driver') || 'null')
-    );
+    const community =
+      memorySession !== undefined
+        ? memorySession
+        : JSON.parse(localStorage.getItem('las-palmas.community') || 'null');
+    if (usableSession(community)) return community;
+    const driver = JSON.parse(sessionStorage.getItem('cerca.driver') || 'null');
+    return usableSession(driver) ? driver : null;
   } catch {
-    return null;
+    return memorySession || null;
   }
 }
 export function saveSession(value) {
-  if (value) localStorage.setItem('las-palmas.community', JSON.stringify(value));
-  else localStorage.removeItem('las-palmas.community');
+  memorySession = value;
+  try {
+    if (value) localStorage.setItem('las-palmas.community', JSON.stringify(value));
+    else localStorage.removeItem('las-palmas.community');
+  } catch {
+    /* Private browsing can use an in-memory session. */
+  }
 }
 export function fingerprint() {
   let value = localStorage.getItem('las-palmas.device');
@@ -38,25 +56,57 @@ export function fingerprint() {
   return value;
 }
 export async function api(path, options = {}) {
+  const method = options.method || 'GET';
+  const canCache = method === 'GET' && !options.download && publicPath(path);
+  const cached = canCache ? await readPublic(base + path) : null;
+  if (cached && !navigator.onLine) return cached.data;
+  if (
+    canCache &&
+    !options.fresh &&
+    cached &&
+    Date.now() - cached.savedAt <
+      (path === '/categorias' ? 86400000 : path.startsWith('/reportes') ? 0 : 300000)
+  )
+    return cached.data;
+  if (!navigator.onLine)
+    throw new Error(
+      'Esta función necesita internet. Los borradores permanecen guardados en este teléfono.'
+    );
   const headers = new Headers(options.headers);
-  if (session()?.token) headers.set('Authorization', `Bearer ${session().token}`);
+  headers.set('X-App-Version', APP_VERSION);
+  headers.set('X-App-Platform', Capacitor.isNativePlatform() ? 'native' : 'web');
+  const token = options.token || session()?.token;
+  if (token) headers.set('Authorization', `Bearer ${token}`);
   let body = options.body;
   if (body && !(body instanceof FormData)) {
     body = JSON.stringify(body);
     headers.set('Content-Type', 'application/json');
   }
-  const response = await fetch(base + path, {
-    ...options,
-    headers,
-    body,
-    signal: options.signal ?? AbortSignal.timeout(20000),
-  });
+  let response;
+  try {
+    response = await fetch(base + path, {
+      ...options,
+      headers,
+      body,
+      signal: options.signal ?? AbortSignal.timeout(20000),
+    });
+  } catch (error) {
+    if (cached) return cached.data;
+    throw error;
+  }
   if (options.download && response.ok) return response.blob();
   const data = await response.json().catch(() => ({}));
+  if (response.status === 426)
+    window.dispatchEvent(new CustomEvent('las-palmas-update-required', { detail: data.release }));
   if (!response.ok) {
     const error = new Error(data.error || data.message || 'No pudimos conectar. Intenta de nuevo.');
     error.status = response.status;
     throw error;
+  }
+  if (canCache) await savePublic(base + path, data);
+  else if (method !== 'GET') {
+    await invalidatePublic();
+    window.dispatchEvent(new Event('las-palmas-community-changed'));
   }
   return data;
 }

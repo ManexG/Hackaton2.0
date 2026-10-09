@@ -1,8 +1,14 @@
-# Las Palmas Rutas 1.7 · React + Capacitor + GPS + Comunidad
+# Las Palmas Rutas 1.8.0 · React + Capacitor + GPS + Comunidad
 
 Aplicación Android y web de movilidad para el corredor indicado en Lázaro Cárdenas. Usa **React 19, JavaScript, Vite 8, Leaflet y Capacitor 8**. La publicación en **Cloudflare Workers** guarda cuentas y GPS en un **Durable Object con SQLite** y comparte las posiciones mediante **SSE**. También se conserva el servidor alternativo de Node.js 24 para uso local o alojamiento propio.
 
 La configuración y los comandos para publicar en `workers.dev` están en [CLOUDFLARE.md](CLOUDFLARE.md). El almacenamiento en Cloudflare es independiente del SQLite local; no se suben automáticamente cuentas ni datos del equipo.
+
+## Versión 1.8.0
+
+Incluye 33 semáforos de OpenStreetMap, actualización obligatoria con novedades desde GitHub Releases, avisos sin señal, recuperación de errores y menor consumo de datos. El modelo se descarga cuando hace falta y el lector de cámara al utilizarlo. La ubicación de los semáforos no representa su estado real.
+
+Las instalaciones anteriores necesitan instalar 1.8.0 una vez para recibir los avisos futuros. Publicación, firma, etiqueta de versión y despliegue en [ACTUALIZACIONES.md](ACTUALIZACIONES.md). Pruebas, correcciones y límites en [AUDITORIA.md](AUDITORIA.md).
 
 ## Interfaz para viajar con menos pasos
 
@@ -106,19 +112,22 @@ npm run android:sync
 npm run android:open
 ```
 
-Configura primero `VITE_PUBLIC_API_URL` y `VITE_PUBLIC_APP_URL` para conectar el APK al servidor publicado. El identificador es `mx.cerca.combis.demo`; versión **1.7**, código **8**. El APK de depuración se genera en `android/app/build/outputs/apk/debug/app-debug.apk`.
+Configura primero `VITE_PUBLIC_API_URL` y `VITE_PUBLIC_APP_URL` para conectar el APK al servidor publicado. El identificador es `mx.cerca.combis.demo`; versión **1.8.0**, código **9**. GitHub Releases publica el APK de release firmado. Consulta [ACTUALIZACIONES.md](ACTUALIZACIONES.md) para generar una versión y conocer la firma utilizada.
 
 ## Verificar
 
 ```sh
 npm test
 npm run test:ui
+npm run test:offline
+npm run test:cloudflare
+npm run release:check
 npm run build
 ```
 
 Las pruebas cubren datos, búsquedas, planificación, autenticación, horarios, GPS, SSE, QR y comunidad, incluidas fotos, apoyos, importación de rutas y borradores sin señal. El runtime de Cloudflare verifica que cuentas, reportes y fotos se conserven al reiniciar. Las cuentas y posiciones de prueba existen únicamente en pruebas aisladas.
 
-Las pruebas de interfaz usan Microsoft Edge y un puerto propio para evitar conflictos con otros proyectos. Se verificó la compilación Android. No se instaló ni se probó en un teléfono físico. La web pública, HTTPS, QR y SSE se verifican en Cloudflare; el contenedor Node se conserva como alternativa.
+Las pruebas de interfaz usan Microsoft Edge y un puerto propio para evitar conflictos con otros proyectos. Se verificaron compilación y lint Android, y la instalación sobre la versión anterior en un Samsung SM-S938B. La revisión detallada y sus límites están en [AUDITORIA.md](AUDITORIA.md). La web pública, HTTPS, QR y SSE se verifican en Cloudflare; el contenedor Node se conserva como alternativa.
 
 ## Archivos
 

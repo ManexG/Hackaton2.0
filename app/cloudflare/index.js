@@ -2,6 +2,7 @@ import { DurableObject } from 'cloudflare:workers';
 import { createHash, timingSafeEqual } from 'node:crypto';
 import { ApiError, TransitStoreCore } from '../server/store-core.js';
 import { CommunityService } from '../server/community/service.js';
+import { ReleaseService } from '../server/releases.js';
 import networkData from '../public/data/network.demo.json';
 const network = networkData;
 const json = (status, data) =>
@@ -41,7 +42,10 @@ export default {
     if (origin) {
       headers.set('Access-Control-Allow-Origin', origin);
       headers.set('Vary', 'Origin');
-      headers.set('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Admin-Key');
+      headers.set(
+        'Access-Control-Allow-Headers',
+        'Content-Type,Authorization,X-Admin-Key,X-App-Version,X-App-Platform'
+      );
       headers.set('Access-Control-Allow-Methods', 'GET,POST,PATCH,OPTIONS');
     }
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers });
@@ -63,6 +67,7 @@ export default {
 export class FleetService extends DurableObject {
   store;
   clients = new Map();
+  lastEvents = new WeakMap();
   timer;
   encoder = new TextEncoder();
   constructor(ctx, env) {
@@ -85,6 +90,7 @@ export class FleetService extends DurableObject {
     };
     this.store = new TransitStoreCore(db, network, env.PUBLIC_APP_URL ?? '');
     this.community = new CommunityService(this.store, env.CERCA_ADMIN_TOKEN ?? '');
+    this.releases = new ReleaseService({ db });
     // Eviction/redeployment must preserve driver availability; snapshot expires stale GPS.
     ctx.storage.sql.exec(
       'CREATE TABLE IF NOT EXISTS login_attempts (key TEXT PRIMARY KEY, count INTEGER NOT NULL, reset INTEGER NOT NULL)'
@@ -96,9 +102,20 @@ export class FleetService extends DurableObject {
   broadcast() {
     for (const [client, publicUrl] of this.clients) {
       try {
+        const data = this.snapshot(publicUrl);
+        const signature = JSON.stringify({
+          vehicles: data.vehicles,
+          services: data.services,
+          pilotZone: data.pilotZone,
+        });
         client.enqueue(
-          this.encoder.encode(`event: fleet\ndata: ${JSON.stringify(this.snapshot(publicUrl))}\n\n`)
+          this.encoder.encode(
+            this.lastEvents.get(client) === signature
+              ? ': keep-alive\n\n'
+              : `event: fleet\ndata: ${JSON.stringify(data)}\n\n`
+          )
         );
+        this.lastEvents.set(client, signature);
       } catch {
         this.clients.delete(client);
       }
@@ -170,6 +187,21 @@ export class FleetService extends DurableObject {
       publicUrl = url.origin + '/';
     const token = request.headers.get('Authorization')?.replace(/^Bearer /, '') ?? '';
     try {
+      if (request.method === 'GET' && url.pathname === '/api/version')
+        return json(200, await this.releases.current());
+      if (
+        ['POST', 'PATCH', 'DELETE'].includes(request.method) &&
+        !['/api/auth/logout', '/api/community/vehiculos/detener', '/api/driver/service'].includes(
+          url.pathname
+        )
+      ) {
+        const release = this.releases.required(
+          request.headers.get('X-App-Version'),
+          request.headers.get('X-App-Platform')
+        );
+        if (release)
+          return json(426, { message: 'Actualiza Las Palmas Rutas para continuar.', release });
+      }
       if (url.pathname.startsWith('/api/community/') || url.pathname === '/api/network') {
         if (['/api/community/auth/login', '/api/community/auth/registro'].includes(url.pathname)) {
           const data = await request
@@ -253,6 +285,12 @@ export class FleetService extends DurableObject {
           this.broadcast();
           return json(200, result);
         }
+        const release = this.releases.required(
+          request.headers.get('X-App-Version'),
+          request.headers.get('X-App-Platform')
+        );
+        if (release)
+          return json(426, { message: 'Actualiza Las Palmas Rutas para continuar.', release });
         if (url.pathname.endsWith('/service') && data.active !== true)
           throw new ApiError(400, 'Indica si deseas activar o desactivar el servicio.');
         try {

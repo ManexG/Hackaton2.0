@@ -79,11 +79,15 @@ export function SearchFields(props) {
           <button
             type="button"
             className="online-search"
-            disabled={props.loading}
+            disabled={props.loading || !props.connected}
             onClick={() => props.onOnline(field)}
           >
             <Icon name={props.loading ? 'loading' : 'search'} />
-            {props.loading ? 'Buscando dentro de la zona…' : 'Buscar dirección o negocio en línea'}
+            {!props.connected
+              ? 'Búsqueda en línea · requiere internet'
+              : props.loading
+                ? 'Buscando dentro de la zona…'
+                : 'Buscar dirección o negocio en línea'}
           </button>
         )}
       </div>

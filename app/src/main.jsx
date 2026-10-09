@@ -1,4 +1,4 @@
-import '@fontsource-variable/manrope';
+import './font.css';
 import 'leaflet/dist/leaflet.css';
 import './style.css';
 import './live.css';
@@ -10,6 +10,10 @@ import { AppRoot } from './AppRoot.jsx';
 import { insideCoverage, validateNetwork } from './planner.js';
 import { installEtaModel } from './etaModel.js';
 import { Capacitor } from '@capacitor/core';
+import { ConnectivityProvider } from './connectivity.jsx';
+import { UpdateGate } from './UpdateGate.jsx';
+import { ErrorBoundary } from './ErrorBoundary.jsx';
+import './reliability.css';
 // Accept the URLs shared by the original Axel app and use one root shell.
 if (
   /^\/(reporte\/\d+|parada\/[A-Za-z0-9-]+|admin|perfil|mapa|estadisticas|campo|avenida|chofer)\/?$/.test(
@@ -27,7 +31,10 @@ function Bootstrap() {
   const [error, setError] = useState('');
   async function refreshNetwork() {
     const base = (import.meta.env.VITE_PUBLIC_API_URL || '/api').replace(/\/$/, '');
-    const response = await fetch(base + '/network', { signal: AbortSignal.timeout(4000) });
+    const response = await fetch(base + '/network', {
+      cache: 'reload',
+      signal: AbortSignal.timeout(4000),
+    });
     if (!response.ok) return;
     const routes = await response.json();
     validateNetwork(routes);
@@ -42,12 +49,16 @@ function Bootstrap() {
   useEffect(() => {
     const controller = new AbortController();
     const modelController = new AbortController();
-    const modelTimeout = setTimeout(() => modelController.abort(), 4000);
-    const modelPromise = fetch('./data/eta-model.json', { signal: modelController.signal })
-      .then((r) => (r.ok ? r.json() : null))
-      .then(installEtaModel)
-      .catch(() => false)
-      .finally(() => clearTimeout(modelTimeout));
+    let modelStarted = false;
+    const loadModel = () => {
+      if (modelStarted) return;
+      modelStarted = true;
+      fetch('./data/eta-model.json', { signal: modelController.signal })
+        .then((r) => (r.ok ? r.json() : null))
+        .then(installEtaModel)
+        .catch(() => false);
+    };
+    window.addEventListener('las-palmas-fleet-active', loadModel);
     Promise.all([
       fetch('./data/network.demo.json', { signal: controller.signal }).then((r) => {
         if (!r.ok) throw new Error('No se pudieron cargar las rutas.');
@@ -57,7 +68,6 @@ function Bootstrap() {
         if (!r.ok) throw new Error('No se pudo cargar el catálogo de lugares.');
         return r.json();
       }),
-      modelPromise,
       fetch((import.meta.env.VITE_PUBLIC_API_URL || '/api').replace(/\/$/, '') + '/network', {
         signal: AbortSignal.timeout(4000),
       })
@@ -68,7 +78,7 @@ function Bootstrap() {
         })
         .catch(() => null),
     ])
-      .then(([bundled, places, _model, remote]) => {
+      .then(([bundled, places, remote]) => {
         const routes = remote || bundled;
         validateNetwork(routes);
         const combined = {
@@ -89,7 +99,7 @@ function Bootstrap() {
     return () => {
       controller.abort();
       modelController.abort();
-      clearTimeout(modelTimeout);
+      window.removeEventListener('las-palmas-fleet-active', loadModel);
     };
   }, []);
   if (error)
@@ -105,6 +115,12 @@ function Bootstrap() {
 }
 createRoot(document.getElementById('app')).render(
   <React.StrictMode>
-    <Bootstrap />
+    <ErrorBoundary>
+      <ConnectivityProvider>
+        <UpdateGate>
+          <Bootstrap />
+        </UpdateGate>
+      </ConnectivityProvider>
+    </ErrorBoundary>
   </React.StrictMode>
 );

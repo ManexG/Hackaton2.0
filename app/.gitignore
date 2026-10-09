@@ -22,3 +22,5 @@ android/.kotlin/
 .dev.vars.*
 
 .model-venv/
+
+release-notes.txt

@@ -67,7 +67,7 @@ function LocalMap({ network, reports = [], points = [], pick, chosen }) {
       maxBoundsViscosity: 1,
     }).fitBounds(bounds);
     instance.current = map;
-    addStreetMap(map, network);
+    addStreetMap(map, network, { interactiveSignals: !pickRef.current });
     map.createPane('communityMask').style.zIndex = '270';
     map.getPane('communityMask').style.pointerEvents = 'none';
     L.polygon(

@@ -35,13 +35,23 @@ export function offlinePlugin() {
 const PREFIX = 'las-palmas-';
 const CACHE = PREFIX + '${version}';
 const ASSETS = ${JSON.stringify(assets)};
+const PRECACHE = ASSETS.filter(path => !path.includes('/esm-') && path !== '/data/eta-model.json');
 self.addEventListener('install', event => {
-  event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS)).then(() => self.skipWaiting()));
+  event.waitUntil((async () => {
+    const cache = await caches.open(CACHE);
+    await Promise.all(PRECACHE.map(async path => {
+      // Browser HTTP cache avoids downloading the initial page assets twice.
+      const response = await fetch(path, {cache: path.startsWith('/assets/') ? 'force-cache' : 'no-cache'});
+      if (!response.ok) throw new Error('Incomplete offline resources');
+      await cache.put(path, response);
+    }));
+    await self.skipWaiting();
+  })());
 });
 self.addEventListener('activate', event => {
   event.waitUntil((async () => {
     const keys = (await caches.keys()).filter(key => key.startsWith(PREFIX));
-    await Promise.all(keys.slice(0, -2).filter(key => key !== CACHE).map(key => caches.delete(key)));
+    await Promise.all(keys.filter(key => key !== CACHE).slice(0, -1).map(key => caches.delete(key)));
     await self.clients.claim();
   })());
 });
@@ -53,9 +63,18 @@ self.addEventListener('fetch', event => {
     if (!/^\\/api\\/(network$|community\\/(reportes(?:\\/\\d+(?:\\/(comentarios|historial))?)?$|categorias$|colonias$|estadisticas$|foto\\/|rutas(?:\\/\\d+\\/paradas)?$))/.test(url.pathname)) return;
     event.respondWith((async () => {
       const cache = await caches.open(CACHE);
+      const saved = await cache.match(request.url);
+      const ttl = url.pathname.includes('/foto/') ? 86400000 : /network$|colonias$|categorias$/.test(url.pathname) ? 300000 : 0;
+      if (saved && request.cache !== 'reload' && ttl && Date.now() - Number(saved.headers.get('X-Saved-At') || 0) < ttl) return saved;
       try {
-        const response = await fetch(request, { cache: 'reload' });
-        if (response.ok) await cache.put(request.url, response.clone()).catch(() => {});
+        const response = await fetch(request, { cache: 'no-cache' });
+        if (response.ok && Number(response.headers.get('Content-Length') || 0) < 350000) {
+          const copy = response.clone();
+          const headers = new Headers(copy.headers); headers.set('X-Saved-At', String(Date.now()));
+          await cache.put(request.url, new Response(copy.body, {status:copy.status,headers})).catch(() => {});
+          const entries = (await cache.keys()).filter(entry => new URL(entry.url).pathname.startsWith('/api/'));
+          await Promise.all(entries.slice(0,-60).map(entry => cache.delete(entry)));
+        }
         return response;
       } catch {
         return await cache.match(request.url) || Response.json({error:'Sin señal. Este contenido aún no está guardado.'}, {status:503});
@@ -75,7 +94,11 @@ self.addEventListener('fetch', event => {
   }
   if (ASSETS.includes(url.pathname)) event.respondWith((async () => {
     const cache = await caches.open(CACHE);
-    return await cache.match(url.pathname) || fetch(request);
+    const saved = await cache.match(url.pathname);
+    if (saved) return saved;
+    const response = await fetch(request);
+    if (response.ok) await cache.put(url.pathname, response.clone()).catch(() => {});
+    return response;
   })());
 });
 `

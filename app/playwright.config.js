@@ -7,7 +7,7 @@ export default defineConfig({
     baseURL: 'http://127.0.0.1:5184',
     viewport: { width: 1440, height: 1000 },
     headless: true,
-    launchOptions: { channel: 'msedge' },
+    launchOptions: { channel: process.env.CI ? undefined : 'msedge' },
   },
   reporter: 'list',
   webServer: {

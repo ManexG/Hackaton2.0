@@ -25,31 +25,49 @@ async function operate(mode, action) {
   }
 }
 export const drafts = () => operate('readonly', (store) => store.getAll());
-export const enqueue = (item) =>
-  operate('readwrite', (store) =>
-    store.put({
-      ...item,
-      id: item.id || crypto.randomUUID(),
-      owner: session()?.email || session()?.driver?.email,
-    })
-  );
+export const enqueue = async (item) => {
+  const owner = session()?.email || session()?.driver?.email;
+  if (!owner) throw new Error('Inicia sesión para guardar un reporte.');
+  const existing = (await drafts()).filter((d) => d.owner === owner);
+  if (existing.length >= 30 && !existing.some((d) => d.id === item.id))
+    throw new Error(
+      'Ya guardaste 30 reportes sin enviar. Conéctate a internet para enviarlos antes de guardar más.'
+    );
+  try {
+    return await operate('readwrite', (store) =>
+      store.put({
+        ...item,
+        id: item.id || crypto.randomUUID(),
+        owner,
+      })
+    );
+  } catch (error) {
+    if (error?.name === 'QuotaExceededError')
+      throw new Error(
+        'No queda espacio para guardar el reporte. Libera espacio en el teléfono e inténtalo de nuevo.'
+      );
+    throw error;
+  }
+};
 export const removeDraft = (id) => operate('readwrite', (store) => store.delete(id));
 let syncing;
 export function syncDrafts() {
   if (syncing) return syncing;
   syncing = (async () => {
     const owner = session()?.email || session()?.driver?.email;
+    const token = session()?.token;
     let uploaded = 0;
     if (navigator.onLine && owner) {
       for (const item of await drafts()) {
         if (item.owner !== owner) continue;
+        if (session()?.token !== token) break;
         const form = new FormData();
         for (const field of ['categoria', 'descripcion', 'colonia', 'lat', 'lng'])
           form.set(field, item[field] ?? '');
         form.set('client_id', item.id);
         if (item.foto) form.set('foto', item.foto, 'foto.jpg');
         try {
-          await api('/reportes', { method: 'POST', body: form });
+          await api('/reportes', { method: 'POST', body: form, token });
           await removeDraft(item.id);
           uploaded++;
         } catch (error) {

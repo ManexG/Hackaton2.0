@@ -3,17 +3,29 @@ import { Capacitor } from '@capacitor/core';
 import { Geolocation } from '@capacitor/geolocation';
 import { Icon } from './Icon.jsx';
 import { api, ConnectionError } from './liveApi.js';
-import { scheduleLabel, serviceEnd } from './transit.js';
+import { scheduleLabel, serviceEnd, validateWindows } from './transit.js';
 import { serviceZoneStatus, shortDistance } from './serviceZone.js';
+import { OfflineNotice, useConnectivity } from './connectivity.jsx';
 function savedSession() {
   try {
     const value = JSON.parse(sessionStorage.getItem('cerca.driver') ?? 'null');
-    return value && value.expiresAt > Date.now() ? value : null;
+    if (value?.driver) validateWindows(value.driver.windows);
+    return value &&
+      typeof value.token === 'string' &&
+      value.expiresAt > Date.now() &&
+      value.driver &&
+      ['id', 'name', 'email', 'routeId', 'unit'].every(
+        (key) => typeof value.driver[key] === 'string'
+      ) &&
+      Array.isArray(value.driver.windows)
+      ? value
+      : null;
   } catch {
     return null;
   }
 }
 export function DriverPanel({ network, fleet, onMessage }) {
+  const { online } = useConnectivity();
   const [session, setSession] = useState(savedSession);
   const [email, setEmail] = useState(''),
     [password, setPassword] = useState('');
@@ -22,6 +34,8 @@ export function DriverPanel({ network, fleet, onMessage }) {
   const [direction, setDirection] = useState(1);
   const [lastFix, setLastFix] = useState(null);
   const watch = useRef(null);
+  const pendingStop = useRef(false);
+  const stopRequest = useRef(null);
   const generation = useRef(0),
     sessionRef = useRef(session),
     uploading = useRef(false),
@@ -29,16 +43,44 @@ export function DriverPanel({ network, fleet, onMessage }) {
   sessionRef.current = session;
   function persist(value) {
     setSession(value);
-    if (value) sessionStorage.setItem('cerca.driver', JSON.stringify(value));
-    else sessionStorage.removeItem('cerca.driver');
+    try {
+      if (value) sessionStorage.setItem('cerca.driver', JSON.stringify(value));
+      else sessionStorage.removeItem('cerca.driver');
+    } catch {
+      /* Keep the current session in memory when storage is denied. */
+    }
   }
   async function clearWatch() {
     generation.current++;
     const current = watch.current;
     watch.current = null;
     if (current?.web !== undefined) navigator.geolocation.clearWatch(current.web);
-    if (current?.native) await Geolocation.clearWatch({ id: current.native });
+    if (current?.native) await Geolocation.clearWatch({ id: current.native }).catch(() => {});
   }
+  function syncStop(current) {
+    if (stopRequest.current) return stopRequest.current;
+    stopRequest.current = api('/driver/service', { token: current.token, body: { active: false } })
+      .then(() => {
+        pendingStop.current = false;
+      })
+      .finally(() => {
+        stopRequest.current = null;
+      });
+    return stopRequest.current;
+  }
+  useEffect(() => {
+    const current = sessionRef.current;
+    if (!online && current?.driver.active) {
+      pendingStop.current = true;
+      void clearWatch();
+      persist({ ...current, driver: { ...current.driver, active: false } });
+      setError(
+        'Sin internet: se detuvo el GPS en este teléfono. La combi desaparecerá del mapa en un máximo de 45 segundos. Al volver la señal, activa tu servicio de nuevo.'
+      );
+    } else if (online && pendingStop.current && current) {
+      void syncStop(current).catch(() => {});
+    }
+  }, [online]);
   useEffect(() => {
     const token = sessionRef.current?.token;
     if (token)
@@ -153,10 +195,17 @@ export function DriverPanel({ network, fleet, onMessage }) {
   }
   async function toggle() {
     if (!session) return;
+    if (!online) {
+      setError('Necesitas internet para activar el servicio.');
+      return;
+    }
     setBusy(true);
     setError('');
     try {
       await clearWatch();
+      if (pendingStop.current) {
+        await syncStop(session);
+      }
       if (session.driver.active) {
         const driver = await api('/driver/service', {
           token: session.token,
@@ -184,6 +233,10 @@ export function DriverPanel({ network, fleet, onMessage }) {
               setError('No llega una señal GPS reciente. Comprueba el permiso y tu ubicación.');
           }
         );
+        if (run !== generation.current) {
+          await Geolocation.clearWatch({ id });
+          return;
+        }
         watch.current = { native: id };
       } else
         watch.current = {
@@ -237,6 +290,7 @@ export function DriverPanel({ network, fleet, onMessage }) {
   const where = recent ? serviceZoneStatus(position.point, network) : null;
   return (
     <section className="driver-panel" aria-label="Acceso de chofer">
+      <OfflineNotice />
       <div className="section-heading">
         <div>
           <h2>{session ? `Hola, ${session.driver.name.split(' ')[0]}` : 'Tu ruta empieza aquí'}</h2>
@@ -269,7 +323,7 @@ export function DriverPanel({ network, fleet, onMessage }) {
             value={password}
             onChange={(event) => setPassword(event.target.value)}
           />
-          <button className="primary-button" disabled={busy} type="submit">
+          <button className="primary-button" disabled={busy || !online} type="submit">
             {busy ? 'Iniciando sesión…' : 'Ingresar como chofer'}
             <Icon name={busy ? 'loading' : 'arrow-right'} />
           </button>
@@ -363,7 +417,9 @@ export function DriverPanel({ network, fleet, onMessage }) {
           <button
             className={`primary-button service-toggle ${session.driver.active ? 'pause' : ''}`}
             disabled={
-              busy || (!session.driver.active && !serviceEnd(session.driver.windows, fleet.now))
+              busy ||
+              !online ||
+              (!session.driver.active && !serviceEnd(session.driver.windows, fleet.now))
             }
             onClick={() => {
               void toggle();

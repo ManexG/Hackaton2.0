@@ -144,7 +144,7 @@ export const MapView = forwardRef(function MapView(props, ref) {
       instance.getPane(name).style.zIndex = String(z);
     }
     instance.getPane('localMap').style.pointerEvents = 'none';
-    addStreetMap(instance, network);
+    addStreetMap(instance, network, { isPicking: () => Boolean(state.current.pinMode) });
     instance.getPane('mask').style.pointerEvents = 'none';
     L.polygon(network.coverage.polygon, {
       pane: 'coverage',

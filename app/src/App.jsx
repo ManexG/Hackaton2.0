@@ -15,7 +15,9 @@ import { predictJourneys } from './transit.js';
 import { stopFromLink } from './stopLinks.js';
 import { distance, insideCoverage, normalize, searchPlaces } from './planner.js';
 import { geocodeInCoverage } from './geocoding.js';
+import { OfflineNotice, useConnectivity } from './connectivity.jsx';
 export function CercaApp({ network: originalNetwork, catalog }) {
+  const connectivity = useConnectivity();
   const fleet = useFleet(originalNetwork);
   const network = fleet.network;
   const [origin, setOrigin] = useState(null);
@@ -52,10 +54,10 @@ export function CercaApp({ network: originalNetwork, catalog }) {
   latest.current = { text, active, drawer, tab, pinMode, simulation, role };
   const journeys = useMemo(
     () =>
-      trip
+      trip && connectivity.online && fleet.status === 'connected'
         ? predictJourneys(trip.origin, trip.destination, network, fleet.vehicles, fleet.now)
         : [],
-    [trip, network, fleet.snapshot, fleet.now]
+    [trip, network, fleet.snapshot, fleet.now, fleet.status, connectivity.online]
   );
   const journey = journeys.find((item) => item.id === selectedId) ?? journeys[0] ?? null;
   const activeRoutes = new Set(
@@ -195,6 +197,10 @@ export function CercaApp({ network: originalNetwork, catalog }) {
     setToast('Intercambiaste los lugares. Pulsa «Ver cómo llegar» para buscar de nuevo.');
   }
   async function searchOnline(field) {
+    if (!connectivity.online) {
+      setToast('Sin internet. Busca entre los lugares guardados o elige un punto en el mapa.');
+      return;
+    }
     const query = text[field].trim();
     if (query.length < 3) {
       setToast('Escribe el nombre o una dirección para buscar.');
@@ -448,6 +454,7 @@ export function CercaApp({ network: originalNetwork, catalog }) {
               </div>
             </div>
             <div className="passenger-content" hidden={role !== 'passenger'}>
+              <OfflineNotice />
               <h1 className="passenger-title">¿Qué necesitas hacer?</h1>
               <div className="tabs" role="tablist" aria-label="Modo de consulta">
                 {[
@@ -488,6 +495,7 @@ export function CercaApp({ network: originalNetwork, catalog }) {
                     active={active}
                     online={online}
                     loading={loadingSearch}
+                    connected={connectivity.online}
                     onFocus={focusField}
                     onChange={editField}
                     onSelect={choosePlace}

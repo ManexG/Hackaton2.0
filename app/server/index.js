@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { extname, resolve, sep } from 'node:path';
 import { TransitStore, ApiError } from './store.js';
 import { CommunityService } from './community/service.js';
+import { ReleaseService } from './releases.js';
 import { validateNetwork } from '../src/planner.js';
 const root = fileURLToPath(new URL('../', import.meta.url));
 export function createTransitServer(options = {}) {
@@ -39,12 +40,26 @@ export function createTransitServer(options = {}) {
     options.adminToken ?? process.env.CERCA_ADMIN_TOKEN ?? ''
   );
   const clients = new Set();
+  const releases = new ReleaseService({
+    db: store.db,
+    ...(options.releaseFetcher ? { fetcher: options.releaseFetcher } : {}),
+  });
   const attempts = new Map();
+  const lastEvents = new WeakMap();
   function broadcast() {
-    const event = `event: fleet\ndata: ${JSON.stringify(store.snapshot())}\n\n`;
+    const data = store.snapshot();
+    const signature = JSON.stringify({
+      vehicles: data.vehicles,
+      services: data.services,
+      pilotZone: data.pilotZone,
+    });
+    const event = `event: fleet\ndata: ${JSON.stringify(data)}\n\n`;
     for (const client of clients) {
       if (client.writableLength > 256_000) client.destroy();
-      else client.write(event);
+      else {
+        client.write(lastEvents.get(client) === signature ? ': keep-alive\n\n' : event);
+        lastEvents.set(client, signature);
+      }
     }
   }
   const interval = setInterval(() => {
@@ -76,13 +91,19 @@ export function createTransitServer(options = {}) {
     response.setHeader('Cache-Control', 'no-store');
     const origin = request.headers.origin;
     if (origin) {
-      if (!allowed.has(origin)) {
+      if (
+        !allowed.has(origin) &&
+        !['http://', 'https://'].some((protocol) => origin === protocol + request.headers.host)
+      ) {
         response.writeHead(403).end();
         return;
       }
       response.setHeader('Access-Control-Allow-Origin', origin);
       response.setHeader('Vary', 'Origin');
-      response.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Admin-Key');
+      response.setHeader(
+        'Access-Control-Allow-Headers',
+        'Content-Type,Authorization,X-Admin-Key,X-App-Version,X-App-Platform'
+      );
       response.setHeader('Access-Control-Allow-Methods', 'GET,POST,PATCH,OPTIONS');
     }
     if (request.method === 'OPTIONS') {
@@ -96,6 +117,10 @@ export function createTransitServer(options = {}) {
     };
     try {
       const url = new URL(request.url ?? '/', 'http://localhost');
+      if (request.method === 'GET' && url.pathname === '/api/version') {
+        send(200, await releases.current());
+        return;
+      }
       if (
         /^\/(reporte\/\d+|parada\/[A-Za-z0-9-]+|admin|perfil|mapa|estadisticas|campo|avenida|chofer)\/?$/.test(
           url.pathname
@@ -109,6 +134,22 @@ export function createTransitServer(options = {}) {
         return;
       }
       const token = request.headers.authorization?.replace(/^Bearer /, '') ?? '';
+      if (
+        ['POST', 'PATCH', 'DELETE'].includes(request.method) &&
+        !['/api/auth/logout', '/api/community/vehiculos/detener', '/api/driver/service'].includes(
+          url.pathname
+        )
+      ) {
+        const release = releases.required(
+          request.headers['x-app-version'],
+          request.headers['x-app-platform']
+        );
+        if (release) {
+          send(426, { message: 'Actualiza Las Palmas Rutas para continuar.', release });
+          return;
+        }
+      }
+
       if (url.pathname.startsWith('/api/community/') || url.pathname === '/api/network') {
         const chunks = [];
         let length = 0;
@@ -191,6 +232,14 @@ export function createTransitServer(options = {}) {
           const profile = store.pause(driver.id);
           broadcast();
           send(200, profile);
+          return;
+        }
+        const release = releases.required(
+          request.headers['x-app-version'],
+          request.headers['x-app-platform']
+        );
+        if (release) {
+          send(426, { message: 'Actualiza Las Palmas Rutas para continuar.', release });
           return;
         }
         if (url.pathname.endsWith('/service') && data.active !== true)

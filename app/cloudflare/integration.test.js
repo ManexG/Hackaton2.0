@@ -68,6 +68,20 @@ test('Cloudflare runtime: persistent SQLite, private accounts, real GPS API, SSE
   let reader;
   try {
     assert.equal((await call('/health')).status, 200);
+    const releaseResponse = await call('/version');
+    assert.equal(releaseResponse.status, 200);
+    assert.equal((await releaseResponse.json()).minimumWebVersion, '1.8.0');
+    const oldClient = await runtime.dispatchFetch('https://cerca-test.workers.dev/api/auth/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-App-Version': '1.0.0',
+        'X-App-Platform': 'native',
+      },
+      body: '{}',
+    });
+    assert.equal(oldClient.status, 426);
+
     assert.equal((await runtime.dispatchFetch('https://cerca-test.workers.dev/')).status, 200);
     assert.equal((await call('/admin/drivers', account)).status, 401);
     assert.equal((await call('/admin/drivers', account, 'wrong-token')).status, 401);

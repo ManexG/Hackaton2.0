@@ -1,7 +1,7 @@
 {
   "name": "cerca-combis-demo",
   "private": true,
-  "version": "1.7.0",
+  "version": "1.8.0",
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
@@ -20,7 +20,11 @@
     "cloudflare:deploy": "npm run build && wrangler deploy",
     "test:cloudflare": "node --test cloudflare/integration.test.js",
     "format": "prettier --write \"src/**/*.{js,jsx}\" \"server/**/*.js\" \"cloudflare/**/*.js\" \"tests/**/*.js\" \"*.config.js\"",
-    "format:check": "prettier --check \"src/**/*.{js,jsx}\" \"server/**/*.js\" \"cloudflare/**/*.js\" \"tests/**/*.js\" \"*.config.js\""
+    "format:check": "prettier --check \"src/**/*.{js,jsx}\" \"server/**/*.js\" \"cloudflare/**/*.js\" \"tests/**/*.js\" \"*.config.js\"",
+    "version": "node scripts/version.mjs",
+    "release:check": "node scripts/release-check.mjs",
+    "map:refresh": "node scripts/refresh-signals.mjs",
+    "test:offline": "node --test tests/offline-browser.test.mjs"
   },
   "engines": {
     "node": ">=24"
@@ -47,5 +51,10 @@
     "prettier": "3.9.9",
     "vite": "^8.0.0",
     "wrangler": "^4.149.0"
+  },
+  "overrides": {
+    "xcode": {
+      "uuid": "11.1.1"
+    }
   }
 }

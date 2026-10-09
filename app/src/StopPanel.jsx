@@ -58,7 +58,9 @@ export function FleetStatus({ fleet, network }) {
                 ? 'Conectando con las combis…'
                 : fleet.status === 'unconfigured'
                   ? 'Servicio pendiente de conexión'
-                  : 'Reconectando con el servicio'}
+                  : fleet.status === 'paused'
+                    ? 'Consulta en pausa'
+                    : 'Sin conexión con las combis'}
           </strong>
           <span>
             {fleet.status === 'connected'
@@ -123,7 +125,10 @@ export function StopPanel({ network, selected, fleet, onStop, onOrigin, onScan, 
       disposed = true;
     };
   }, [link]);
-  const arrivals = selected ? stopArrivals(selected.id, network, fleet.vehicles, fleet.now) : [];
+  const arrivals =
+    selected && fleet.status === 'connected'
+      ? stopArrivals(selected.id, network, fleet.vehicles, fleet.now)
+      : [];
   return (
     <section className="stop-panel">
       <div className="section-heading">

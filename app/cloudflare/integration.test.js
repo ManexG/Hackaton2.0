@@ -21,6 +21,8 @@ test('Cloudflare runtime: persistent SQLite, private accounts, real GPS API, SSE
   const stateRoot = resolve('.wrangler');
   mkdirSync(stateRoot, { recursive: true });
   const statePath = mkdtempSync(resolve(stateRoot, 'runtime-test-'));
+  const futureVersion = `${Number(APP_VERSION.split('.')[0]) + 1}.0.0`;
+  let releaseRequests = 0;
   const options = {
     ...convertV4MiniflareOptions({
       workers: [
@@ -32,6 +34,26 @@ test('Cloudflare runtime: persistent SQLite, private accounts, real GPS API, SSE
           compatibilityFlags: ['nodejs_compat'],
           durableObjects: { FLEET: { className: 'FleetService', useSQLite: true } },
           bindings: { CERCA_ADMIN_TOKEN: admin },
+          outboundService: async (request) => {
+            releaseRequests++;
+            if (request.url.startsWith('https://api.github.com/'))
+              return new Response(null, { status: 403 });
+            if (request.url.endsWith('/latest/download/release.json'))
+              return Response.json({
+                version: futureVersion,
+                repository: 'ManexG/Hackaton2.0',
+                assetName: 'Las-Palmas-Rutas.apk',
+                notes: ['Actualización de prueba aislada'],
+              });
+            if (request.url.endsWith('/Las-Palmas-Rutas.apk') && request.method === 'HEAD')
+              return new Response(null, {
+                headers: {
+                  'Content-Length': '33321729',
+                  'Content-Type': 'application/octet-stream',
+                },
+              });
+            return new Response(null, { status: 404 });
+          },
           serviceBindings: {
             ASSETS: () =>
               new Response('<html>Cerca</html>', { headers: { 'Content-Type': 'text/html' } }),
@@ -71,7 +93,11 @@ test('Cloudflare runtime: persistent SQLite, private accounts, real GPS API, SSE
     assert.equal((await call('/health')).status, 200);
     const releaseResponse = await call('/version');
     assert.equal(releaseResponse.status, 200);
-    assert.equal((await releaseResponse.json()).minimumWebVersion, APP_VERSION);
+    const release = await releaseResponse.json();
+    assert.equal(release.minimumWebVersion, APP_VERSION);
+    assert.equal(release.minimumVersion, futureVersion);
+    assert.equal(release.discovery, 'manifest');
+    assert.equal(releaseRequests, 3);
     const oldClient = await runtime.dispatchFetch('https://cerca-test.workers.dev/api/auth/login', {
       method: 'POST',
       headers: {
@@ -297,6 +323,8 @@ test('Cloudflare runtime: persistent SQLite, private accounts, real GPS API, SSE
     reader = undefined;
     await runtime.dispose();
     runtime = new Miniflare(options);
+    assert.equal((await (await call('/version')).json()).minimumVersion, futureVersion);
+    assert.equal(releaseRequests, 3);
     assert.equal((await manage('GET', '/me')).status, 200);
     assert.ok(
       (await (await call('/network')).json()).routes.some((r) => r.name === 'Ruta CF editada')

@@ -92,6 +92,90 @@ test('GitHub failure does not crash startup or lose a known mandatory version', 
   service.cached = { data: githubRelease(candidate()), checkedAt: 0 };
   assert.equal((await service.current()).version, futureVersion);
 });
+
+test('GitHub rate limits use a published manifest, verify APK with HEAD and reuse its ETag', async () => {
+  for (const status of [403, 429]) {
+    let time = 1000000,
+      calls = 0;
+    const service = new ReleaseService({
+      now: () => time,
+      fetcher: async (url, options) => {
+        calls++;
+        if (url.startsWith('https://api.github.com/')) {
+          assert.equal(options.headers['If-None-Match'], undefined);
+          return new Response(null, { status });
+        }
+        if (url.endsWith('/latest/download/release.json')) {
+          if (time > 1000000) {
+            assert.equal(options.headers['If-None-Match'], '"manifest-9"');
+            return new Response(null, { status: 304 });
+          }
+          return Response.json(
+            {
+              version: futureVersion,
+              repository: 'ManexG/Hackaton2.0',
+              assetName: 'Las-Palmas-Rutas.apk',
+              notes: ['Mapa nuevo', 'Correcciones'],
+            },
+            { headers: { ETag: '"manifest-9"' } }
+          );
+        }
+        assert.equal(options.method, 'HEAD');
+        assert.equal(url, candidate().assets[0].browser_download_url);
+        return new Response(null, {
+          headers: { 'Content-Length': '33321729', 'Content-Type': 'application/octet-stream' },
+        });
+      },
+    });
+    const releases = await Promise.all(Array.from({ length: 20 }, () => service.current()));
+    assert.ok(releases.every((release) => release.version === futureVersion));
+    assert.equal(releases[0].discovery, 'manifest');
+    assert.equal(calls, 3);
+    assert.ok(service.required(APP_VERSION, 'native'));
+    assert.equal(service.required(APP_VERSION, 'web'), null);
+    time += 600001;
+    assert.equal((await service.current()).version, futureVersion);
+    assert.equal(calls, 5);
+  }
+});
+
+test('rate-limit fallback rejects invalid manifests, oversized bodies and unavailable APKs', async () => {
+  const manifest = {
+    version: futureVersion,
+    repository: 'ManexG/Hackaton2.0',
+    assetName: 'Las-Palmas-Rutas.apk',
+    notes: ['Correcciones'],
+  };
+  for (const scenario of [
+    { manifest: { ...manifest, repository: 'another/repo' } },
+    { manifest: { ...manifest, version: '9.0.0-beta' } },
+    { manifest: { ...manifest, version: '1.7.0' } },
+    { manifest: { ...manifest, notes: ['x'.repeat(1001)] } },
+    { body: ' '.repeat(65537) },
+    { apkStatus: 404 },
+    { apkSize: '0' },
+    { apkType: 'text/html' },
+  ]) {
+    const service = new ReleaseService({
+      fetcher: async (url) => {
+        if (url.startsWith('https://api.github.com/')) return new Response(null, { status: 403 });
+        if (url.endsWith('/release.json'))
+          return scenario.body
+            ? new Response(scenario.body)
+            : Response.json(scenario.manifest ?? manifest);
+        return new Response(null, {
+          status: scenario.apkStatus ?? 200,
+          headers: {
+            'Content-Length': scenario.apkSize ?? '33321729',
+            'Content-Type': scenario.apkType ?? 'application/octet-stream',
+          },
+        });
+      },
+    });
+    assert.equal((await service.current()).source, 'bundled');
+    assert.equal(service.required(APP_VERSION), null);
+  }
+});
 test('offline cache never accepts sessions, live locations, operator data or mutation endpoints', () => {
   for (const path of [
     '/reportes?limit=20',

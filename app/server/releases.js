@@ -50,7 +50,7 @@ export class ReleaseService {
     const minimum = platform === 'web' ? bundled.version : release.minimumVersion;
     return parseVersion(version) && compareVersions(version, minimum) < 0 ? release : null;
   }
-  constructor({ db, fetcher = fetch, now = Date.now } = {}) {
+  constructor({ db, fetcher = (...args) => fetch(...args), now = Date.now } = {}) {
     this.fetcher = fetcher;
     this.now = now;
     this.db = db;
@@ -89,6 +89,75 @@ export class ReleaseService {
     });
     return this.pending;
   }
+  async latestManifest() {
+    const response = await this.fetcher(
+      `https://github.com/${bundled.repository}/releases/latest/download/release.json`,
+      {
+        headers: {
+          'User-Agent': 'Las-Palmas-Rutas',
+          ...(this.cached?.data.discovery === 'manifest' && this.cached.etag
+            ? { 'If-None-Match': this.cached.etag }
+            : {}),
+        },
+        signal: AbortSignal.timeout(4000),
+      }
+    );
+    if (response.status === 304 && this.cached?.data.discovery === 'manifest')
+      return { data: this.cached.data, etag: this.cached.etag };
+    if (!response.ok || Number(response.headers.get('Content-Length')) > 65536)
+      throw new Error('Release manifest unavailable');
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let bytes = 0,
+      text = '';
+    try {
+      for (;;) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        bytes += value.byteLength;
+        if (bytes > 65536) throw new Error('Release manifest too large');
+        text += decoder.decode(value, { stream: true });
+      }
+      text += decoder.decode();
+    } finally {
+      await reader.cancel().catch(() => {});
+      reader.releaseLock();
+    }
+    const manifest = JSON.parse(text);
+    if (
+      manifest.repository !== bundled.repository ||
+      manifest.assetName !== bundled.assetName ||
+      !parseVersion(manifest.version) ||
+      manifest.version.startsWith('v') ||
+      compareVersions(manifest.version, bundled.version) < 0
+    )
+      throw new Error('Invalid release manifest');
+    const data = {
+      version: manifest.version,
+      minimumVersion: manifest.version,
+      minimumWebVersion: bundled.version,
+      webVersion: bundled.version,
+      notes: manifest.notes,
+      releaseUrl: `https://github.com/${bundled.repository}/releases/tag/v${manifest.version}`,
+      downloadUrl: `https://github.com/${bundled.repository}/releases/download/v${manifest.version}/${bundled.assetName}`,
+      source: 'github',
+      discovery: 'manifest',
+    };
+    if (!validRelease(data)) throw new Error('Invalid release notes');
+    const apk = await this.fetcher(data.downloadUrl, {
+      method: 'HEAD',
+      signal: AbortSignal.timeout(4000),
+    });
+    if (
+      !apk.ok ||
+      !(Number(apk.headers.get('Content-Length')) > 0) ||
+      !['application/vnd.android.package-archive', 'application/octet-stream'].includes(
+        apk.headers.get('Content-Type')?.split(';')[0].trim().toLowerCase()
+      )
+    )
+      throw new Error('Release APK not ready');
+    return { data, etag: response.headers.get('ETag') };
+  }
   async refresh() {
     try {
       const response = await this.fetcher(
@@ -97,18 +166,25 @@ export class ReleaseService {
           headers: {
             Accept: 'application/vnd.github+json',
             'User-Agent': 'Las-Palmas-Rutas',
-            ...(this.cached?.etag ? { 'If-None-Match': this.cached.etag } : {}),
+            ...(this.cached?.etag && this.cached.data.discovery !== 'manifest'
+              ? { 'If-None-Match': this.cached.etag }
+              : {}),
           },
           signal: AbortSignal.timeout(4000),
         }
       );
       if (response.status === 304 && this.cached) this.cached.checkedAt = this.now();
       else {
-        if (!response.ok) throw new Error('Release unavailable');
-        const data = githubRelease(await response.json());
+        let data, etag;
+        if ([403, 429].includes(response.status)) ({ data, etag } = await this.latestManifest());
+        else {
+          if (!response.ok) throw new Error('Release unavailable');
+          data = githubRelease(await response.json());
+          etag = response.headers.get('ETag');
+        }
         if (!data || (this.cached && compareVersions(data.version, this.cached.data.version) < 0))
           throw new Error('Unpublished or older release');
-        this.cached = { data, etag: response.headers.get('ETag'), checkedAt: this.now() };
+        this.cached = { data, etag, checkedAt: this.now() };
       }
       if (this.db)
         this.db

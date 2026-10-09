@@ -3,7 +3,7 @@
   "appName": "Las Palmas Rutas",
   "webDir": "dist",
   "backgroundColor": "#f7f9f6",
-  "appendUserAgent": "LasPalmasRutas/1.8.2",
+  "appendUserAgent": "LasPalmasRutas/1.8.3",
   "android": {
     "backgroundColor": "#f7f9f6",
     "allowMixedContent": false

@@ -1,4 +1,4 @@
-# Revisión de Las Palmas Rutas 1.8.2
+# Revisión de Las Palmas Rutas 1.8.3
 
 Revisión del 8 de octubre de 2026: React/JavaScript, servidor Node, Cloudflare Durable Object, comunidad integrada de Axel, datos cartográficos, modelo de predicción, PWA, Capacitor Android y publicación en GitHub. Se conserva la cobertura y los datos persistentes del servicio. La revisión reduce riesgos concretos; no demuestra que cualquier dispositivo o circunstancia futura esté libre de errores.
 
@@ -24,6 +24,8 @@ Revisión del 8 de octubre de 2026: React/JavaScript, servidor Node, Cloudflare 
 | Excepción de React que dejaba pantalla vacía | Pantalla de recuperación con recarga y mensaje en español; conserva borradores. |
 | Dependencia UUID vulnerable en herramientas de Capacitor | Sustitución compatible verificada en compilación Android; auditoría npm sin vulnerabilidades conocidas en este conjunto instalado. |
 | Actualizaciones sin versión fiable o enlace seguro | Comparación semántica, publicación firmada por etiqueta, URLs limitadas al repositorio, notas, bloqueo obligatorio y HTTP 426. |
+| Consulta de Releases incompatible con el receptor de `fetch` en Workers | Una función envolvente mantiene la llamada correcta; la prueba del runtime ahora exige descubrir una versión superior y conservarla al reiniciar SQLite. |
+| GitHub devuelve 403/429 desde una dirección compartida de Cloudflare | Alternativa por el archivo público de la última Release, con JSON acotado, validación del repositorio/notas y comprobación HEAD del APK antes de anunciarlo. |
 | Administración del equipo que respondía 404 en Cloudflare | Mismo controlador y permisos en Node y Workers, con primer administrador protegido, edición persistente de rutas y bloqueo al borrar rutas asignadas. |
 | Paradas borradas que podían quedar en sugerencias tras editar la red | La recarga de rutas excluye paradas antiguas retiradas. |
 | Respuesta de trazado externo incompleta | Validación y error 502 comprensible antes de utilizar la geometría. |
@@ -47,7 +49,7 @@ La web requiere completar una primera visita con conexión para conservar sus ar
 
 ## Verificación
 
-- 52 pruebas de lógica y servidor: datos, búsqueda, planificación, horarios, cobertura, autenticación, GPS, SSE, QR, comunidad y actualizaciones. Incluyen 260 entradas de paridad del modelo original.
+- 54 pruebas de lógica y servidor: datos, búsqueda, planificación, horarios, cobertura, autenticación, GPS, SSE, QR, comunidad y actualizaciones. Incluyen 260 entradas de paridad del modelo original.
 - 46 pruebas de interfaz de escritorio y móvil: accesibilidad, ampliación de texto, roles, selección y trasbordos, comunidad, errores de red, versiones, caché y cambios de cuenta.
 - Una prueba de PWA compilada: recarga completa sin señal, catálogo y semáforos, borrador que se sincroniza exactamente una vez y bloqueo de actualización persistente.
 - Una prueba con el runtime de Cloudflare: sesiones, GPS, SSE, CORS, persistencia de reportes/fotos, versión, rechazo de un cliente antiguo y administración por sesiones, CRUD, permisos y persistencia de rutas.

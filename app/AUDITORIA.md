@@ -11,6 +11,7 @@ Revisión del 8 de octubre de 2026: React/JavaScript, servidor Node, Cloudflare 
 | Reintentos continuos sin conexión | Reintentos progresivos hasta 60 s y reanudación únicamente con conexión y app visible. |
 | Descarga inicial del modelo, lector QR y fuentes innecesarias | Modelo cuando existe flota real; cámara al usarla; fuente latina; recursos grandes excluidos de la precarga. |
 | Catálogos grandes y repetición de descargas | JSON compactado sin cambiar los datos; recursos con hash reutilizables; cachés públicas acotadas con caducidad. |
+| Logos grandes en cada primera visita | Copias WebP sin pérdida con dimensiones y píxeles idénticos; se conservan los PNG originales. |
 | Comunidad nativa sin service worker | Caché pública en IndexedDB, también utilizable en Android, con alternativa en memoria si falla el almacenamiento. |
 | Reportes pendientes enviados tras cambiar de cuenta | Autor y token capturados por sincronización; se detiene al cambiar la sesión; identificadores estables evitan duplicados. |
 | Almacenamiento pendiente ilimitado o lleno | Hasta 30 borradores por autor; error comprensible si se alcanza el límite o no queda espacio. |

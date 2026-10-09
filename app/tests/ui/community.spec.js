@@ -21,6 +21,7 @@ test.beforeEach(async ({ page }) => {
   });
   await page.route('**/api/**', async (route) => {
     const url = new URL(route.request().url());
+    if (url.pathname.endsWith('/events')) return route.abort();
     const response = await route.fetch({ url: backend + url.pathname + url.search });
     try {
       await route.fulfill({ response });
@@ -35,7 +36,8 @@ test.beforeEach(async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Tu comunidad', exact: true })).toBeVisible();
 });
 test.afterEach(async ({ page }) => {
-  await page.unrouteAll({ behavior: 'wait' });
+  await page.unrouteAll({ behavior: 'ignoreErrors' });
+  await page.close();
   await new Promise((resolve) => {
     service.server.close(resolve);
     service.server.closeAllConnections();

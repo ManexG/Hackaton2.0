@@ -14,6 +14,7 @@ const escape = (value) =>
 // The bundled OSM street geometry is rendered as a flat map, without raster tiles,
 // building footprints or tile boundaries. Street names remain available offline.
 export function addStreetMap(map, network, options = {}) {
+  let disposed = false;
   if (!map.getPane('localMap')) map.createPane('localMap');
   map.getPane('localMap').style.zIndex = '150';
   map.getPane('localMap').style.pointerEvents = 'none';
@@ -75,6 +76,7 @@ export function addStreetMap(map, network, options = {}) {
     '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a>'
   );
   function redrawNames() {
+    if (disposed) return;
     labels.clearLayers();
     const zoom = map.getZoom();
     const boxes = [];
@@ -109,6 +111,8 @@ export function addStreetMap(map, network, options = {}) {
   map.on('zoomend moveend resize', redrawNames);
   redrawNames();
   return () => {
+    if (disposed) return;
+    disposed = true;
     map.off('zoomend moveend resize', redrawNames);
     labels.remove();
     signals.remove();

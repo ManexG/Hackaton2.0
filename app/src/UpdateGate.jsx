@@ -136,7 +136,7 @@ export function UpdateGate({ children }) {
   if (!blocked) return children;
   return (
     <main className="update-required" aria-labelledby="update-title">
-      <img src="./brand/las-palmas-logo.png" alt="Las Palmas Rutas" />
+      <img src="./brand/las-palmas-logo.webp" alt="Las Palmas Rutas" />
       <h1 id="update-title">Actualiza para continuar</h1>
       <p>
         Tu versión es {version}. Está disponible la versión {release.version}.

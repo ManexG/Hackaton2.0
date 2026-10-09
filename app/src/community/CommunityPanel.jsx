@@ -67,7 +67,7 @@ function LocalMap({ network, reports = [], points = [], pick, chosen }) {
       maxBoundsViscosity: 1,
     }).fitBounds(bounds);
     instance.current = map;
-    addStreetMap(map, network, { interactiveSignals: !pickRef.current });
+    const clearStreetMap = addStreetMap(map, network, { interactiveSignals: !pickRef.current });
     map.createPane('communityMask').style.zIndex = '270';
     map.getPane('communityMask').style.pointerEvents = 'none';
     L.polygon(
@@ -100,6 +100,7 @@ function LocalMap({ network, reports = [], points = [], pick, chosen }) {
     }, 100);
     return () => {
       clearTimeout(timer);
+      clearStreetMap();
       map.remove();
     };
   }, [network]);
@@ -1337,7 +1338,7 @@ export default function CommunityPanel({ network, route, refreshNetwork }) {
           <ArrowLeft />
           Volver a transporte
         </button>
-        <img src="./brand/las-palmas-logo.png" alt="Las Palmas Rutas" />
+        <img src="./brand/las-palmas-logo.webp" alt="Las Palmas Rutas" />
         <span>
           {!online && <WifiOff />}
           {online ? 'En línea' : 'Sin señal'}

@@ -144,7 +144,9 @@ export const MapView = forwardRef(function MapView(props, ref) {
       instance.getPane(name).style.zIndex = String(z);
     }
     instance.getPane('localMap').style.pointerEvents = 'none';
-    addStreetMap(instance, network, { isPicking: () => Boolean(state.current.pinMode) });
+    const clearStreetMap = addStreetMap(instance, network, {
+      isPicking: () => Boolean(state.current.pinMode),
+    });
     instance.getPane('mask').style.pointerEvents = 'none';
     L.polygon(network.coverage.polygon, {
       pane: 'coverage',
@@ -233,6 +235,7 @@ export const MapView = forwardRef(function MapView(props, ref) {
       cancelAnimationFrame(frame.current);
       simulating.current = false;
       observer.disconnect();
+      clearStreetMap();
       instance.remove();
       map.current = null;
       lines.current.clear();

@@ -417,7 +417,7 @@ export function CercaApp({ network: originalNetwork, catalog }) {
             aria-label="Las Palmas Rutas, ir al inicio"
             onClick={() => changeTab('plan')}
           >
-            <img src="./brand/las-palmas-logo.png" alt="Las Palmas Rutas" />
+            <img src="./brand/las-palmas-logo.webp" alt="Las Palmas Rutas" />
           </button>
           <div className="header-actions">
             <button

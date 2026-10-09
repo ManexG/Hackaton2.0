@@ -199,7 +199,7 @@ function RouteMapEditor({ network, routes, route, token, notify, onCancel, onSav
       fill: false,
       interactive: false,
     }).addTo(instance);
-    addStreetMap(instance, network, { interactiveSignals: false });
+    const clearStreetMap = addStreetMap(instance, network, { interactiveSignals: false });
     layer.current = L.layerGroup().addTo(instance);
     map.current = instance;
     instance.on('click', (event) => {
@@ -211,6 +211,7 @@ function RouteMapEditor({ network, routes, route, token, notify, onCancel, onSav
     const resizeTimer = setTimeout(() => instance.invalidateSize(), 50);
     return () => {
       clearTimeout(resizeTimer);
+      clearStreetMap();
       instance.remove();
     };
   }, []);

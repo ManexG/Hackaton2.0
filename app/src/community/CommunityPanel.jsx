@@ -170,7 +170,7 @@ function ReportCard({ report, refresh, notify }) {
     try {
       const url = reportLink(report.id);
       if (navigator.share)
-        await navigator.share({ title: 'Las Palmas · Comunidad', text: report.descripcion, url });
+        await navigator.share({ title: 'OptiRouteLZC · Comunidad', text: report.descripcion, url });
       else {
         await navigator.clipboard.writeText(url);
         notify('Enlace copiado. Puedes compartirlo.');
@@ -1058,7 +1058,7 @@ export function CommunityAdmin({ network, notify, refreshNetwork, token }) {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `las-palmas-reportes.${format}`;
+      a.download = `optiroutelzc-reportes.${format}`;
       a.click();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch (e) {
@@ -1331,7 +1331,7 @@ export default function CommunityPanel({ network, route, refreshNetwork }) {
           <ArrowLeft />
           Volver a transporte
         </button>
-        <img src="./brand/las-palmas-logo.webp" alt="Las Palmas Rutas" />
+        <img src="./brand/optiroutelzc-logo.png" alt="OptiRouteLZC" />
         <span>
           {!online && <WifiOff />}
           {online ? 'En línea' : 'Sin señal'}

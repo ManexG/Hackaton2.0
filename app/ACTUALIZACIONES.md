@@ -1,4 +1,4 @@
-# Actualizaciones de Las Palmas Rutas
+# Actualizaciones de OptiRouteLZC
 
 La versión 1.8.1 incorpora el control de versiones. Un commit conserva el trabajo; una etiqueta estable `vX.Y.Z` publica una actualización Android mediante GitHub Actions. No se solicita instalar un APK diferente por cada commit.
 
@@ -31,7 +31,8 @@ Sustituye `X.Y.Z` por la versión real, por ejemplo `1.9.1`. La etiqueta debe co
 
 El workflow raíz `.github/workflows/release.yml` instala Node 24, JDK 21 y SDK 36, revisa dependencias, ejecuta pruebas, sincroniza Capacitor y compila un APK de release firmado. Solo entonces crea una GitHub Release estable con:
 
-- `Las-Palmas-Rutas.apk`.
+- `OptiRouteLZC.apk`.
+- `Las-Palmas-Rutas.apk`, copia idéntica conservada para que las instalaciones anteriores puedan actualizarse.
 - `SHA256SUMS.txt`, con la suma SHA-256 del APK.
 - `release.json`, con versión y novedades.
 

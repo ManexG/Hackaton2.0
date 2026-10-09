@@ -388,7 +388,7 @@ export function DriverPanel({ network, fleet, onMessage }) {
           <input
             id="driver-password"
             type="password"
-            minLength={12}
+            minLength={8}
             required
             autoComplete="current-password"
             value={password}
@@ -400,7 +400,7 @@ export function DriverPanel({ network, fleet, onMessage }) {
           </button>
           <p className="walking-note">
             Tu cuenta, ruta y horario los asigna la persona responsable del servicio. Los pasajeros
-            pueden usar Las Palmas Rutas sin registrarse.
+            pueden usar OptiRouteLZC sin registrarse.
           </p>
           <a className="walking-note" href="#/gestion">
             Acceso de administración
@@ -545,10 +545,10 @@ export function DriverPanel({ network, fleet, onMessage }) {
                   value={claveNueva}
                   onChange={(e) => setClaveNueva(e.target.value)}
                   autoComplete="new-password"
-                  minLength={12}
+                  minLength={8}
                   required
                 />
-                <small>Necesita al menos 12 caracteres.</small>
+                <small>Necesita al menos 8 caracteres.</small>
               </label>
               {mensajeClave && <p className="driver-note">{mensajeClave}</p>}
               <button type="submit" className="primary-button" disabled={busy}>

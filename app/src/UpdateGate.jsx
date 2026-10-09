@@ -177,13 +177,13 @@ export function UpdateGate({ children }) {
   if (!started && !blocked)
     return (
       <div className="boot" role="status">
-        Comprobando la versión de Las Palmas Rutas…
+        Comprobando la versión de OptiRouteLZC…
       </div>
     );
   if (!blocked) return children;
   return (
     <main className="update-required" aria-labelledby="update-title">
-      <img src="./brand/las-palmas-logo.webp" alt="Las Palmas Rutas" />
+      <img src="./brand/optiroutelzc-logo.png" alt="OptiRouteLZC" />
       <h1 id="update-title">Actualiza para continuar</h1>
       <p>
         Tu versión es {version}. Está disponible la versión {release.version}.

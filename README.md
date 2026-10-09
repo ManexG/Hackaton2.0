@@ -1,4 +1,4 @@
-# Hackaton2.0 · Las Palmas Rutas
+# Hackaton2.0 · OptiRouteLZC
 
 Aplicación Android y web para consultar combis en el corredor de Jugos Acapulco al entronque de la avenida Lázaro Cárdenas. El proyecto está en [`app/`](app/): **React con JavaScript/JSX, Vite, Leaflet y Capacitor**, alojado en **Cloudflare Workers + Durable Objects con SQLite + SSE**. Los componentes usan `.jsx` y la lógica, el servidor, Cloudflare y las pruebas usan `.js` con módulos ES. Se conserva un servidor alternativo de Node.js 24. No se necesita compilar TypeScript ni instalar `tsx`. Capacitor se configura con `capacitor.config.json`.
 
@@ -22,7 +22,7 @@ Una etiqueta estable `vX.Y.Z` ejecuta pruebas, compila Android firmado y publica
 
 Indica origen y destino y pulsa **Ver cómo llegar**. Las selecciones se confirman, las instrucciones quedan abiertas y tocar una ruta muestra directamente su inicio, término y paradas. El acceso de choferes está separado y se indica claramente el modo pasajero. Se retiraron las tarjetas numeradas de pasos y el botón de ayuda.
 
-Texto base de 18 px, opción de 22 px persistente, botones grandes y vistas de mapa/instrucciones con acciones explícitas en celular. El mapa plano usa las calles locales sin edificios ni teselas externas; mantiene sus nombres y la atribución requerida. Se incorporan los logos proporcionados de **Las Palmas Rutas**. Las pruebas incluyen ampliación de texto, teclado y pantallas móviles; queda pendiente validarlo de nuevo con personas mayores. Se verificó la instalación de actualización en un teléfono Samsung SM-S938B.
+Texto base de 18 px, opción de 22 px persistente, botones grandes y vistas de mapa/instrucciones con acciones explícitas en celular. El mapa plano usa las calles locales sin edificios ni teselas externas; mantiene sus nombres y la atribución requerida. Se incorporan los logos proporcionados de **OptiRouteLZC**. Las pruebas incluyen ampliación de texto, teclado y pantallas móviles; queda pendiente validarlo de nuevo con personas mayores. Se verificó la instalación de actualización en un teléfono Samsung SM-S938B.
 
 La rama **Axel**, actualizada al commit **3b38961**, se incorpora conservando sus originales en [`ciudadviva/`](ciudadviva/). Sus funciones se adaptan a React y al servidor existente: la comunidad usa `/api/community`, las fotos y reportes se guardan en el mismo SQLite, y rutas importadas, QR y vehículos comparten el motor de movilidad. Incluye avisos de dentro/fuera de zona al chofer, área piloto configurable dentro del perímetro original, lista de unidades con edad de señal y desactivación inmediata en servidor. No se calculan llegadas de combis remotas ni con señal caducada. No se usan la base de datos ni el servidor público del compañero. Los reportes pueden guardarse sin señal y enviarse al reconectar. Uso e importación en [app/COMUNIDAD.md](app/COMUNIDAD.md).
 

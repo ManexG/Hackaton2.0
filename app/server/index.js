@@ -160,7 +160,7 @@ export function createTransitServer(options = {}) {
           request.headers['x-app-platform']
         );
         if (release) {
-          send(426, { message: 'Actualiza Las Palmas Rutas para continuar.', release });
+          send(426, { message: 'Actualiza OptiRouteLZC para continuar.', release });
           return;
         }
       }
@@ -261,7 +261,7 @@ export function createTransitServer(options = {}) {
           request.headers['x-app-platform']
         );
         if (release) {
-          send(426, { message: 'Actualiza Las Palmas Rutas para continuar.', release });
+          send(426, { message: 'Actualiza OptiRouteLZC para continuar.', release });
           return;
         }
         if (url.pathname.endsWith('/service') && data.active !== true)

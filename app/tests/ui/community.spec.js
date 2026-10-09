@@ -103,7 +103,7 @@ test('neighbor can submit an actual report, support once, comment, and see it in
   await page.getByLabel('Colonia o referencia').fill('Centro');
   await page
     .getByLabel('Foto del problema (opcional)')
-    .setInputFiles('public/brand/las-palmas-icon.png');
+    .setInputFiles('public/brand/optiroutelzc-logo.png');
   await context.grantPermissions(['geolocation']);
   await context.setGeolocation({ latitude: 17.96, longitude: -102.197 });
   await page.route('https://photon.komoot.io/**', (route) =>

@@ -56,7 +56,7 @@ public class NativeUpdatePlugin extends Plugin {
             connection = next;
             next.setConnectTimeout(15000); next.setReadTimeout(20000);
             next.setInstanceFollowRedirects(false);
-            next.setRequestProperty("User-Agent", "LasPalmasRutas-Android");
+            next.setRequestProperty("User-Agent", "OptiRouteLZC-Android");
             int status = next.getResponseCode();
             if (status == 200) return next;
             if (status == 301 || status == 302 || status == 303 || status == 307 || status == 308) {
@@ -101,7 +101,7 @@ public class NativeUpdatePlugin extends Plugin {
         long currentCode = Build.VERSION.SDK_INT >= 28 ? current.getLongVersionCode() : current.versionCode;
         long archiveCode = archive == null ? -1 : Build.VERSION.SDK_INT >= 28 ? archive.getLongVersionCode() : archive.versionCode;
         if (archive == null || !current.packageName.equals(archive.packageName) || !target.equals(archive.versionName) || archiveCode <= currentCode)
-            throw new IOException("Este archivo no es una actualización válida de Las Palmas Rutas.");
+            throw new IOException("Este archivo no es una actualización válida de OptiRouteLZC.");
         Signature[] a, b;
         if (Build.VERSION.SDK_INT >= 28) {
             if (archive.signingInfo == null || current.signingInfo == null) throw new IOException("No pudimos comprobar la firma de la app.");
@@ -211,7 +211,7 @@ public class NativeUpdatePlugin extends Plugin {
     }
     @ActivityCallback private void permissionResult(PluginCall call, ActivityResult result) {
         if (call == null) return;
-        if (!getContext().getPackageManager().canRequestPackageInstalls()) { call.reject("Permite actualizar desde Las Palmas Rutas para continuar. El archivo ya está descargado."); return; }
+        if (!getContext().getPackageManager().canRequestPackageInstalls()) { call.reject("Permite actualizar desde OptiRouteLZC para continuar. El archivo ya está descargado."); return; }
         try { launchInstaller(call); } catch (Exception error) { call.reject("No pudimos abrir el instalador de Android."); }
     }
     @ActivityCallback private void installResult(PluginCall call, ActivityResult result) {

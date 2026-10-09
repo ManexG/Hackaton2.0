@@ -108,7 +108,7 @@ function Bootstrap() {
   if (error)
     return (
       <div className="fatal-error">
-        <h1>No pudimos iniciar Las Palmas Rutas</h1>
+        <h1>No pudimos iniciar OptiRouteLZC</h1>
         <p>{error}</p>
         <button onClick={() => location.reload()}>Volver a intentar</button>
       </div>

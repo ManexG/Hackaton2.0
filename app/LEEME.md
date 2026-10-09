@@ -1,10 +1,14 @@
-# Las Palmas Rutas 1.9.1 · React + Capacitor + GPS + Comunidad
+# OptiRouteLZC 1.9.3 · React + Capacitor + GPS + Comunidad
 
 Aplicación Android y web de movilidad para la zona urbana de Lázaro Cárdenas, conservando el encuadre del corredor indicado. Usa **React 19, JavaScript, Vite 8, Leaflet y Capacitor 8**. La publicación en **Cloudflare Workers** guarda cuentas y GPS en un **Durable Object con SQLite** y comparte las posiciones mediante **SSE**. También se conserva el servidor alternativo de Node.js 24 para uso local o alojamiento propio.
 
 La configuración y los comandos para publicar en `workers.dev` están en [CLOUDFLARE.md](CLOUDFLARE.md). El almacenamiento en Cloudflare es independiente del SQLite local; no se suben automáticamente cuentas ni datos del equipo.
 
-## Versión 1.9.1
+## Versión 1.9.3
+
+Nuevo nombre y logo OptiRouteLZC en Android y web. Las cuentas de chofer admiten contraseñas de 8 a 256 caracteres; las claves y las asignaciones se guardan solo en el servidor.
+
+## Funciones
 
 Origen y destino plegables, ocho rutas de ejemplo, paradas por zonas y administración después de validar el inicio de sesión. Las actualizaciones Android se descargan dentro de la app y abren el instalador del sistema. Detalles y límites en [CAMBIOS-1.9.md](CAMBIOS-1.9.md).
 

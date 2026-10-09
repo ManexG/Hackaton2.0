@@ -17,7 +17,7 @@ export function ScanStopButton({ onScan, onMessage }) {
       } = await import('@capacitor/barcode-scanner');
       const result = await CapacitorBarcodeScanner.scanBarcode({
         hint: CapacitorBarcodeScannerTypeHint.QR_CODE,
-        scanInstructions: 'Apunta al QR de una parada de Las Palmas Rutas',
+        scanInstructions: 'Apunta al QR de una parada de OptiRouteLZC',
         scanButton: false,
         scanText: 'Leer parada',
         cameraDirection: 1,

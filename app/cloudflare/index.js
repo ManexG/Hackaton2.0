@@ -236,7 +236,7 @@ export class FleetService extends DurableObject {
           request.headers.get('X-App-Platform')
         );
         if (release)
-          return json(426, { message: 'Actualiza Las Palmas Rutas para continuar.', release });
+          return json(426, { message: 'Actualiza OptiRouteLZC para continuar.', release });
       }
       if (url.pathname.startsWith('/api/manage/')) {
         let response;
@@ -339,7 +339,7 @@ export class FleetService extends DurableObject {
           request.headers.get('X-App-Platform')
         );
         if (release)
-          return json(426, { message: 'Actualiza Las Palmas Rutas para continuar.', release });
+          return json(426, { message: 'Actualiza OptiRouteLZC para continuar.', release });
         if (url.pathname.endsWith('/service') && data.active !== true)
           throw new ApiError(400, 'Indica si deseas activar o desactivar el servicio.');
         try {

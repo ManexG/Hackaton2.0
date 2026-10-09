@@ -1,9 +1,9 @@
 {
   "appId": "mx.cerca.combis.demo",
-  "appName": "Las Palmas Rutas",
+  "appName": "OptiRouteLZC",
   "webDir": "dist",
   "backgroundColor": "#f7f9f6",
-  "appendUserAgent": "LasPalmasRutas/1.9.2",
+  "appendUserAgent": "OptiRouteLZC/1.9.3",
   "android": {
     "backgroundColor": "#f7f9f6",
     "allowMixedContent": false

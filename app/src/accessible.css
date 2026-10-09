@@ -8,7 +8,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .app-shell { grid-template-columns: minmax(420px, 510px) minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); height: 100dvh; }
 .app-header { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; gap: 16px; background: #fff; border-bottom: 1px solid #d7e2d0; padding: max(8px, env(safe-area-inset-top)) 24px 8px; z-index: 40; }
 .brand-home { padding: 0; display: flex; align-items: center; min-width: 0; }
-.brand-home img { width: 198px; height: 86px; object-fit: contain; }
+.brand-home img { width: 198px; height: 86px; object-fit: cover; }
 .header-actions { display: flex; gap: 10px; align-items: center; }
 .header-actions button { display: flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid #bbcdb3; border-radius: 12px; padding: 8px 14px; font-weight: 750; color: var(--green); }
 .text-size-button[aria-pressed=true] { background: #e3f0d9; box-shadow: inset 0 0 0 2px var(--green); }

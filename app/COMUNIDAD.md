@@ -1,4 +1,4 @@
-# Integración de Axel · Las Palmas Rutas 1.7
+# Integración de Axel · OptiRouteLZC 1.7
 
 Procedencia: rama [Axel, commit 3b38961](https://github.com/ManexG/Hackaton2.0/tree/3b389614c88b77e21234c627979a81b94e06919f), incluida su actualización de detección de zona y disponibilidad GPS sobre la integración inicial `fcad9cc`. El repositorio conserva sus archivos originales en `ciudadviva/`. La app que se publica y compila está en `app/`, con React y JavaScript. No se utiliza el servidor público del compañero ni se trasladan sus datos o credenciales.
 

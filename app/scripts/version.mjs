@@ -24,7 +24,7 @@ write(
   )
 );
 const capacitor = JSON.parse(read('capacitor.config.json'));
-capacitor.appendUserAgent = `LasPalmasRutas/${release.version}`;
+capacitor.appendUserAgent = `OptiRouteLZC/${release.version}`;
 write('capacitor.config.json', JSON.stringify(capacitor, null, 2) + '\n');
 console.log(
   `Versión ${release.version}, Android ${release.androidVersionCode}. Actualiza las novedades de release.json antes de crear la etiqueta.`

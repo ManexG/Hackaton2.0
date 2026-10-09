@@ -1,4 +1,4 @@
-name: Publicar Las Palmas Rutas
+name: Publicar OptiRouteLZC
 on:
   push:
     tags: ['v[0-9]*']
@@ -51,11 +51,11 @@ jobs:
           KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
         run: |
           test -n "$KEYSTORE" || { echo 'Falta configurar ANDROID_KEYSTORE_BASE64.'; exit 1; }
-          printf '%s' "$KEYSTORE" | base64 --decode > "$RUNNER_TEMP/las-palmas.keystore"
-          chmod 600 "$RUNNER_TEMP/las-palmas.keystore"
+          printf '%s' "$KEYSTORE" | base64 --decode > "$RUNNER_TEMP/optiroutelzc.keystore"
+          chmod 600 "$RUNNER_TEMP/optiroutelzc.keystore"
       - name: Compilar Android firmado
         env:
-          ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/las-palmas.keystore
+          ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/optiroutelzc.keystore
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
@@ -69,10 +69,11 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          cp android/app/build/outputs/apk/release/app-release.apk Las-Palmas-Rutas.apk
-          "$ANDROID_HOME/build-tools/36.1.0/apksigner" verify Las-Palmas-Rutas.apk
-          sha256sum Las-Palmas-Rutas.apk > SHA256SUMS.txt
-          gh release create "$RELEASE_TAG" Las-Palmas-Rutas.apk SHA256SUMS.txt release.json --verify-tag --title "Las Palmas Rutas $RELEASE_TAG" --notes-file release-notes.txt --latest
+          cp android/app/build/outputs/apk/release/app-release.apk OptiRouteLZC.apk
+          cp OptiRouteLZC.apk Las-Palmas-Rutas.apk
+          "$ANDROID_HOME/build-tools/36.1.0/apksigner" verify OptiRouteLZC.apk
+          sha256sum OptiRouteLZC.apk Las-Palmas-Rutas.apk > SHA256SUMS.txt
+          gh release create "$RELEASE_TAG" OptiRouteLZC.apk Las-Palmas-Rutas.apk SHA256SUMS.txt release.json --verify-tag --title "OptiRouteLZC $RELEASE_TAG" --notes-file release-notes.txt --latest
       - name: Eliminar copia temporal de la firma
         if: always()
-        run: rm -f "$RUNNER_TEMP/las-palmas.keystore"
+        run: rm -f "$RUNNER_TEMP/optiroutelzc.keystore"

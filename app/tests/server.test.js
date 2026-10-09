@@ -26,6 +26,35 @@ const fix = (extra = {}) => ({
   direction: 1,
   ...extra,
 });
+test('driver passwords accept 8–256 characters and preserve route assignments on login', async () => {
+  const store = new TransitStore(':memory:', network);
+  try {
+    for (const [index, password] of ['test1234', 'test12345', 'test1234567'].entries()) {
+      const routeId = index === 0 ? 'R02' : 'R05';
+      const input = {
+        ...account,
+        email: `short-driver-${index}@example.test`,
+        unit: `SHORT-${index}`,
+        routeId,
+        password,
+      };
+      const driver = store.provision(input);
+      const session = await store.login(input.email, password);
+      assert.equal(session.driver.id, driver.id);
+      assert.equal(session.driver.routeId, routeId);
+      assert.deepEqual(session.driver.windows, windows);
+      assert.ok(!JSON.stringify(session.driver).includes(password));
+      await store.changePassword(session.token, password, 'next1234');
+      await assert.rejects(() => store.login(input.email, password), /no coinciden/);
+      assert.equal((await store.login(input.email, 'next1234')).driver.id, driver.id);
+    }
+    for (const password of ['short12', 'x'.repeat(257), null]) {
+      assert.throws(() => store.provision({ ...account, password }), /8 y 256 caracteres/);
+    }
+  } finally {
+    store.close();
+  }
+});
 test('real HTTP login, activation, GPS, public availability and logout without passenger registration', async () => {
   const { server, store } = createTransitServer({ dbPath: ':memory:' });
   store.provision(account);
@@ -174,10 +203,10 @@ test('driver changes their own password, other sessions close and a wrong curren
         store.changePassword(first.token, 'no-es-la-actual', 'nueva-clave-suficientemente-larga'),
       /no coincide/
     );
-    // Mínimo de 12 caracteres, igual que para los administradores.
+    // Las contraseñas de chofer necesitan al menos 8 caracteres.
     await assert.rejects(
       async () => store.changePassword(first.token, account.password, 'corta'),
-      /12 caracteres/
+      /8 caracteres/
     );
     // Sin sesión no se puede cambiar.
     await assert.rejects(

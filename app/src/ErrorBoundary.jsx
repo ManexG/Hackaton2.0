@@ -7,7 +7,7 @@ export class ErrorBoundary extends Component {
   render() {
     return this.state.failed ? (
       <main className="update-required">
-        <img src="./brand/las-palmas-logo.webp" alt="Las Palmas Rutas" />
+        <img src="./brand/optiroutelzc-logo.png" alt="OptiRouteLZC" />
         <h1>No pudimos abrir esta pantalla</h1>
         <p>
           Recarga la app para volver a intentarlo. Tus reportes guardados permanecen en este

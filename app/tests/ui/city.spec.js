@@ -38,7 +38,10 @@ for (const width of [1440, 390]) {
       panel.scrollTop = 0;
     });
     await page.locator('#toast button').click();
-    await page.screenshot({ path: `../../outputs/Las-Palmas-viaje-${width}.png`, fullPage: true });
+    await page.screenshot({
+      path: `../../outputs/OptiRouteLZC-viaje-${width}.png`,
+      fullPage: true,
+    });
     await openField(page, 'origin');
     await page.getByRole('button', { name: 'O elegir un punto en el mapa' }).click();
     await expect(page.locator('.map-notice')).toContainText('origen');

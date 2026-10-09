@@ -376,7 +376,7 @@ export function CercaApp({ network: originalNetwork, catalog }) {
       fleet.snapshot?.publicAppUrl || import.meta.env.VITE_PUBLIC_APP_URL || location.origin;
     const stop = stopFromLink(value, network, base);
     if (!stop) {
-      setToast('Ese QR no corresponde a una parada de Las Palmas Rutas dentro de la zona.');
+      setToast('Ese QR no corresponde a una parada de OptiRouteLZC dentro de la zona.');
       return;
     }
     choosePlace('origin', stopPlace(stop));
@@ -500,8 +500,8 @@ export function CercaApp({ network: originalNetwork, catalog }) {
         data-dragging={dragHeight !== null}
       >
         <header className="app-header">
-          <button className="brand-home" aria-label="Las Palmas Rutas, ir al mapa" onClick={goHome}>
-            <img src="./brand/las-palmas-logo.webp" alt="Las Palmas Rutas" />
+          <button className="brand-home" aria-label="OptiRouteLZC, ir al mapa" onClick={goHome}>
+            <img src="./brand/optiroutelzc-logo.png" alt="OptiRouteLZC" />
           </button>
           <div className="header-actions">
             <button

@@ -9,7 +9,7 @@ const firstStop = network.stops.find((stop) => stop.id === network.routes[0].sto
 const account = {
   name: 'Chofer de prueba',
   email: 'ui-driver@example.test',
-  password: 'only-for-ui-test-12345',
+  password: 'test12345',
   unit: 'TEST-UI-01',
   routeId: 'R01',
   windows: [
@@ -81,7 +81,7 @@ test('guest needs no account, sees no invented drivers or default recommendation
   await page.locator('.map-legend [data-route=R01]').dblclick();
   await expect(page.locator('.route-hours')).toContainText('Horario pendiente de asignación');
   await expect(page.locator('#route-detail .stop-list')).toContainText('Jugos Acapulco');
-  await page.screenshot({ path: '../cerca-servicio-sin-choferes.png' });
+  await page.screenshot({ path: '../optiroutelzc-servicio-sin-choferes.png' });
 });
 test('authenticated driver shares GPS through the real server and a guest immediately sees and loses the vehicle', async ({
   page,
@@ -120,7 +120,7 @@ test('authenticated driver shares GPS through the real server and a guest immedi
   await choose(guest, 'origin', 'Jugos Acapulco');
   await choose(guest, 'destination', 'Entronque av');
   await expect(guest.locator('.journey-card.selected')).toContainText('R01');
-  await page.screenshot({ path: '../cerca-chofer-gps.png' });
+  await page.screenshot({ path: '../optiroutelzc-chofer-gps.png' });
   await page.waitForTimeout(5100);
   const moved =
     network.routes[0].segments[0][Math.min(12, network.routes[0].segments[0].length - 1)];
@@ -155,7 +155,7 @@ test('a driver in another city gets a clear zone warning and produces no public 
   expect(store.snapshot().vehicles).toHaveLength(0);
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  await page.screenshot({ path: '../Las-Palmas-chofer-fuera-de-zona.png' });
+  await page.screenshot({ path: '../OptiRouteLZC-chofer-fuera-de-zona.png' });
 });
 test('QR web link centers a known stop, selects it as origin and creates a downloadable code', async ({
   page,
@@ -174,7 +174,7 @@ test('QR web link centers a known stop, selects it as origin and creates a downl
     'href',
     new RegExp(`stop=${firstStop.id}`)
   );
-  await page.screenshot({ path: '../cerca-parada-qr.png' });
+  await page.screenshot({ path: '../optiroutelzc-parada-qr.png' });
 });
 test('voice text uses the same street and address search without selecting an arbitrary destination', async ({
   page,
@@ -203,7 +203,7 @@ test('mobile guest can enter and leave driver access without mandatory registrat
   await page.setViewportSize({ width: 390, height: 844 });
   await page.getByRole('button', { name: 'Soy un chofer', exact: true }).click();
   await expect(page.locator('#driver-email')).toBeVisible();
-  await page.screenshot({ path: '../cerca-android-acceso.png' });
+  await page.screenshot({ path: '../optiroutelzc-android-acceso.png' });
   await page.getByRole('button', { name: 'Volver a viajar como pasajero', exact: true }).click();
   await openSection(page, 'Buscar viaje');
   await expect(page.locator('#origin')).toBeVisible();
@@ -281,7 +281,7 @@ test('driver changes their own password and keeps working with the same session'
   await page.getByRole('button', { name: 'Guardar contraseña', exact: true }).click();
   await expect(page.locator('.driver-note')).toContainText('no coincide');
 
-  // Menos de 12 caracteres no llega ni a enviarse: el campo lo exige en el
+  // Menos de 8 caracteres no llega ni a enviarse: el campo lo exige en el
   // navegador. La regla misma se comprueba en la prueba de servidor.
   await page.locator('.driver-password input').nth(0).fill(account.password);
   await page.locator('.driver-password input').nth(1).fill('corta');

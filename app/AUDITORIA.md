@@ -1,4 +1,4 @@
-# Revisión de Las Palmas Rutas 1.8.3
+# Revisión de OptiRouteLZC 1.8.3
 
 Revisión del 8 de octubre de 2026: React/JavaScript, servidor Node, Cloudflare Durable Object, comunidad integrada de Axel, datos cartográficos, modelo de predicción, PWA, Capacitor Android y publicación en GitHub. Se conserva la cobertura y los datos persistentes del servicio. La revisión reduce riesgos concretos; no demuestra que cualquier dispositivo o circunstancia futura esté libre de errores.
 

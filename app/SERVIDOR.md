@@ -1,4 +1,4 @@
-# Alojar Las Palmas Rutas y conectar Android
+# Alojar OptiRouteLZC y conectar Android
 
 Para alojar web, API y SQLite directamente en Cloudflare, sigue [CLOUDFLARE.md](CLOUDFLARE.md). Las instrucciones siguientes corresponden al servidor Node alternativo.
 
@@ -99,7 +99,7 @@ Las recomendaciones comparan candidatos hacia el origen y destino elegidos, incl
 
 ## QR
 
-Cada QR contiene `https://TU_DOMINIO/?stop=IDENTIFICADOR`. La cámara normal del teléfono puede abrir ese enlace en la web. Las Palmas Rutas centra el mapa, abre la parada y la coloca como origen, sin exigir registro.
+Cada QR contiene `https://TU_DOMINIO/?stop=IDENTIFICADOR`. La cámara normal del teléfono puede abrir ese enlace en la web. OptiRouteLZC centra el mapa, abre la parada y la coloca como origen, sin exigir registro.
 
 También hay un lector de QR en la app y una descarga del QR por parada. El lector valida que el enlace pertenezca al dominio configurado y que la parada exista. La app Android admite `cerca://stop/IDENTIFICADOR` para enlaces nativos. Los QR generados con una dirección local solo funcionan en ese equipo; configura la URL pública antes de imprimirlos.
 

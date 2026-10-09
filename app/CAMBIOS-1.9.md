@@ -1,4 +1,4 @@
-# Las Palmas Rutas 1.9.1
+# OptiRouteLZC 1.9.1
 
 ## Buscar un viaje
 
@@ -51,7 +51,7 @@ Solo admite los enlaces HTTPS del repositorio y sus servidores de assets de GitH
 No abre el navegador. Se comparte únicamente el archivo verificado con el instalador
 de Android mediante un FileProvider restringido a `cache/updates/`.
 
-Android pide permiso para instalar desde Las Palmas Rutas y confirmación de instalación.
+Android pide permiso para instalar desde OptiRouteLZC y confirmación de instalación.
 No es una instalación silenciosa. Si cancelas, puedes instalar el archivo ya descargado,
 incluso sin conexión; una descarga incompleta se puede reintentar. Se conservan los datos.
 El bloqueo de versión sigue activo hasta actualizar. Un APK anterior a 1.9.1 conserva

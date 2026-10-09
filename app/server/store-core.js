@@ -68,10 +68,12 @@ export class TransitStoreCore {
       !input.name.trim() ||
       !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.email) ||
       !/^[a-zA-Z0-9 -]{1,24}$/.test(input.unit) ||
-      input.password.length < 12
+      typeof input.password !== 'string' ||
+      input.password.length < 8 ||
+      input.password.length > 256
     )
       throw new Error(
-        'Nombre, correo, unidad o contraseña inválidos; la contraseña requiere 12 caracteres.'
+        'Nombre, correo, unidad o contraseña inválidos; la contraseña requiere entre 8 y 256 caracteres.'
       );
     if (!this.network.routes.some((route) => route.id === input.routeId))
       throw new Error('La ruta no existe.');
@@ -154,8 +156,8 @@ export class TransitStoreCore {
   async changePassword(token, current, next) {
     const driver = this.authenticate(token);
     const row = this.row(driver.id);
-    if (typeof next !== 'string' || next.length < 12 || next.length > 256)
-      throw new ApiError(422, 'La contraseña necesita al menos 12 caracteres.');
+    if (typeof next !== 'string' || next.length < 8 || next.length > 256)
+      throw new ApiError(422, 'La contraseña necesita al menos 8 caracteres.');
     if (typeof current !== 'string' || current.length > 256)
       throw new ApiError(400, 'Escribe tu contraseña actual.');
     const [salt, saved] = row.password.split(':');

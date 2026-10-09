@@ -37,7 +37,7 @@ export function githubRelease(data) {
     minimumVersion: version,
     minimumWebVersion: bundled.version,
     webVersion: bundled.version,
-    notes: notes.length ? notes : ['Mejoras y correcciones de Las Palmas Rutas.'],
+    notes: notes.length ? notes : ['Mejoras y correcciones de OptiRouteLZC.'],
     releaseUrl: `https://github.com/${bundled.repository}/releases/tag/v${version}`,
     downloadUrl: expected,
     publishedAt: data.published_at,
@@ -94,7 +94,7 @@ export class ReleaseService {
       `https://github.com/${bundled.repository}/releases/latest/download/release.json`,
       {
         headers: {
-          'User-Agent': 'Las-Palmas-Rutas',
+          'User-Agent': 'OptiRouteLZC',
           ...(this.cached?.data.discovery === 'manifest' && this.cached.etag
             ? { 'If-None-Match': this.cached.etag }
             : {}),
@@ -165,7 +165,7 @@ export class ReleaseService {
         {
           headers: {
             Accept: 'application/vnd.github+json',
-            'User-Agent': 'Las-Palmas-Rutas',
+            'User-Agent': 'OptiRouteLZC',
             ...(this.cached?.etag && this.cached.data.discovery !== 'manifest'
               ? { 'If-None-Match': this.cached.etag }
               : {}),

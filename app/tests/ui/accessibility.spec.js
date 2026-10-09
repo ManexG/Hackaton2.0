@@ -24,9 +24,7 @@ test('passenger identity is explicit; driver login has a clearly labelled return
 }) => {
   await expect(page.getByRole('button', { name: 'Soy un chofer', exact: true })).toBeVisible();
   await expect(page.locator('#driver-email')).toBeHidden();
-  await expect(
-    page.getByRole('img', { name: 'Las Palmas Rutas', exact: true }).first()
-  ).toBeVisible();
+  await expect(page.getByRole('img', { name: 'OptiRouteLZC', exact: true }).first()).toBeVisible();
   await page.getByRole('button', { name: 'Soy un chofer', exact: true }).click();
   await expect(page.locator('.sheet-title')).toContainText('Soy un chofer');
   await expect(page.locator('#driver-email')).toBeVisible();

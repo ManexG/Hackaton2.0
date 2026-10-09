@@ -18,7 +18,7 @@
 
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">#F7F9F6</item>
-        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_cerca</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_optiroutelzc</item>
         <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
     </style>
 </resources>

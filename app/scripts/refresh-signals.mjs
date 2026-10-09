@@ -7,7 +7,7 @@ const query = `[out:json][timeout:25];(node["highway"="traffic_signals"](${bbox}
 const response = await fetch(
   'https://overpass-api.de/api/interpreter?' + new URLSearchParams({ data: query }),
   {
-    headers: { 'User-Agent': 'Las-Palmas-Rutas/1.8 (https://github.com/ManexG/Hackaton2.0)' },
+    headers: { 'User-Agent': 'OptiRouteLZC/1.8 (https://github.com/ManexG/Hackaton2.0)' },
     signal: AbortSignal.timeout(35000),
   }
 );

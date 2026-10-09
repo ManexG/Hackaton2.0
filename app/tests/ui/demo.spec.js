@@ -70,7 +70,7 @@ test('starts without a default origin, destination, or recommended route', async
   await expect(page.locator('.bus-marker.selected')).toHaveCount(0);
   await expect(page.locator('.nearby-place')).toHaveCount(0);
   await page.waitForTimeout(1000);
-  await page.screenshot({ path: '../cerca-react-inicio.png' });
+  await page.screenshot({ path: '../optiroutelzc-react-inicio.png' });
 });
 test('calculates direct journey only after choosing both endpoints', async ({ page }) => {
   await choose(page, 'origin', 'Jugos Acapulco');
@@ -90,7 +90,7 @@ test('selected cafe needs transfer and highlights both combis', async ({ page })
   await expect(page.locator('.transfer-marker')).toHaveCount(1);
   await expect(page.locator('.journey-steps')).toContainText('Haz tu trasbordo aquí');
   await page.waitForTimeout(1000);
-  await page.screenshot({ path: '../cerca-react-trasbordo.png' });
+  await page.screenshot({ path: '../optiroutelzc-react-trasbordo.png' });
 });
 test('editing destination clears stale recommendations and recalculates new route', async ({
   page,
@@ -261,7 +261,7 @@ test('mobile instructions and destination-specific transfer', async ({ page }) =
   });
   await page.waitForTimeout(900);
   expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
-  await page.screenshot({ path: '../cerca-react-android.png' });
+  await page.screenshot({ path: '../optiroutelzc-react-android.png' });
 });
 test('swap recalculates return journey for chosen endpoints', async ({ page }) => {
   await choose(page, 'origin', 'Jugos Acapulco');

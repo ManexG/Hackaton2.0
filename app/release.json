@@ -1,0 +1,14 @@
+{
+  "version": "1.8.1",
+  "androidVersionCode": 10,
+  "repository": "ManexG/Hackaton2.0",
+  "assetName": "Las-Palmas-Rutas.apk",
+  "notes": [
+    "Semáforos de OpenStreetMap visibles incluso sin conexión.",
+    "Actualizaciones obligatorias con APK y novedades desde GitHub Releases.",
+    "Menor consumo de datos y carga más rápida del mapa.",
+    "Modo sin internet con funciones disponibles y restricciones claras.",
+    "Correcciones en GPS, reconexión, seguridad y guardado de reportes.",
+    "Administración del equipo integrada con cuentas, choferes y rutas en Cloudflare."
+  ]
+}

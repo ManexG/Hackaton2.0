@@ -1,0 +1,14 @@
+node_modules
+android
+dist
+data
+.env
+.env.*
+!.env.example
+test-results
+playwright-report
+.git
+*.apk
+*.zip
+.wrangler
+.dev.vars*

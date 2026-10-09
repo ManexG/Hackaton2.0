@@ -1,0 +1,22 @@
+.traffic-signal-marker { background: transparent; border: 0; filter: drop-shadow(0 1px 2px #0005); }
+.traffic-signal-marker svg { width: 24px; height: 36px; }
+.traffic-signal-legend { display: flex; align-items: center; gap: 5px; background: #fffffff0; border-radius: 8px; padding: 4px 8px; color: #26382c; font: 12px/1.4 sans-serif; }
+.traffic-signal-legend svg { width: 13px; height: 21px; }
+.offline-notice { margin: 12px 0; padding: 14px; border: 1px solid #c89e45; border-radius: 12px; background: #fff7df; color: #513e19; }
+.offline-notice p { margin: 6px 0 0; line-height: 1.5; }
+.update-required { max-width: 620px; margin: auto; padding: max(24px, env(safe-area-inset-top)) 22px 40px; min-height: 100dvh; background: #fff; }
+.update-required img { width: 190px; max-width: 100%; }
+.update-required h1 { font-size: 1.8rem; margin: 24px 0 12px; }
+.update-required h2 { font-size: 1.2rem; margin-top: 22px; }
+.update-required li { margin-bottom: 12px; line-height: 1.5; }
+.update-required a, .update-required button { margin: 10px 0; }
+.update-required .primary-button { display: flex; justify-content: center; min-height: 56px; }
+.boot { display: grid; align-content: center; justify-items: center; gap: 14px; min-height: 100dvh; font-size: 1.1rem; padding: 24px; text-align: center; color: #24551f; }
+.boot::before { content: ''; width: 42px; height: 42px; border: 4px solid #d9e6ce; border-top-color: #24551f; border-radius: 50%; }
+button:disabled { cursor: not-allowed; }
+@media (prefers-reduced-motion: no-preference) {
+  .boot::before { animation: app-spin .9s linear infinite; }
+  .driver-panel, .route-detail, .journey-detail, .community-root, .update-required { animation: app-appear .2s ease-out; }
+  @keyframes app-spin { to { transform: rotate(360deg); } }
+  @keyframes app-appear { from { opacity: .5; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+}

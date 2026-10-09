@@ -1,0 +1,11 @@
+node_modules/
+dist/
+android/
+data/
+.wrangler/
+public/data/
+model-tools/
+tests/fixtures/
+test-results/
+playwright-report/
+.env*

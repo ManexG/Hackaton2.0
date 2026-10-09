@@ -1,0 +1,5 @@
+{$CERCA_DOMAIN} {
+    reverse_proxy cerca:8787 {
+        flush_interval -1
+    }
+}

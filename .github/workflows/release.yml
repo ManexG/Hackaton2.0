@@ -1,0 +1,78 @@
+name: Publicar Las Palmas Rutas
+on:
+  push:
+    tags: ['v[0-9]*']
+permissions:
+  contents: write
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  android-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: app
+    env:
+      VITE_PUBLIC_API_URL: https://cerca-combis.alanedgardo4.workers.dev/api
+      VITE_PUBLIC_APP_URL: https://cerca-combis.alanedgardo4.workers.dev/
+      RELEASE_TAG: ${{ github.ref_name }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools'
+          log-accepted-android-sdk-licenses: false
+      - name: Instalar dependencias y validar versión
+        run: |
+          npm ci
+          npm run release:check
+          npm run format:check
+          npm audit --audit-level=moderate
+          npm test
+          npm run test:cloudflare
+      - name: Verificar interfaz y modo sin conexión
+        run: |
+          npx playwright install --with-deps chromium
+          npm run test:ui
+          npm run test:offline
+      - name: Preparar firma privada
+        env:
+          KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          test -n "$KEYSTORE" || { echo 'Falta configurar ANDROID_KEYSTORE_BASE64.'; exit 1; }
+          printf '%s' "$KEYSTORE" | base64 --decode > "$RUNNER_TEMP/las-palmas.keystore"
+          chmod 600 "$RUNNER_TEMP/las-palmas.keystore"
+      - name: Compilar Android firmado
+        env:
+          ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/las-palmas.keystore
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          sdkmanager 'platforms;android-36' 'build-tools;36.1.0'
+          npm run android:sync
+          chmod +x android/gradlew
+          cd android
+          ./gradlew assembleRelease lintRelease --no-daemon
+      - name: Publicar APK y novedades
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp android/app/build/outputs/apk/release/app-release.apk Las-Palmas-Rutas.apk
+          "$ANDROID_HOME/build-tools/36.1.0/apksigner" verify Las-Palmas-Rutas.apk
+          sha256sum Las-Palmas-Rutas.apk > SHA256SUMS.txt
+          gh release create "$RELEASE_TAG" Las-Palmas-Rutas.apk SHA256SUMS.txt release.json --verify-tag --title "Las Palmas Rutas $RELEASE_TAG" --notes-file release-notes.txt --latest
+      - name: Eliminar copia temporal de la firma
+        if: always()
+        run: rm -f "$RUNNER_TEMP/las-palmas.keystore"

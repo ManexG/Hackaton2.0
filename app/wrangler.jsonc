@@ -1,0 +1,13 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "cerca-combis",
+  "main": "cloudflare/index.js",
+  "compatibility_date": "2026-10-08",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  "secrets": { "required": ["CERCA_ADMIN_TOKEN"] },
+  "assets": { "directory": "./dist", "binding": "ASSETS", "run_worker_first": ["/api/*"] },
+  "durable_objects": { "bindings": [{ "name": "FLEET", "class_name": "FleetService" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["FleetService"] }],
+  "observability": { "enabled": false }
+}

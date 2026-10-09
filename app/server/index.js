@@ -3,6 +3,7 @@ import { readFileSync, existsSync, createReadStream } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { extname, resolve, sep } from 'node:path';
 import { TransitStore, ApiError } from './store.js';
+import { CommunityService } from './community/service.js';
 import { validateNetwork } from '../src/planner.js';
 const root = fileURLToPath(new URL('../', import.meta.url));
 export function createTransitServer(options = {}) {
@@ -33,6 +34,10 @@ export function createTransitServer(options = {}) {
     publicAppUrl
   );
   store.resetServices();
+  const community = new CommunityService(
+    store,
+    options.adminToken ?? process.env.CERCA_ADMIN_TOKEN ?? ''
+  );
   const clients = new Set();
   const attempts = new Map();
   function broadcast() {
@@ -77,8 +82,8 @@ export function createTransitServer(options = {}) {
       }
       response.setHeader('Access-Control-Allow-Origin', origin);
       response.setHeader('Vary', 'Origin');
-      response.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization');
-      response.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+      response.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Admin-Key');
+      response.setHeader('Access-Control-Allow-Methods', 'GET,POST,PATCH,OPTIONS');
     }
     if (request.method === 'OPTIONS') {
       response.writeHead(204).end();
@@ -91,7 +96,38 @@ export function createTransitServer(options = {}) {
     };
     try {
       const url = new URL(request.url ?? '/', 'http://localhost');
+      if (
+        /^\/(reporte\/\d+|parada\/[A-Za-z0-9-]+|admin|perfil|mapa|estadisticas|campo|avenida|chofer)\/?$/.test(
+          url.pathname
+        )
+      ) {
+        const path = url.pathname.replace(/\/$/, '');
+        response.writeHead(302, {
+          Location: path === '/chofer' ? '/?driver=1' : path === '/avenida' ? '/' : '/#' + path,
+        });
+        response.end();
+        return;
+      }
       const token = request.headers.authorization?.replace(/^Bearer /, '') ?? '';
+      if (url.pathname.startsWith('/api/community/') || url.pathname === '/api/network') {
+        const chunks = [];
+        let length = 0;
+        for await (const chunk of request) {
+          length += chunk.length;
+          if (length > 4_500_000) throw new ApiError(413, 'Solicitud demasiado grande.');
+          chunks.push(chunk);
+        }
+        const result = await community.fetch(
+          new Request(new URL(request.url, 'http://localhost:8787'), {
+            method: request.method,
+            headers: request.headers,
+            ...(!['GET', 'HEAD'].includes(request.method) ? { body: Buffer.concat(chunks) } : {}),
+          })
+        );
+        response.writeHead(result.status, Object.fromEntries(result.headers));
+        response.end(Buffer.from(await result.arrayBuffer()));
+        return;
+      }
       if (request.method === 'GET' && url.pathname === '/api/health') {
         send(200, { ok: true });
         return;
@@ -191,6 +227,7 @@ export function createTransitServer(options = {}) {
         '.js': 'text/javascript; charset=utf-8',
         '.css': 'text/css; charset=utf-8',
         '.json': 'application/json',
+        '.webmanifest': 'application/manifest+json',
         '.svg': 'image/svg+xml',
         '.woff2': 'font/woff2',
         '.png': 'image/png',

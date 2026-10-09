@@ -15,7 +15,7 @@ test.beforeEach(async ({ page }) => {
     })
   );
   await page.goto('/');
-  await expect(page.locator('.plan-welcome')).toBeVisible();
+  await expect(page.locator('.search-status')).toBeVisible();
 });
 test('passenger identity is explicit; driver login has a clearly labelled return', async ({
   page,
@@ -43,7 +43,7 @@ test('choosing places confirms them and requires the explicit how-to-get-there a
     await page.getByRole('option').first().click();
   }
   await expect(page.locator('.field-confirmation')).toHaveCount(2);
-  await expect(page.locator('.plan-welcome')).toContainText('Todo listo');
+  await expect(page.locator('.search-status')).toContainText('Todo listo');
   await expect(page.locator('#results')).toHaveCount(0);
   await page.getByRole('button', { name: /Ver cómo llegar/ }).click();
   await expect(page.locator('#results')).toContainText('No hay un viaje disponible ahora');
@@ -62,16 +62,19 @@ test('route tap opens its endpoints and selected confirmation instead of an unex
   await page.getByRole('button', { name: 'Volver a todas las rutas' }).click();
   await expect(page.locator('.route-card')).toHaveCount(4);
 });
-test('help opens with readable instructions and keyboard escape returns to its trigger', async ({
+test('clean interface removes help and numbered onboarding while keeping a readable street map', async ({
   page,
 }) => {
-  await expect(page.locator('#info-dialog')).not.toBeVisible();
-  await page.getByRole('button', { name: 'Ayuda', exact: true }).click();
-  await expect(page.getByRole('dialog')).toBeVisible();
-  await expect(page.locator('.help-steps li')).toHaveCount(3);
-  await page.keyboard.press('Escape');
-  await expect(page.getByRole('dialog')).not.toBeVisible();
-  await expect(page.getByRole('button', { name: 'Ayuda', exact: true })).toBeFocused();
+  await expect(page.getByRole('button', { name: 'Ayuda', exact: true })).toHaveCount(0);
+  await expect(
+    page.locator('.plan-welcome, .step-number, #info-dialog, .panel-footer')
+  ).toHaveCount(0);
+  await expect(page.locator('.leaflet-tile')).toHaveCount(0);
+  await expect.poll(() => page.locator('.flat-street-name').count()).toBeGreaterThan(0);
+  await expect(page.locator('.leaflet-control-attribution')).toContainText(
+    'OpenStreetMap contributors'
+  );
+  await expect(page.getByRole('button', { name: 'Comunidad', exact: true })).toBeVisible();
 });
 test('larger text persists and mobile map has an explicit way back to instructions', async ({
   page,
@@ -85,7 +88,7 @@ test('larger text persists and mobile map has an explicit way back to instructio
   ).toBeGreaterThanOrEqual(22);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.reload();
-  await expect(page.locator('.plan-welcome')).toBeVisible();
+  await expect(page.locator('.search-status')).toBeVisible();
   await expect(page.getByRole('button', { name: /Letra normal/ })).toHaveAttribute(
     'aria-pressed',
     'true'
@@ -113,7 +116,7 @@ test('mobile passenger can enlarge text again to 200 percent without horizontal 
 test('missing model does not prevent local places, routes or stop browsing', async ({ page }) => {
   await page.route('**/data/eta-model.json', (route) => route.fulfill({ status: 404, body: '' }));
   await page.reload();
-  await expect(page.locator('.plan-welcome')).toBeVisible();
+  await expect(page.locator('.search-status')).toBeVisible();
   await page.locator('#destination').fill('Avenida Reforma 534');
   await expect(page.getByRole('option').first()).toContainText('#534');
   await page.getByRole('tab', { name: 'Ver rutas', exact: true }).click();

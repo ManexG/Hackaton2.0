@@ -165,6 +165,6 @@ test('mobile guest can enter and leave driver access without mandatory registrat
   await expect(page.locator('#driver-email')).toBeVisible();
   await page.screenshot({ path: '../cerca-android-acceso.png' });
   await page.getByRole('button', { name: 'Volver a viajar como pasajero', exact: true }).click();
-  await expect(page.locator('.plan-welcome')).toBeVisible();
+  await expect(page.locator('.search-status')).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
 });

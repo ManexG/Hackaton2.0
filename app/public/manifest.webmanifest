@@ -1,0 +1,11 @@
+{
+  "name": "Las Palmas Rutas",
+  "short_name": "Las Palmas",
+  "lang": "es-MX",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "theme_color": "#24551f",
+  "background_color": "#f5f7f0",
+  "icons": [{ "src": "/brand/las-palmas-icon.png", "sizes": "any", "type": "image/png", "purpose": "any" }]
+}

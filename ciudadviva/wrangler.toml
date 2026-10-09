@@ -1,0 +1,26 @@
+name = "lcalerta"
+main = "worker/src/index.js"
+compatibility_date = "2025-01-01"
+
+# DEV: `wrangler dev` y `wrangler d1 execute --local` usan la BD local (.wrangler/).
+# PROD: el mismo binding apunta a la base remota creada con `wrangler d1 create lcalerta`.
+#
+# Lo que se sirve es el frontend de React (frontend/dist). Para volver a la versión
+# anterior en HTML plano, cambia directory a "./app" y quita not_found_handling.
+
+[assets]
+directory = "./frontend/dist"
+binding = "ASSETS"
+# Cualquier ruta que no sea un archivo (/avenida, /parada/LC-001, /reporte/5...)
+# devuelve index.html para que React Router la resuelva. Sin esto, escanear
+# un QR de parada daría 404.
+not_found_handling = "single-page-application"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "lcalerta"
+database_id = "61b3828e-80b9-476c-8ede-15e58441c039"
+
+[[r2_buckets]]
+binding = "FOTOS"
+bucket_name = "lcalerta-fotos"

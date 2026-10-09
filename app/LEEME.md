@@ -1,4 +1,4 @@
-# Las Palmas Rutas 1.5 · React + Capacitor + GPS + Cloudflare
+# Las Palmas Rutas 1.6 · React + Capacitor + GPS + Comunidad
 
 Aplicación Android y web de movilidad para el corredor indicado en Lázaro Cárdenas. Usa **React 19, JavaScript, Vite 8, Leaflet y Capacitor 8**. La publicación en **Cloudflare Workers** guarda cuentas y GPS en un **Durable Object con SQLite** y comparte las posiciones mediante **SSE**. También se conserva el servidor alternativo de Node.js 24 para uso local o alojamiento propio.
 
@@ -14,7 +14,13 @@ La identidad **Estás en: Pasajero** aparece al entrar. El acceso **Entrar como 
 
 **Ver rutas** abre directamente el detalle de la ruta elegida, con confirmación, origen, término, sentido y paradas. **Volver a todas las rutas** regresa a la lista. En celular, **Ver mapa de las rutas** y **Volver a las instrucciones** separan ambas vistas sin un panel que haya que descubrir o arrastrar.
 
-Texto base de 18 px, control **Letra más grande** a 22 px con preferencia guardada, botones de al menos 48 px, contraste más alto y etiquetas escritas. **Ayuda** explica los tres pasos y puede leerlos en voz alta cuando el navegador lo permite. Se respeta la preferencia de movimiento reducido. Estas mejoras necesitan volver a probarse con personas mayores; las pruebas automatizadas no sustituyen esa evaluación.
+Texto base de 18 px, control **Letra más grande** a 22 px con preferencia guardada, botones de al menos 48 px, contraste más alto y etiquetas escritas. Se retiraron las tarjetas numeradas de pasos y el botón de ayuda. El mapa es plano, dibuja las calles guardadas sin edificios ni teselas externas y mantiene sus nombres y una atribución discreta. Se respeta la preferencia de movimiento reducido. Estas mejoras necesitan volver a probarse con personas mayores; las pruebas automatizadas no sustituyen esa evaluación.
+
+## Comunidad de la rama Axel
+
+**Comunidad** abre reportes ciudadanos con foto y ubicación, apoyos únicos por dispositivo, comentarios e historial, filtros, perfil con reportes y reconocimientos, estadísticas, trabajo de campo y administración. Consultar es libre; publicar requiere cuenta. Los choferes pueden usar su sesión ya asignada. [COMUNIDAD.md](COMUNIDAD.md) documenta la integración y el formato de importación de rutas.
+
+La web conserva sus recursos para abrir sin señal después de la primera visita. Los reportes se guardan en IndexedDB y se envían al recuperar conexión, con un identificador que evita duplicados. GPS y disponibilidad siguen requiriendo internet. La API, fotos y nuevas tablas se alojan en el mismo SQLite de Cloudflare, conservando las cuentas existentes. No hay conexión automática con un ayuntamiento.
 
 ## Pasajero
 
@@ -98,7 +104,7 @@ npm run android:sync
 npm run android:open
 ```
 
-Configura primero `VITE_PUBLIC_API_URL` y `VITE_PUBLIC_APP_URL` para conectar el APK al servidor publicado. El identificador es `mx.cerca.combis.demo`; versión **1.5**, código **6**. El APK de depuración se genera en `android/app/build/outputs/apk/debug/app-debug.apk`.
+Configura primero `VITE_PUBLIC_API_URL` y `VITE_PUBLIC_APP_URL` para conectar el APK al servidor publicado. El identificador es `mx.cerca.combis.demo`; versión **1.6**, código **7**. El APK de depuración se genera en `android/app/build/outputs/apk/debug/app-debug.apk`.
 
 ## Verificar
 
@@ -108,7 +114,7 @@ npm run test:ui
 npm run build
 ```
 
-Hay 35 pruebas de datos, búsqueda, planificación, autenticación, horarios, GPS, disponibilidad, SSE y enlaces QR; y 28 pruebas de interfaz, incluidas dos ventanas con servidor real y GPS controlado. Las cuentas y posiciones de prueba existen únicamente en pruebas aisladas, no en el servidor de la app.
+Las pruebas cubren datos, búsquedas, planificación, autenticación, horarios, GPS, SSE, QR y comunidad, incluidas fotos, apoyos, importación de rutas y borradores sin señal. El runtime de Cloudflare verifica que cuentas, reportes y fotos se conserven al reiniciar. Las cuentas y posiciones de prueba existen únicamente en pruebas aisladas.
 
 Las pruebas de interfaz usan Microsoft Edge y un puerto propio para evitar conflictos con otros proyectos. Se verificó la compilación Android. No se instaló ni se probó en un teléfono físico. La web pública, HTTPS, QR y SSE se verifican en Cloudflare; el contenedor Node se conserva como alternativa.
 

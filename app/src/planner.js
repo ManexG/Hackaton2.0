@@ -258,6 +258,9 @@ export function planJourneys(origin, destination, network, maxWalk = 420, allCan
           (sum, leg) => sum + network.routes.find((route) => route.id === leg.routeId).fare,
           0
         ),
+        fareKnown: legs.every(
+          (leg) => network.routes.find((route) => route.id === leg.routeId).fareKnown !== false
+        ),
         transfers: legs.length - 1,
       });
     }

@@ -114,7 +114,9 @@ export function RouteExplorer({
                 <Icon name="clock-3" />
                 {leg.rideMinutes} min aprox.
               </span>
-              <span>${selected.fare} MXN</span>
+              <span>
+                {selected.fareKnown === false ? 'Tarifa por confirmar' : `$${selected.fare} MXN`}
+              </span>
               <span>{ids.length} paradas</span>
             </div>
             <button className="secondary-button route-map-button" onClick={onMap}>

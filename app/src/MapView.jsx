@@ -1,5 +1,6 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import L from 'leaflet';
+import { addStreetMap } from './streetMap.js';
 import { distance, insideCoverage } from './planner.js';
 const escape = (text) =>
   text.replace(
@@ -140,55 +141,8 @@ export const MapView = forwardRef(function MapView(props, ref) {
       instance.getPane(name).style.zIndex = String(z);
     }
     instance.getPane('localMap').style.pointerEvents = 'none';
-    // A small, bundled street layer keeps the area readable while internet tiles load.
-    const streets = network.places.filter((place) => place.streetSegments?.length);
-    for (const street of streets) {
-      L.polyline(street.streetSegments, {
-        pane: 'localMap',
-        color: '#ffffff',
-        weight: /Avenida|Boulevard/.test(street.name) ? 7 : 4,
-        opacity: 0.85,
-        interactive: false,
-      }).addTo(instance);
-    }
-    streets
-      .filter((street) => /^(Avenida|Boulevard)/.test(street.name))
-      .slice(0, 18)
-      .forEach((street) => {
-        L.marker(street.point, {
-          pane: 'localMap',
-          icon: L.divIcon({
-            className: 'local-street-label',
-            html: escape(street.name),
-            iconSize: [130, 20],
-            iconAnchor: [65, 10],
-          }),
-          interactive: false,
-        }).addTo(instance);
-      });
+    addStreetMap(instance, network);
     instance.getPane('mask').style.pointerEvents = 'none';
-    let tilesLoaded = false,
-      reported = false;
-    const tileLayer = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution:
-        '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>',
-      maxZoom: 19,
-      bounds,
-      updateWhenIdle: true,
-      keepBuffer: 1,
-      crossOrigin: true,
-    }).addTo(instance);
-    tileLayer.on('tileload', () => {
-      tilesLoaded = true;
-    });
-    tileLayer.on('tileerror', () => {
-      if (!tilesLoaded && !reported) {
-        reported = true;
-        state.current.onMessage(
-          'El mapa base necesita conexión. El catálogo local y las rutas siguen disponibles.'
-        );
-      }
-    });
     L.polygon(network.coverage.polygon, {
       pane: 'coverage',
       color: '#8eaa91',

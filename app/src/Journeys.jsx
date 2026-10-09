@@ -45,8 +45,14 @@ export function JourneyResults({ journeys, selected, network, onSelect, onSimula
                 <small> min</small>
               </strong>
               <div className="journey-price">
-                ${journey.fare} <small>MXN</small>
-                <span>tarifa simulada</span>
+                {journey.fareKnown === false ? (
+                  'Por confirmar'
+                ) : (
+                  <>
+                    ${journey.fare} <small>MXN</small>
+                  </>
+                )}
+                <span>{journey.fareKnown === false ? 'tarifa pendiente' : 'tarifa simulada'}</span>
               </div>
             </div>
             <div className="journey-lines">
@@ -190,7 +196,8 @@ function LegSteps({ leg, route, index, network, unit, wait }) {
             {stopName(network, leg.from)} → {stopName(network, leg.to)}
           </span>
           <small>
-            Unidad {unit} · {leg.rideMinutes} min aprox. · ${route.fare} MXN simulados
+            Unidad {unit} · {leg.rideMinutes} min aprox. ·{' '}
+            {route.fareKnown === false ? 'Tarifa por confirmar' : `$${route.fare} MXN simulados`}
           </small>
         </div>
       </li>

@@ -7,8 +7,13 @@ export function stopFromLink(value, network, webOrigin) {
       (!['https:', 'http:'].includes(url.protocol) || url.origin !== new URL(webOrigin).origin)
     )
       return null;
-    const id = isNative ? decodeURIComponent(url.pathname.slice(1)) : url.searchParams.get('stop');
-    return network.stops.find((stop) => stop.id === id) ?? null;
+    const code = (url.hash.replace(/^#/, '') || url.pathname).match(
+      /^\/parada\/([A-Za-z0-9-]+)\/?$/
+    )?.[1];
+    const id = isNative
+      ? decodeURIComponent(url.pathname.slice(1))
+      : url.searchParams.get('stop') || code;
+    return network.stops.find((stop) => stop.id === id || (code && stop.qr === code)) ?? null;
   } catch {
     return null;
   }

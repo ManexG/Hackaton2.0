@@ -1,0 +1,36 @@
+{
+  "zona": {
+    "nombre": "Zona piloto centro",
+    "lat": 17.958,
+    "lng": -102.205,
+    "radio_m": 1500,
+    "descripcion": "EJEMPLO para probar el formato. Sustituir por datos reales."
+  },
+"rutas": [
+    {
+      "nombre": "EJEMPLO - Ruta Centro",
+      "color": "#e11d48",
+      "fuente": "EJEMPLO - reemplazar por la fuente real de estos datos",
+      "trazo": [
+        [17.951, -102.202],
+        [17.956, -102.206],
+        [17.961, -102.21]
+      ],
+      "paradas": [
+        {
+          "nombre": "EJEMPLO - Parada centro",
+          "lat": 17.956,
+          "lng": -102.206,
+          "qr": "LC-EJ-001",
+          "espera_min": 4
+        },
+        {
+          "nombre": "EJEMPLO - Parada mercado",
+          "lat": 17.961,
+          "lng": -102.21,
+          "qr": "LC-EJ-002"
+        }
+      ]
+    }
+  ]
+}

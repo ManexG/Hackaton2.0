@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="es" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LCAlerta — Estadísticas</title>
+  <link rel="icon" href="/img/icon.svg" type="image/svg+xml">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 p-4 max-w-3xl mx-auto">
+  <header class="flex justify-between items-center mb-4">
+    <h1 class="text-2xl font-black">Estadísticas de la ciudad</h1>
+    <a href="/" class="btn btn-ghost">Volver</a>
+  </header>
+  <div class="grid md:grid-cols-2 gap-4">
+    <div class="card bg-slate-800 border border-white/10 p-4"><h2 class="font-bold">Por categoría</h2><canvas id="cCat"></canvas></div>
+    <div class="card bg-slate-800 border border-white/10 p-4"><h2 class="font-bold">Por estado</h2><canvas id="cEstado"></canvas></div>
+    <div class="card bg-slate-800 border border-white/10 p-4"><h2 class="font-bold">Top colonias</h2><canvas id="cColonia"></canvas></div>
+    <div class="card bg-slate-800 border border-white/10 p-4"><h2 class="font-bold">Por día</h2><canvas id="cDia"></canvas></div>
+  </div>
+  <script>
+    const texto = { color: '#e2e8f0' };
+    fetch('/api/estadisticas').then(r => r.json()).then(d => {
+      const colors = ['#eab308', '#ef4444', '#22c55e', '#3b82f6', '#a855f7'];
+      const base = { responsive: true, plugins: { legend: { labels: texto } } };
+      new Chart(cCat, { type: 'doughnut', data: { labels: d.porCat.map(x => x.categoria), datasets: [{ data: d.porCat.map(x => x.n), backgroundColor: colors }] }, options: base });
+      new Chart(cEstado, { type: 'pie', data: { labels: d.estados.map(x => x.estado), datasets: [{ data: d.estados.map(x => x.n) }] }, options: base });
+      new Chart(cColonia, { type: 'bar', data: { labels: d.porColonia.map(x => x.colonia), datasets: [{ label: 'Reportes', data: d.porColonia.map(x => x.n), backgroundColor: '#2563eb' }] }, options: { ...base, plugins: { legend: { display: false } } } });
+      new Chart(cDia, { type: 'line', data: { labels: d.porDia.map(x => x.d), datasets: [{ label: 'Reportes/día', data: d.porDia.map(x => x.n), borderColor: '#22c55e' }] }, options: base });
+    });
+  </script>
+</body>
+</html>

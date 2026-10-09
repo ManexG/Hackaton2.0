@@ -80,6 +80,76 @@ test('Cloudflare runtime: persistent SQLite, private accounts, real GPS API, SSE
     assert.equal(login.status, 200);
     const session = await login.json();
     assert.equal((await call('/driver/profile', undefined, session.token)).status, 200);
+    const community = (path, options = {}) =>
+      runtime.dispatchFetch('https://cerca-test.workers.dev/api/community' + path, options);
+    const communityDriver = await (
+      await community('/auth/me', { headers: { Authorization: `Bearer ${session.token}` } })
+    ).json();
+    assert.equal(communityDriver.rol, 'chofer');
+    assert.equal(communityDriver.email, account.email);
+    const neighbor = await community('/auth/registro', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nombre: 'Vecina CF',
+        email: 'neighbor-cf@example.test',
+        password: 'isolated-neighbor-cloudflare-password',
+        rol: 'admin',
+      }),
+    });
+    assert.equal(neighbor.status, 201);
+    const neighborSession = await neighbor.json();
+    assert.equal(neighborSession.rol, 'vecino');
+    const photoBytes = new Uint8Array(280000).fill(42);
+    const form = new FormData();
+    for (const [key, value] of Object.entries({
+      categoria: 'bache',
+      descripcion: 'Reporte persistente CF',
+      lat: network.stops[0].point[0],
+      lng: network.stops[0].point[1],
+      client_id: 'isolated-cloudflare-report',
+    }))
+      form.set(key, value);
+    form.set('foto', new Blob([photoBytes], { type: 'image/png' }), 'photo.png');
+    const upload = new Request('https://isolated.test/', { method: 'POST', body: form });
+    const created = await community('/reportes', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${neighborSession.token}`,
+        'Content-Type': upload.headers.get('Content-Type'),
+      },
+      body: new Uint8Array(await upload.arrayBuffer()),
+    });
+    assert.equal(created.status, 201);
+    const reportId = (await created.json()).id;
+    assert.equal(
+      (
+        await community(`/reportes/${reportId}/votar`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fingerprint: 'cloudflare-device' }),
+        })
+      ).status,
+      200
+    );
+    assert.equal(
+      (
+        await community(`/reportes/${reportId}/estado`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', 'X-Admin-Key': admin },
+          body: JSON.stringify({ estado: 'recibido', nota: 'En revisión por el equipo' }),
+        })
+      ).status,
+      200
+    );
+    assert.equal(
+      (
+        await runtime.dispatchFetch('https://cerca-test.workers.dev/parada/LC-001', {
+          redirect: 'manual',
+        })
+      ).headers.get('Location'),
+      'https://cerca-test.workers.dev/#/parada/LC-001'
+    );
     assert.equal(
       (await call('/fleet', undefined, undefined, 'https://foreign.example')).status,
       403
@@ -116,6 +186,9 @@ test('Cloudflare runtime: persistent SQLite, private accounts, real GPS API, SSE
     const fleet = await (await call('/fleet')).json();
     assert.equal(fleet.vehicles.length, 1);
     assert.equal(fleet.vehicles[0].routeId, 'R01');
+    const communityFleet = await (await community('/vehiculos/activos')).json();
+    assert.equal(communityFleet.length, 1);
+    assert.equal(communityFleet[0].nombre, account.unit);
     assert.ok(!JSON.stringify(fleet).includes(account.email));
     assert.ok(!JSON.stringify(fleet).includes(account.password));
     const updated = decoder.decode((await reader.read()).value);
@@ -128,6 +201,21 @@ test('Cloudflare runtime: persistent SQLite, private accounts, real GPS API, SSE
     reader = undefined;
     await runtime.dispose();
     runtime = new Miniflare(options);
+    const restoredReport = await (await community(`/reportes/${reportId}`)).json();
+    assert.equal(restoredReport.votos, 1);
+    assert.equal(restoredReport.estado, 'recibido');
+    assert.deepEqual(
+      new Uint8Array(await (await community('/foto/' + restoredReport.foto_key)).arrayBuffer()),
+      photoBytes
+    );
+    assert.equal(
+      (
+        await community('/auth/me', {
+          headers: { Authorization: `Bearer ${neighborSession.token}` },
+        })
+      ).status,
+      200
+    );
     assert.equal((await call('/driver/profile', undefined, session.token)).status, 200);
     assert.equal((await (await call('/fleet')).json()).vehicles.length, 1);
     assert.equal((await call('/driver/service', { active: false }, session.token)).status, 200);

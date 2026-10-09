@@ -54,7 +54,7 @@ test.beforeEach(async ({ page }) => {
     })
   );
   await page.goto('/');
-  await expect(page.locator('.plan-welcome')).toBeVisible();
+  await expect(page.locator('.search-status')).toBeVisible();
 });
 test.afterEach(async ({ page }) => {
   expect(errors.get(page)).toEqual([]);
@@ -263,7 +263,7 @@ test('swap recalculates return journey for chosen endpoints', async ({ page }) =
 test('bundled streets and catalog work when internet map tiles fail', async ({ page }) => {
   await page.route('https://tile.openstreetmap.org/**', (route) => route.abort());
   await page.reload();
-  await expect(page.locator('.plan-welcome')).toBeVisible();
+  await expect(page.locator('.search-status')).toBeVisible();
   await expect(page.locator('.leaflet-localMap-pane path')).toHaveCount(412);
   await page.locator('#destination').fill('Avenida Reforma 534');
   await expect(page.locator('#suggestions [role=option]').first()).toContainText('#534');

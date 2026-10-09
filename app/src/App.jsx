@@ -25,13 +25,14 @@ export function CercaApp({ network, catalog }) {
   const [selectedRoute, setSelectedRoute] = useState(null);
   const [reversed, setReversed] = useState(false);
   const [tab, setTab] = useState('plan');
-  const [role, setRole] = useState('passenger');
+  const [role, setRole] = useState(() =>
+    new URLSearchParams(location.search).get('driver') === '1' ? 'driver' : 'passenger'
+  );
   const [selectedStop, setSelectedStop] = useState(null);
   const fleet = useFleet(network);
   const [drawer, setDrawer] = useState('normal');
   const [pinMode, setPinMode] = useState(null);
   const [toast, setToast] = useState('');
-  const [showInfo, setShowInfo] = useState(false);
   const [largeText, setLargeText] = useState(() => {
     try {
       return localStorage.getItem('las-palmas-large-text') === 'true';
@@ -46,9 +47,8 @@ export function CercaApp({ network, catalog }) {
   const controller = useRef(null);
   const map = useRef(null);
   const panel = useRef(null);
-  const dialog = useRef(null);
-  const latest = useRef({ text, active, drawer, tab, pinMode, showInfo, simulation, role });
-  latest.current = { text, active, drawer, tab, pinMode, showInfo, simulation, role };
+  const latest = useRef({ text, active, drawer, tab, pinMode, simulation, role });
+  latest.current = { text, active, drawer, tab, pinMode, simulation, role };
   const journeys = useMemo(
     () =>
       trip
@@ -95,14 +95,6 @@ export function CercaApp({ network, catalog }) {
     return () => clearTimeout(timer);
   }, [toast]);
   useEffect(() => {
-    if (showInfo && !dialog.current?.open) {
-      dialog.current?.showModal();
-      document.getElementById('help-title')?.focus({ preventScroll: true });
-      if (dialog.current) dialog.current.scrollTop = 0;
-    }
-    if (!showInfo && dialog.current?.open) dialog.current.close();
-  }, [showInfo]);
-  useEffect(() => {
     function dismiss(event) {
       if (!event.target.closest('.search-box')) setActive(null);
     }
@@ -114,8 +106,9 @@ export function CercaApp({ network, catalog }) {
     if (!Capacitor.isNativePlatform()) return;
     const registration = NativeApp.addListener('backButton', () => {
       const ui = latest.current;
-      if (ui.showInfo) setShowInfo(false);
-      else if (ui.active) setActive(null);
+      if (location.hash) {
+        location.hash = location.hash.startsWith('#/reporte/') ? '/comunidad' : '';
+      } else if (ui.active) setActive(null);
       else if (ui.simulation) {
         map.current?.stopSimulation();
         setDrawer('normal');
@@ -428,9 +421,13 @@ export function CercaApp({ network, catalog }) {
               <span aria-hidden="true">A+</span>
               {largeText ? 'Letra normal' : 'Letra más grande'}
             </button>
-            <button className="help-button" onClick={() => setShowInfo(true)}>
-              <Icon name="info" />
-              Ayuda
+            <button
+              onClick={() => {
+                location.hash = '/comunidad';
+              }}
+            >
+              <Icon name="users" />
+              Comunidad
             </button>
           </div>
         </header>
@@ -479,7 +476,7 @@ export function CercaApp({ network, catalog }) {
               >
                 <div className="task-intro">
                   <h2>¿A dónde quieres ir?</h2>
-                  <p>Sigue estos tres pasos para encontrar tu combi.</p>
+                  <p>Elige tu origen y tu destino.</p>
                 </div>
                 <form id="search-form" onSubmit={submit}>
                   <SearchFields
@@ -517,7 +514,6 @@ export function CercaApp({ network, catalog }) {
                     type="submit"
                     disabled={loadingSearch}
                   >
-                    <span className="step-number">3</span>
                     {loadingSearch ? 'Buscando tu destino…' : 'Ver cómo llegar'}
                     <Icon name={loadingSearch ? 'loading' : 'arrow-right'} />
                   </button>
@@ -560,27 +556,11 @@ export function CercaApp({ network, catalog }) {
                     </button>
                   </div>
                 ) : (
-                  <div className="plan-welcome" aria-live="polite">
-                    <Icon name={origin && destination ? 'check' : 'info'} />
-                    <div>
-                      <strong>
-                        {origin && destination
-                          ? 'Todo listo para buscar'
-                          : origin
-                            ? 'Paso 2: elige tu destino'
-                            : destination
-                              ? 'Paso 1: elige desde dónde sales'
-                              : 'Empieza en el paso 1'}
-                      </strong>
-                      <p>
-                        {origin && destination
-                          ? 'Pulsa el botón verde «Ver cómo llegar».'
-                          : origin
-                            ? 'Escribe un lugar o elígelo en las sugerencias de abajo.'
-                            : 'Puedes usar tu ubicación o escribir una calle, negocio o parada.'}
-                      </p>
-                    </div>
-                  </div>
+                  <p className="search-status" aria-live="polite">
+                    {origin && destination
+                      ? 'Todo listo. Pulsa «Ver cómo llegar».'
+                      : 'Busca una calle, negocio o parada dentro de la zona.'}
+                  </p>
                 )}
                 <ExplorePlaces
                   network={network}
@@ -666,12 +646,6 @@ export function CercaApp({ network, catalog }) {
                 conectados con GPS real.
               </p>
             </div>
-            <footer className="panel-footer">
-              <button className="catalog-info" onClick={() => setShowInfo(true)}>
-                Ayuda e información de la demo
-              </button>
-              <span>© OpenStreetMap</span>
-            </footer>
           </div>
         </aside>
         <section className="map-section" aria-label="Mapa de rutas dentro de la cobertura">
@@ -817,90 +791,6 @@ export function CercaApp({ network, catalog }) {
           </button>
         </div>
       )}
-      <dialog
-        id="info-dialog"
-        ref={dialog}
-        aria-labelledby="help-title"
-        onClose={() => {
-          setShowInfo(false);
-          if ('speechSynthesis' in window) window.speechSynthesis.cancel();
-        }}
-      >
-        <img className="help-logo" src="./brand/las-palmas-logo.png" alt="Las Palmas Rutas" />
-        <h2 id="help-title" tabIndex={-1}>
-          Te ayudamos a encontrar tu combi
-        </h2>
-        <ol className="help-steps">
-          <li>
-            <strong>Elige desde dónde sales.</strong>
-            <p>
-              Pulsa «Mi ubicación» o escribe el nombre de una calle, negocio o parada. Toca el
-              resultado que buscas.
-            </p>
-          </li>
-          <li>
-            <strong>Elige a dónde vas.</strong>
-            <p>
-              Escribe tu destino o toca un lugar sugerido. Revisa que los dos lugares sean
-              correctos.
-            </p>
-          </li>
-          <li>
-            <strong>Pulsa «Ver cómo llegar».</strong>
-            <p>
-              Verás qué combi tomar, dónde bajar y si debes cambiar de combi. Las rutas de tu viaje
-              se resaltan en el mapa.
-            </p>
-          </li>
-        </ol>
-        <p>
-          <strong>¿Solo quieres conocer una ruta?</strong> Toca «Ver rutas» y elige una. Se abrirán
-          su inicio, su término y todas sus paradas.
-        </p>
-        {'speechSynthesis' in window && (
-          <button
-            className="secondary-button"
-            onClick={() => {
-              window.speechSynthesis.cancel();
-              const speech = new SpeechSynthesisUtterance(
-                'Para buscar tu combi, primero elige desde dónde sales. Puedes pulsar Mi ubicación o escribir una calle. Segundo, escribe a dónde quieres ir y toca una sugerencia. Tercero, pulsa Ver cómo llegar. Lee las instrucciones para saber qué combi tomar y dónde bajar.'
-              );
-              speech.lang = 'es-MX';
-              speech.rate = 0.85;
-              window.speechSynthesis.speak(speech);
-            }}
-          >
-            Escuchar las instrucciones
-            <Icon name="radio" />
-          </button>
-        )}
-        <button className="primary-button" onClick={() => setShowInfo(false)}>
-          Entendido, quiero viajar
-          <Icon name="check" />
-        </button>
-        <details className="demo-information">
-          <summary>Sobre esta demo y sus datos</summary>
-          <p>
-            Rutas, paradas intermedias y tarifas de ejemplo. GPS real de choferes con cuenta y
-            servicio activo. Sin señal reciente, la combi deja de mostrarse.
-          </p>
-          <p>
-            Las predicciones del modelo de tu equipo son experimentales: se entrenó con viajes
-            ficticios. No conocemos la lluvia ni los semáforos reales. Las llegadas pueden cambiar.
-          </p>
-          <p>
-            La zona disponible rodea el corredor de Jugos Acapulco al entronque de la avenida Lázaro
-            Cárdenas; no es el límite oficial de la ciudad.
-          </p>
-          <p>
-            {catalog.places.length} lugares y calles guardados. Datos ©{' '}
-            <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">
-              OpenStreetMap contributors
-            </a>{' '}
-            · ODbL.
-          </p>
-        </details>
-      </dialog>
     </>
   );
 }

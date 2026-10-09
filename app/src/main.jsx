@@ -3,15 +3,42 @@ import 'leaflet/dist/leaflet.css';
 import './style.css';
 import './live.css';
 import './accessible.css';
+import './community/community.css';
 import React, { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { CercaApp } from './App.jsx';
+import { AppRoot } from './AppRoot.jsx';
 import { insideCoverage, validateNetwork } from './planner.js';
 import { installEtaModel } from './etaModel.js';
+import { Capacitor } from '@capacitor/core';
+// Accept the URLs shared by the original Axel app and use one root shell.
+if (
+  /^\/(reporte\/\d+|parada\/[A-Za-z0-9-]+|admin|perfil|mapa|estadisticas|campo|avenida|chofer)\/?$/.test(
+    location.pathname
+  )
+) {
+  const path = location.pathname.replace(/\/$/, '');
+  location.replace(path === '/chofer' ? '/?driver=1' : path === '/avenida' ? '/' : '/#' + path);
+}
+if (import.meta.env.PROD && !Capacitor.isNativePlatform() && 'serviceWorker' in navigator)
+  window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
 function Bootstrap() {
   const [network, setNetwork] = useState(null);
   const [catalog, setCatalog] = useState(null);
   const [error, setError] = useState('');
+  async function refreshNetwork() {
+    const base = (import.meta.env.VITE_PUBLIC_API_URL || '/api').replace(/\/$/, '');
+    const response = await fetch(base + '/network', { signal: AbortSignal.timeout(4000) });
+    if (!response.ok) return;
+    const routes = await response.json();
+    validateNetwork(routes);
+    setNetwork((current) => ({
+      ...routes,
+      places: [
+        ...routes.places,
+        ...current.places.filter((p) => !routes.places.some((r) => r.id === p.id)),
+      ],
+    }));
+  }
   useEffect(() => {
     const controller = new AbortController();
     const modelController = new AbortController();
@@ -31,8 +58,18 @@ function Bootstrap() {
         return r.json();
       }),
       modelPromise,
+      fetch((import.meta.env.VITE_PUBLIC_API_URL || '/api').replace(/\/$/, '') + '/network', {
+        signal: AbortSignal.timeout(4000),
+      })
+        .then((response) => (response.ok ? response.json() : null))
+        .then((data) => {
+          if (data) validateNetwork(data);
+          return data;
+        })
+        .catch(() => null),
     ])
-      .then(([routes, places]) => {
+      .then(([bundled, places, _model, remote]) => {
+        const routes = remote || bundled;
         validateNetwork(routes);
         const combined = {
           ...routes,
@@ -64,7 +101,7 @@ function Bootstrap() {
       </div>
     );
   if (!network || !catalog) return <div className="boot">Cargando lugares y rutas…</div>;
-  return <CercaApp network={network} catalog={catalog} />;
+  return <AppRoot network={network} catalog={catalog} refreshNetwork={refreshNetwork} />;
 }
 createRoot(document.getElementById('app')).render(
   <React.StrictMode>

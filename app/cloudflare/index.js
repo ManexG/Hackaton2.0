@@ -1,6 +1,7 @@
 import { DurableObject } from 'cloudflare:workers';
 import { createHash, timingSafeEqual } from 'node:crypto';
 import { ApiError, TransitStoreCore } from '../server/store-core.js';
+import { CommunityService } from '../server/community/service.js';
 import networkData from '../public/data/network.demo.json';
 const network = networkData;
 const json = (status, data) =>
@@ -8,6 +9,18 @@ const json = (status, data) =>
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+    if (
+      /^\/(reporte\/\d+|parada\/[A-Za-z0-9-]+|admin|perfil|mapa|estadisticas|campo|avenida|chofer)\/?$/.test(
+        url.pathname
+      )
+    ) {
+      const path = url.pathname.replace(/\/$/, '');
+      return Response.redirect(
+        new URL(path === '/chofer' ? '/?driver=1' : path === '/avenida' ? '/' : '/#' + path, url)
+          .href,
+        302
+      );
+    }
     if (!url.pathname.startsWith('/api/')) return env.ASSETS.fetch(request);
     const origin = request.headers.get('Origin');
     const allowed = new Set([
@@ -28,8 +41,8 @@ export default {
     if (origin) {
       headers.set('Access-Control-Allow-Origin', origin);
       headers.set('Vary', 'Origin');
-      headers.set('Access-Control-Allow-Headers', 'Content-Type,Authorization');
-      headers.set('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+      headers.set('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Admin-Key');
+      headers.set('Access-Control-Allow-Methods', 'GET,POST,PATCH,OPTIONS');
     }
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers });
     // Check the current deployment's secret at the gateway, before invoking the persistent object.
@@ -71,6 +84,7 @@ export class FleetService extends DurableObject {
       close: () => {},
     };
     this.store = new TransitStoreCore(db, network, env.PUBLIC_APP_URL ?? '');
+    this.community = new CommunityService(this.store, env.CERCA_ADMIN_TOKEN ?? '');
     // Eviction/redeployment must preserve driver availability; snapshot expires stale GPS.
     ctx.storage.sql.exec(
       'CREATE TABLE IF NOT EXISTS login_attempts (key TEXT PRIMARY KEY, count INTEGER NOT NULL, reset INTEGER NOT NULL)'
@@ -156,6 +170,16 @@ export class FleetService extends DurableObject {
       publicUrl = url.origin + '/';
     const token = request.headers.get('Authorization')?.replace(/^Bearer /, '') ?? '';
     try {
+      if (url.pathname.startsWith('/api/community/') || url.pathname === '/api/network') {
+        if (['/api/community/auth/login', '/api/community/auth/registro'].includes(url.pathname)) {
+          const data = await request
+            .clone()
+            .json()
+            .catch(() => ({}));
+          this.throttle(data.email, request.headers.get('CF-Connecting-IP') ?? 'local');
+        }
+        return await this.community.fetch(request);
+      }
       if (request.method === 'GET' && url.pathname === '/api/health')
         return json(200, { ok: true, hosting: 'cloudflare' });
       if (request.method === 'GET' && url.pathname === '/api/fleet')

@@ -1,0 +1,18 @@
+{
+  "name": "lcalerta",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --port 8787",
+    "deploy": "wrangler deploy",
+    "migrate:local": "for f in migrations/*.sql; do npx wrangler d1 execute lcalerta --local --file=$f; done",
+    "migrate:remote": "npx wrangler d1 migrations apply lcalerta --remote",
+    "db:local": "wrangler d1 execute lcalerta --local --file=./migrations/0001_init.sql",
+    "db:remote": "wrangler d1 execute lcalerta --remote --file=./migrations/0001_init.sql",
+    "datos": "node scripts/crear-datos.mjs"
+  },
+  "devDependencies": {
+    "wrangler": "^4.148.0"
+  }
+}

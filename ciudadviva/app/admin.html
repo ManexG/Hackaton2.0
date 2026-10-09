@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LCAlerta — Panel municipio</title>
+  <link rel="stylesheet" href="/css/app.css">
+  <link rel="icon" href="/img/icon.svg" type="image/svg+xml">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .estado{padding:.15rem .5rem;border-radius:999px;font-size:.7rem;font-weight:700}
+    .estado.enviado{background:#fef9c3;color:#854d0e}
+    .estado.recibido{background:#dbeafe;color:#1e40af}
+    .estado.aprobado{background:#dcfce7;color:#166534}
+    .estado.no_aprobado{background:#fee2e2;color:#991b1b}
+    th,td{padding:.4rem .5rem;border-bottom:1px solid #e2e8f0;font-size:.8rem}
+    body{font-family:system-ui;padding:1rem 1rem 7rem;max-width:1100px;margin:0 auto}
+  </style>
+</head>
+<body>
+  <header class="flex justify-between items-center mb-4"><h1 class="text-xl font-black">🏛 LCAlerta — Ayuntamiento</h1><button id="btnKey" class="btn btn-ghost btn-sm">🔑 Clave</button></header>
+  <main>
+    <h3>Estado: <select id="fEstado"><option value="">todos</option><option>enviado</option><option>recibido</option><option>aprobado</option><option>no_aprobado</option></select>
+      Categoría: <select id="fCat"><option value="">todas</option><option>alumbrado</option><option>bache</option><option>basura</option><option>fuga_agua</option><option>otro</option></select>
+    </h3>
+    <div style="overflow-x:auto"><table id="tbl" style="width:100%;border-collapse:collapse;font-size:.8rem">
+      <thead><tr style="text-align:left;color:#94a3b8"><th>ID</th><th>Cat.</th><th>Colonia</th><th>Estado</th><th>👍</th><th>Días</th><th>Urgencia</th><th>Nota</th><th>Acciones</th></tr></thead>
+      <tbody></tbody>
+    </table></div>
+    <h3>Ranking de colonias</h3>
+    <ol id="ranking"></ol>
+    <h3>Actividad por día</h3>
+    <div id="actividad"></div>
+    <h3>Exportar</h3>
+    <p><a id="expCsv" href="#" download="lcalerta_reportes.csv">CSV</a> · <a id="expGeo" href="#" download="lcalerta_reportes.geojson">GeoJSON</a></p>
+  </main>
+
+  <!-- ORB STACK del municipio: Export CSV, GeoJSON, Actualizar -->
+  <div class="button-stack orb-side orb-side--row orb-side--admin">
+    <div class="btn-wrapper">
+      <button class="orb-btn btn-teal" id="orbCsv" aria-label="Exportar CSV">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <line x1="12" y1="4" x2="12" y2="20"></line>
+          <line x1="4" y1="12" x2="20" y2="12"></line>
+        </svg>
+      </button>
+      <span class="btn-label">CSV</span>
+    </div>
+    <div class="btn-wrapper">
+      <button class="orb-btn btn-silver" id="orbGeo" aria-label="Exportar GeoJSON">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M7 17 L17 7 M17 7 L9 7 M17 7 L17 15"></path>
+        </svg>
+      </button>
+      <span class="btn-label">GeoJSON</span>
+    </div>
+    <div class="btn-wrapper">
+      <button class="orb-btn btn-mauve" id="orbRefresh" aria-label="Actualizar">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M5 13 L10 17.5 L19 7"></path>
+        </svg>
+      </button>
+      <span class="btn-label">Actualizar</span>
+    </div>
+  </div>
+
+  <script src="/js/admin.js"></script>
+</body>
+</html>

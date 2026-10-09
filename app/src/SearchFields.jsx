@@ -95,7 +95,6 @@ export function SearchFields(props) {
         {['origin', 'destination'].map((field, i) => (
           <div className={`field ${props[field] ? 'field-chosen' : ''}`} key={field}>
             <label htmlFor={field}>
-              <span className="step-number">{i + 1}</span>
               {field === 'origin' ? '¿Desde dónde sales?' : '¿A dónde vas?'}
             </label>
             {field === 'origin' && (

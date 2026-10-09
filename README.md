@@ -8,14 +8,17 @@ Aplicación Android y web para consultar combis en el corredor de Jugos Acapulco
 - Choferes con cuenta, unidad, ruta y horario asignados: activación y desactivación de servicio con GPS.
 - Combis disponibles y llegadas estimadas por parada; viajes con hasta dos trasbordos según vehículos activos.
 - Enlaces y QR por parada, lector QR y búsqueda por voz en Android y navegadores compatibles.
+- Comunidad: reportes con fotos y GPS, apoyos, comentarios, perfil, estadísticas, trabajo de campo y administración, integrados desde la rama `Axel`.
 
 Las rutas, paradas intermedias y tarifas siguen siendo de prueba. El catálogo incluye 941 lugares, calles y direcciones de OpenStreetMap. La cobertura rodea el corredor indicado y no representa el límite oficial de la ciudad. No se crean choferes ni horarios ficticios.
 
 ## Interfaz y modelo del equipo
 
-Flujo de tres pasos: desde dónde sales, a dónde vas y **Ver cómo llegar**. Las selecciones se confirman, las instrucciones quedan abiertas y tocar una ruta muestra directamente su inicio, término y paradas. El acceso de choferes está separado y se indica claramente el modo pasajero.
+Indica origen y destino y pulsa **Ver cómo llegar**. Las selecciones se confirman, las instrucciones quedan abiertas y tocar una ruta muestra directamente su inicio, término y paradas. El acceso de choferes está separado y se indica claramente el modo pasajero. Se retiraron las tarjetas numeradas de pasos y el botón de ayuda.
 
-Texto base de 18 px, opción de 22 px persistente, botones grandes, ayuda paso a paso con lectura por voz y vistas de mapa/instrucciones con acciones explícitas en celular. Se incorporan los logos proporcionados de **Las Palmas Rutas**. Las pruebas incluyen ampliación de texto, teclado y pantallas móviles; queda pendiente validarlo de nuevo con personas mayores y un teléfono físico.
+Texto base de 18 px, opción de 22 px persistente, botones grandes y vistas de mapa/instrucciones con acciones explícitas en celular. El mapa plano usa las calles locales sin edificios ni teselas externas; mantiene sus nombres y la atribución requerida. Se incorporan los logos proporcionados de **Las Palmas Rutas**. Las pruebas incluyen ampliación de texto, teclado y pantallas móviles; queda pendiente validarlo de nuevo con personas mayores y un teléfono físico.
+
+La rama **Axel**, commit **fcad9cc**, se incorpora conservando sus originales en [`ciudadviva/`](ciudadviva/). Sus funciones se adaptan a React y al servidor existente: la comunidad usa `/api/community`, las fotos y reportes se guardan en el mismo SQLite, y rutas importadas, QR y vehículos comparten el motor de movilidad. No se usan la base de datos ni el servidor público del compañero. Los reportes pueden guardarse sin señal y enviarse al reconectar. La web conserva sus recursos para volver a abrir sin conexión. Uso e importación en [app/COMUNIDAD.md](app/COMUNIDAD.md).
 
 El modelo original de la rama **prediction-model**, commit **4266afc**, está integrado en las llegadas a paradas y la clasificación de viajes. Sus árboles se exportan a JSON para evaluarlos en React y Capacitor sin un servidor Python. Se verifica paridad con 260 entradas y las tres salidas originales de scikit-learn. **Fue entrenado con datos ficticios** y se muestra como experimental; no hay observaciones reales de lluvia o semáforos. Procedencia y reproducción en [app/MODELO.md](app/MODELO.md). Se conservan intactos los archivos originales en `model/`.
 
@@ -49,7 +52,7 @@ npm run android:sync
 npm run android:open
 ```
 
-El proyecto nativo está en `app/android/`. Versión 1.5, código 6. En esta versión el chofer debe mantener la app abierta para compartir GPS; el seguimiento con pantalla bloqueada queda pendiente de definir.
+El proyecto nativo está en `app/android/`. Versión 1.6, código 7. En esta versión el chofer debe mantener la app abierta para compartir GPS; el seguimiento con pantalla bloqueada queda pendiente de definir.
 
 ## Verificar
 
@@ -64,6 +67,6 @@ npm run cloudflare:check
 npm run test:cloudflare
 ```
 
-35 pruebas de datos, búsqueda, planificación, autenticación, horarios, GPS, SSE y QR; 28 pruebas de interfaz; una prueba de integración con el runtime de Cloudflare que verifica cuentas, GPS, SSE, CORS y persistencia al reiniciar. Las pruebas usan datos aislados. Se verificó la compilación Android; no se probó en un teléfono físico.
+37 pruebas de datos, búsqueda, planificación, autenticación, horarios, GPS, SSE, QR y comunidad; 33 pruebas de interfaz; una prueba de integración con el runtime de Cloudflare que verifica cuentas, GPS, SSE, CORS y persistencia de reportes y fotos al reiniciar. Las pruebas usan datos aislados. Se verificó la compilación Android; no se probó en un teléfono físico.
 
 Consulta [`app/LEEME.md`](app/LEEME.md) para uso, ejemplos, cobertura y formato de las rutas. Datos del mapa © [OpenStreetMap contributors, ODbL](https://www.openstreetmap.org/copyright).

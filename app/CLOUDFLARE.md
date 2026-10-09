@@ -4,6 +4,8 @@ Dirección publicada: **https://cerca-combis.alanedgardo4.workers.dev/**. API: *
 
 La web React, la API y la base de datos se alojan juntas en un Worker con un Durable Object que usa SQLite persistente. La dirección `https://cerca-combis.<subdominio-de-tu-cuenta>.workers.dev/` se asigna al publicar; no requiere comprar dominio ni dejar una computadora encendida. Las combis se actualizan con SSE y la API pública no entrega nombres ni correos de los choferes.
 
+La versión 1.6 incorpora la comunidad de Axel en `/api/community`: sus tablas y fotos se añaden al mismo SQLite con migraciones idempotentes, conservando la flota y las cuentas. No requiere crear recursos D1/R2 ni cambiar los permisos de la sesión de Cloudflare. El panel de Administración usa el secreto existente `CERCA_ADMIN_TOKEN`, enviado por cabecera `X-Admin-Key`; nunca se incluye en el APK. Detalles en [COMUNIDAD.md](COMUNIDAD.md).
+
 ## Publicación
 
 Requiere Node.js 24 y una cuenta de Cloudflare. Desde esta carpeta:

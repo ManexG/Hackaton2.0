@@ -5,6 +5,12 @@ import { chromium } from 'playwright';
 import { expect } from '@playwright/test';
 import { build } from 'vite';
 import { createTransitServer } from '../server/index.js';
+// The map fills the screen; sections open as a bottom sheet from the bottom navigation.
+async function openSection(page, name) {
+  const nav = page.locator('.bottom-nav').getByRole('button', { name, exact: true });
+  if ((await nav.getAttribute('aria-pressed')) !== 'true') await nav.click();
+  await page.locator('.sidebar').waitFor({ state: 'visible' });
+}
 test(
   'production PWA: cold load, bounded offline cache, offline maps and reports, reconnect and mandatory upgrade',
   { timeout: 120000 },
@@ -33,6 +39,7 @@ test(
       page.on('pageerror', (e) => errors.push(e.message));
       context.on('request', (r) => requests.push(r.url()));
       await page.goto(base);
+      await openSection(page, 'Buscar viaje');
       await expect(page.locator('#origin')).toBeVisible();
       await expect(page.locator('#map .traffic-signal-marker')).toHaveCount(33);
       await expect.poll(() => page.evaluate(() => !!navigator.serviceWorker.controller)).toBe(true);
@@ -93,12 +100,13 @@ test(
       });
       assert.equal(drafts, 1);
       await page.getByRole('button', { name: 'Volver a transporte', exact: true }).click();
+      await openSection(page, 'Buscar viaje');
       await expect(page.locator('#origin')).toBeVisible();
       await expect(page.locator('.passenger-content .offline-notice')).toBeVisible();
-      await page.getByRole('tab', { name: 'Ver rutas', exact: true }).click();
+      await openSection(page, 'Rutas');
       await expect(page.locator('.route-card')).toHaveCount(8);
       await expect(page.locator('#map .traffic-signal-marker')).toHaveCount(33);
-      await page.getByRole('button', { name: 'Entrar como chofer', exact: true }).click();
+      await page.getByRole('button', { name: 'Soy un chofer', exact: true }).click();
       await expect(
         page.getByRole('button', { name: 'Ingresar como chofer', exact: true })
       ).toBeDisabled();

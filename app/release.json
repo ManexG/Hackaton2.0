@@ -1,16 +1,16 @@
 {
-  "version": "1.9.1",
-  "androidVersionCode": 14,
+  "version": "1.9.2",
+  "androidVersionCode": 15,
   "repository": "ManexG/Hackaton2.0",
   "assetName": "Las-Palmas-Rutas.apk",
   "notes": [
-    "Actualizaciones de Axel: el servicio se conserva al recargar, se retoma el GPS y el chofer puede cambiar su contraseña.",
-    "Actualizaciones Android dentro de la app, con progreso y verificación de firma e integridad.",
-    "Origen y destino en tarjetas plegables: toca un lugar elegido para cambiarlo.",
-    "Ocho rutas de ejemplo y búsqueda en la zona urbana de Lázaro Cárdenas, La Orilla y Las Guacamayas.",
-    "El mapa sigue abriendo en el corredor original y dibuja solo las calles visibles.",
-    "Paradas por zonas: consulta rutas, próximas llegadas y QR.",
-    "Administración y reportes del equipo disponibles solo después de iniciar sesión.",
-    "Icono de combi de Cuputo / Noun Project con el color de cada ruta."
+    "Nuevo formato: el mapa ocupa toda la pantalla y abre con todas las rutas, con cobertura ampliada a todo el municipio de Lázaro Cárdenas.",
+    "Barra inferior con Buscar viaje, Rutas y Paradas: abre un panel que puedes arrastrar o cerrar para no perder de vista el mapa.",
+    "Un toque sobre una ruta la resalta en el mapa; dos toques abren su información.",
+    "Buscar viaje paso a paso: primero el origen, luego el destino, sin desplazarte por el formulario.",
+    "Botón «Soy un chofer» en la barra superior y botón único para ver todo el municipio junto al zoom.",
+    "Avisos más breves y animaciones suaves en paneles, pasos y rutas.",
+    "El botón de letra grande ahora solo muestra su icono.",
+    "Conserva las actualizaciones de Axel: el chofer mantiene su servicio al recargar y puede cambiar su contraseña."
   ]
 }

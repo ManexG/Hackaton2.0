@@ -158,7 +158,7 @@ test('SSE delivers public fleet updates without login', async () => {
 });
 test('driver changes their own password, other sessions close and a wrong current one is refused', async () => {
   const store = new TransitStore(':memory:', network);
-  const now = Date.parse('2026-10-08T21:15:00Z');
+  const now = Date.now();
   try {
     const driver = store.provision(account);
     // Cada inicio de sesión reemplaza al anterior en este almacén, así que se

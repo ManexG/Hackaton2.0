@@ -10,3 +10,5 @@ playwright-report
 .git
 *.apk
 *.zip
+.wrangler
+.dev.vars*

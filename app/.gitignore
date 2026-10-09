@@ -17,3 +17,6 @@ android/.kotlin/
 *.local
 .idea/
 .DS_Store
+.wrangler/
+.dev.vars
+.dev.vars.*

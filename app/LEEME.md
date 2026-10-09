@@ -1,6 +1,8 @@
-# Cerca 1.2 · React + Capacitor + GPS
+# Cerca 1.3 · React + Capacitor + GPS + Cloudflare
 
-Aplicación Android y web de movilidad para el corredor indicado en Lázaro Cárdenas. Usa **React 19, TypeScript, Vite 8, Leaflet y Capacitor 8**. El servidor propio usa **Node.js 24, SQLite y SSE** para compartir disponibilidad y ubicación entre dispositivos.
+Aplicación Android y web de movilidad para el corredor indicado en Lázaro Cárdenas. Usa **React 19, TypeScript, Vite 8, Leaflet y Capacitor 8**. La publicación en **Cloudflare Workers** guarda cuentas y GPS en un **Durable Object con SQLite** y comparte las posiciones mediante **SSE**. También se conserva el servidor alternativo de Node.js 24 para uso local o alojamiento propio.
+
+La configuración y los comandos para publicar en `workers.dev` están en [CLOUDFLARE.md](CLOUDFLARE.md). El almacenamiento en Cloudflare es independiente del SQLite local; no se suben automáticamente cuentas ni datos del equipo.
 
 ## Pasajero
 

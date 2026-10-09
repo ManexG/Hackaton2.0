@@ -1,6 +1,8 @@
 # Hackaton2.0 · Cerca
 
-Aplicación Android y web para consultar combis en el corredor de Jugos Acapulco al entronque de la avenida Lázaro Cárdenas. El proyecto está en [`app/`](app/): **React, TypeScript, Vite, Leaflet y Capacitor**, con servidor propio **Node.js 24 + SQLite + SSE**.
+Aplicación Android y web para consultar combis en el corredor de Jugos Acapulco al entronque de la avenida Lázaro Cárdenas. El proyecto está en [`app/`](app/): **React, TypeScript, Vite, Leaflet y Capacitor**, alojado en **Cloudflare Workers + Durable Objects con SQLite + SSE**. Se conserva un servidor alternativo de Node.js 24.
+
+**Web pública: [cerca-combis.alanedgardo4.workers.dev](https://cerca-combis.alanedgardo4.workers.dev/)**.
 
 - Pasajeros sin registro: búsqueda de negocios, calles y direcciones, lugares cercanos y recorridos de colores.
 - Choferes con cuenta, unidad, ruta y horario asignados: activación y desactivación de servicio con GPS.
@@ -24,7 +26,7 @@ Abre `http://127.0.0.1:8787/`. Para editar React, ejecuta también `npm run dev`
 
 ## Alojar y configurar cuentas
 
-[`app/SERVIDOR.md`](app/SERVIDOR.md) explica el servidor, la configuración de HTTPS con Docker Compose, la creación de choferes y la asignación de rutas y horarios. El servidor está preparado para alojarse; **no hay dominio público configurado ni cuentas creadas por defecto**.
+[`app/CLOUDFLARE.md`](app/CLOUDFLARE.md) explica la publicación en `workers.dev`, el almacenamiento persistente y la creación de choferes en la nube. [`app/SERVIDOR.md`](app/SERVIDOR.md) documenta el servidor Node alternativo. **No se crean cuentas ni horarios por defecto**. Las credenciales de operador y de Cloudflare se conservan fuera del repositorio.
 
 ## Android
 
@@ -39,7 +41,7 @@ npm run android:sync
 npm run android:open
 ```
 
-El proyecto nativo está en `app/android/`. Versión 1.2, código 3. En esta versión el chofer debe mantener la app abierta para compartir GPS; el seguimiento con pantalla bloqueada queda pendiente de definir.
+El proyecto nativo está en `app/android/`. Versión 1.3, código 4. En esta versión el chofer debe mantener la app abierta para compartir GPS; el seguimiento con pantalla bloqueada queda pendiente de definir.
 
 ## Verificar
 
@@ -49,8 +51,10 @@ Desde `app/`:
 npm test
 npm run test:ui
 npm run build
+npm run cloudflare:check
+npm run test:cloudflare
 ```
 
-30 pruebas de datos, búsqueda, planificación, autenticación, horarios, GPS, SSE y QR; 21 pruebas de interfaz, incluyendo chofer y pasajero con servidor real y GPS controlado. Las pruebas de interfaz usan Edge y un puerto aislado. Se verificó la compilación Android; no se probó en un teléfono físico.
+30 pruebas de datos, búsqueda, planificación, autenticación, horarios, GPS, SSE y QR; 21 pruebas de interfaz; una prueba de integración con el runtime de Cloudflare que verifica cuentas, GPS, SSE, CORS y persistencia al reiniciar. Las pruebas usan datos aislados. Se verificó la compilación Android; no se probó en un teléfono físico.
 
 Consulta [`app/LEEME.md`](app/LEEME.md) para uso, ejemplos, cobertura y formato de las rutas. Datos del mapa © [OpenStreetMap contributors, ODbL](https://www.openstreetmap.org/copyright).

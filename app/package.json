@@ -1,7 +1,7 @@
 {
   "name": "cerca-combis-demo",
   "private": true,
-  "version": "1.2.0",
+  "version": "1.3.0",
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
@@ -13,9 +13,16 @@
     "driver:create": "tsx --env-file-if-exists=.env server/create-driver.ts",
     "android:sync": "npm run build && cap sync android",
     "android:open": "cap open android",
-    "android:run": "npm run android:sync && cap run android"
+    "android:run": "npm run android:sync && cap run android",
+    "cloudflare:login": "wrangler login --scopes account:read user:read workers:write workers_scripts:write",
+    "cloudflare:check": "tsc -p tsconfig.cloudflare.json && wrangler deploy --dry-run --outdir .wrangler/deploy-check",
+    "cloudflare:dev": "wrangler dev --port 8790 --ip 127.0.0.1",
+    "cloudflare:deploy": "npm run build && wrangler deploy",
+    "test:cloudflare": "tsx --test cloudflare/integration.test.ts"
   },
-  "engines": { "node": ">=24" },
+  "engines": {
+    "node": ">=24"
+  },
   "dependencies": {
     "@capacitor/android": "^8.5.3",
     "@capacitor/app": "^8.0.0",
@@ -31,6 +38,7 @@
   },
   "devDependencies": {
     "@capacitor/cli": "^8.5.3",
+    "@cloudflare/workers-types": "^5.20261008.1",
     "@playwright/test": "^1.58.2",
     "@types/leaflet": "^1.9.21",
     "@types/node": "^24.0.0",
@@ -38,8 +46,11 @@
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^6.1.2",
+    "esbuild": "^0.28.2",
+    "miniflare": "^5.20261006.1-alpha",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
-    "vite": "^8.0.0"
+    "vite": "^8.0.0",
+    "wrangler": "^4.149.0"
   }
 }

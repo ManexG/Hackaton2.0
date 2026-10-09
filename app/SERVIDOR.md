@@ -1,6 +1,8 @@
 # Alojar Cerca y conectar Android
 
-El servidor es propio: Node.js 24, SQLite y eventos SSE. Sirve la web y la API en el mismo dominio. No necesita Firebase, Supabase ni claves de servicios externos. El código está preparado para alojarlo; todavía **no hay una dirección pública configurada ni cuentas de choferes creadas**.
+Para alojar web, API y SQLite directamente en Cloudflare, sigue [CLOUDFLARE.md](CLOUDFLARE.md). Las instrucciones siguientes corresponden al servidor Node alternativo.
+
+La web y la API ya están publicadas en **https://cerca-combis.alanedgardo4.workers.dev/**. No hay cuentas de choferes creadas por defecto. Como alternativa, el servidor propio de Node.js 24, SQLite y SSE sirve la web y la API en el mismo dominio en tu propio alojamiento.
 
 ## Probar localmente
 

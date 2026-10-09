@@ -225,6 +225,51 @@ main form input:focus-visible { border-color: var(--color-marca); outline-offset
 }
 .boton-secundario:hover:not(:disabled) { background: var(--color-superficie-alta); }
 
+/* Lista de combis reportando. Cada una dice en qué estado está su señal y, si
+   está fuera de la zona, a qué distancia: sin eso, un mapa de Lázaro Cárdenas
+   con una burbuja de otro estado engaña a quien mira. */
+.lista-combis {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0 !important;
+  list-style: none;
+}
+.lista-combis li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+  margin-bottom: 0 !important;
+  padding: 0.7rem 0.85rem;
+}
+.lista-combis .punto-combi {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  margin-top: 0.3rem;
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px #fff, 0 0 0 4px var(--color-borde);
+}
+.lista-combis div { flex: 1; min-width: 0; display: grid; gap: 0.2rem; }
+.lista-combis strong { font-size: 0.95rem; }
+.lista-combis small { font-size: 0.82rem; color: var(--color-texto-suave); }
+.senal-viva,
+.senal-vieja,
+.senal-fuera {
+  display: inline-block;
+  font-size: 0.8rem;
+  font-weight: 700;
+  margin-top: 0.15rem;
+}
+.senal-viva { color: #17624a; }
+.senal-viva::before { content: '● '; }
+/* Señal vieja: aún se ve, pero el color avisa que no está en vivo. */
+.senal-vieja { color: #8a6a17; }
+.senal-fuera { color: #9a4a3c; }
+.senal-fuera::before { content: '⚠ '; }
+
+/* La fila de una combi fuera de la zona se marca con una banda al lado. */
+.lista-combis li[data-en-zona='false'] { border-left: 5px solid var(--color-alerta); }
+
 /* ============================================================
    /chofer — quien la usa va conduciendo.
    Por eso los botones son enormes y las decisiones se toman con un dedo,
@@ -347,6 +392,27 @@ main form button[type='submit'] {
   font-size: 0.9rem;
   color: var(--color-texto-suave);
 }
+/* Aviso de que todo bien: el chofer está dentro de la zona piloto. */
+.aviso-ok {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: color-mix(in srgb, var(--color-exito) 12%, white);
+  color: #17624a;
+  font-weight: 600;
+}
+.aviso-ok svg { width: 18px; height: 18px; flex-shrink: 0; }
+/* Aviso de que está fuera: es una advertencia real, no un dato. */
+.aviso-alerta {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  background: color-mix(in srgb, var(--color-alerta) 18%, white);
+  border-left: 4px solid var(--color-alerta);
+  color: #6b4c11;
+  font-weight: 600;
+}
+.aviso-alerta svg { width: 18px; height: 18px; flex-shrink: 0; margin-top: 0.15rem; }
 
 /* Zona segura en iPhone con notch y barra de gestos. */
 .safe-bottom { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0.5rem); }

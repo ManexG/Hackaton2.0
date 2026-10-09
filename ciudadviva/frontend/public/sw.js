@@ -6,9 +6,15 @@
  * - Tiles del mapa y CDN: caché primero (son archivos grandes y no cambian).
  * - API GET: red primero; si no hay señal, se sirve la última respuesta conocida
  *   para que el feed siga siendo legible en la calle.
+ *
+ * IMPORTANTE: al pedir a la red hay que saltarse la caché HTTP del navegador
+ * (`cache: 'reload'`). Con un `fetch` normal, "red primero" puede devolver el
+ * index.html viejo que el navegador tiene en su propia caché: el Service Worker
+ * lo cachea a su vez y el usuario queda viendo una versión anterior para
+ * siempre, aunque se despliegue mil veces.
  */
 
-const CACHE = 'lcalerta-react-v1';
+const CACHE = 'lcalerta-react-v2';
 const SHELL = ['/', '/index.html', '/manifest.json', '/img/icon.svg'];
 
 const CDNS = ['unpkg.com', 'cdn.jsdelivr.net', 'fonts.googleapis.com', 'fonts.gstatic.com'];
@@ -28,7 +34,8 @@ self.addEventListener('activate', (e) => {
 
 async function redPrimero(req) {
   try {
-    const res = await fetch(req);
+    // 'reload' obliga a ir a la red de verdad, sin responder desde la caché HTTP.
+    const res = await fetch(req, { cache: 'reload' });
     if (res.ok) {
       const copia = res.clone();
       caches.open(CACHE).then((c) => c.put(req, copia));

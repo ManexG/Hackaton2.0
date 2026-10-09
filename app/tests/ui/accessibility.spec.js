@@ -179,3 +179,19 @@ test('one tap highlights a route on the map and a double tap opens its informati
   const button = await back.boundingBox();
   expect(button.y).toBeGreaterThan(detail.y + detail.height / 2);
 });
+test('after opening a route, tapping another route on the map still highlights it', async ({
+  page,
+}) => {
+  await openSection(page, 'Rutas');
+  await page.locator('.route-card').first().click();
+  await expect(page.locator('#route-detail')).toBeVisible();
+  await page.getByRole('button', { name: 'Cerrar panel y ver el mapa' }).click();
+  const legend = page.locator('.map-legend [data-route=R03]');
+  await legend.click();
+  await expect(legend).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('.route-R03')).toHaveCSS('stroke-opacity', '1');
+  await expect(page.locator('.route-R01')).not.toHaveCSS('stroke-opacity', '1');
+  await page.waitForTimeout(500);
+  await legend.dblclick();
+  await expect(page.locator('#route-detail')).toContainText('R03');
+});

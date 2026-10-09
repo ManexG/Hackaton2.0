@@ -73,10 +73,10 @@ export function CercaApp({ network: originalNetwork, catalog }) {
   );
   const journey = journeys.find((item) => item.id === selectedId) ?? journeys[0] ?? null;
   const activeRoutes = new Set(
-    selectedRoute
-      ? [selectedRoute.id]
-      : highlightedRoute
-        ? [highlightedRoute]
+    highlightedRoute
+      ? [highlightedRoute]
+      : selectedRoute
+        ? [selectedRoute.id]
         : tab === 'plan'
           ? (journey?.legs.map((leg) => leg.routeId) ?? [])
           : []
@@ -343,7 +343,7 @@ export function CercaApp({ network: originalNetwork, catalog }) {
       return;
     }
     setHighlightedRoute(id);
-    if (!selectedRoute) setToast(`Ruta ${id} resaltada. Toca dos veces para ver su información.`);
+    setToast(`Ruta ${id} resaltada. Toca dos veces para ver su información.`);
   }
   function selectRoute(id) {
     setHighlightedRoute(null);

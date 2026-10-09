@@ -290,7 +290,7 @@ export const MapView = forwardRef(function MapView(props, ref) {
     stops.current.clearLayers();
     endpoints.current.clearLayers();
     const { highlightedRoute } = state.current;
-    const focusId = selectedRoute?.id ?? highlightedRoute;
+    const focusId = highlightedRoute ?? selectedRoute?.id;
     const active = new Set(focusId ? [focusId] : (journey?.legs.map((leg) => leg.routeId) ?? []));
     for (const route of network.routes) {
       const selected = active.has(route.id);
@@ -417,7 +417,7 @@ export const MapView = forwardRef(function MapView(props, ref) {
   ]);
   useEffect(() => {
     if (!map.current) return;
-    const focusId = props.selectedRoute?.id ?? props.highlightedRoute;
+    const focusId = props.highlightedRoute ?? props.selectedRoute?.id;
     const active = new Set(
       focusId ? [focusId] : (props.journey?.legs.map((leg) => leg.routeId) ?? [])
     );

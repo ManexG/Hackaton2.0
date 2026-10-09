@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="es" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>LCAlerta — Tu colonia, en tiempo real</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" href="/img/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="/css/app.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/daisyui@5" rel="stylesheet" type="text/css" />
+</head>
+<body class="bg-slate-900 text-slate-100">
+  <header class="navbar sticky top-0 z-40 px-4 bg-slate-900/70 backdrop-blur-xl border-b border-white/10">
+    <span class="text-xl font-black"><i data-lucide="megaphone"></i> LCAlerta</span>
+    <span class="flex items-center gap-2">
+      <span id="syncChip" class="badge badge-success">…</span>
+      <a href="/estadisticas.html" class="btn btn-ghost btn-sm"><i data-lucide="bar-chart-3"></i></a>
+      <button id="btnSesion" class="btn btn-primary btn-sm">Entrar</button>
+    </span>
+  </header>
+
+  <div class="flex justify-between items-center px-4 py-3">
+    <p class="text-slate-400 font-semibold m-0">Lo que pasa en tu colonia</p>
+    <button id="btnReportar" class="btn btn-primary rounded-full pulse"><i data-lucide="camera"></i> Reportar</button>
+  </div>
+
+  <div id="rankingChips" class="flex gap-2 overflow-x-auto px-4 pb-2"></div>
+
+  <main class="px-4 pb-28 max-w-xl mx-auto">
+    <section id="tab-muro">
+      <div class="flex gap-2 mb-3">
+        <input id="buscador" class="input input-bordered flex-1" placeholder="Buscar en los reportes…" autocomplete="off">
+        <select id="fEstado" class="select select-bordered w-auto"><option value="">Estado</option><option value="enviado">Enviado</option><option value="recibido">Visto</option><option value="aprobado">Arreglado</option><option value="no_aprobado">No aplica</option></select>
+        <select id="fColonia" class="select select-bordered w-auto"><option value="">Colonia</option></select>
+      </div>
+      <div id="pendientes"></div>
+      <ul id="muro" class="space-y-4"></ul>
+      <button id="moreBtn" class="btn btn-outline btn-block mt-2">Cargar más</button>
+    </section>
+
+    <section id="tab-mapa" hidden>
+      <button id="btnTiles" class="btn btn-outline btn-primary btn-sm w-full mb-2"><i data-lucide="download"></i> Descargar mapa de LC para usar sin señal</button>
+      <div id="map"></div>
+      <p class="leyenda">
+        <span><i style="background:#eab308"></i>Alumbrado</span>
+        <span><i style="background:#ef4444"></i>Bache</span>
+        <span><i style="background:#22c55e"></i>Basura</span>
+        <span><i style="background:#3b82f6"></i>Fuga</span>
+        <span><i style="background:#a855f7"></i>Otro</span>
+      </p>
+    </section>
+
+    <section id="tab-perfil" hidden>
+      <div id="perfilAnon">
+        <h2 class="text-xl font-bold"><i data-lucide="log-in"></i> Entrar</h2>
+        <form id="loginForm" class="space-y-2">
+          <input name="email" type="email" class="input input-bordered w-full" placeholder="tu@correo.com">
+          <input name="password" type="password" class="input input-bordered w-full" placeholder="Contraseña">
+          <button class="btn btn-primary w-full">Entrar</button><p class="msg" id="msgLogin"></p>
+        </form>
+        <h2 class="text-xl font-bold mt-6"><i data-lucide="user-plus"></i> Crear cuenta</h2>
+        <form id="registroForm" class="space-y-2">
+          <input name="nombre" class="input input-bordered w-full" placeholder="Tu nombre (ej: Chuy)">
+          <input name="email" type="email" class="input input-bordered w-full" placeholder="tu@correo.com">
+          <input name="password" type="password" class="input input-bordered w-full" placeholder="Contraseña (6+)">
+          <button class="btn btn-secondary w-full">Crear cuenta</button><p class="msg" id="msgReg"></p>
+        </form>
+      </div>
+      <div id="perfilUser" hidden>
+        <h2 class="text-2xl font-black"><i data-lucide="user"></i> <span id="pNombre"></span></h2>
+        <p id="pEmail" class="text-slate-500"></p>
+        <div id="insignias" class="flex gap-2 flex-wrap my-2"></div>
+        <button id="btnLogout" class="btn btn-ghost btn-sm">Cerrar sesión</button>
+        <h3 class="text-lg font-bold mt-4"><i data-lucide="clipboard-list"></i> Mis reportes</h3><ul id="misReportes" class="space-y-1"></ul>
+        <h3 class="text-lg font-bold mt-4"><i data-lucide="thumbs-up"></i> Lo que apoyé</h3><ul id="misVotos" class="space-y-1"></ul>
+      </div>
+    </section>
+  </main>
+
+  <div class="dock fixed bottom-0 bg-slate-900/90 backdrop-blur-xl border-t border-white/10 shadow-2xl">
+    <button data-tab="muro" class="dock-active"><i data-lucide="newspaper"></i><span>Feed</span></button>
+    <button data-tab="mapa"><i data-lucide="map"></i><span>Mapa</span></button>
+    <button data-tab="perfil"><i data-lucide="user"></i><span>Yo</span></button>
+  </div>
+
+  <div id="modalReportar" class="modal-lcalerta" hidden>
+    <div class="modalCard bg-slate-800/95 backdrop-blur-xl border border-white/10">
+      <h2><i data-lucide="camera"></i> Cuéntanos qué pasa</h2>
+      <form id="formReporte" class="space-y-3">
+        <div id="formFields" class="space-y-3">
+          <div class="cats flex flex-wrap gap-2">
+            <label><input type="radio" name="categoria" value="alumbrado" checked> Alumbrado</label>
+            <label><input type="radio" name="categoria" value="bache"> Bache</label>
+            <label><input type="radio" name="categoria" value="basura"> Basura</label>
+            <label><input type="radio" name="categoria" value="fuga_agua"> Fuga</label>
+            <label><input type="radio" name="categoria" value="otro"> Otro</label>
+          </div>
+          <input name="descripcion" class="input input-bordered w-full bg-slate-900" maxlength="200" placeholder="¿Qué ves? (máx 1 renglón)">
+          <input name="colonia" class="input input-bordered w-full bg-slate-900" maxlength="80" placeholder="¿En qué colonia? Ej: Centro">
+          <div class="row flex items-center gap-2">
+            <button type="button" id="btnGps" class="btn btn-ghost"><i data-lucide="map-pin"></i> Mi ubicación</button>
+            <small id="coords"></small>
+          </div>
+          <input type="file" name="foto" accept="image/*" capture="environment" class="file-input file-input-bordered w-full bg-slate-900">
+          <input type="hidden" name="lat"><input type="hidden" name="lng">
+          <button type="submit" class="btn btn-primary w-full">Continuar</button>
+        </div>
+        <div id="pasoConfirm" hidden>
+          <div id="resumen" class="bg-slate-900 rounded-xl p-3 space-y-2"></div>
+          <button type="button" id="btnConfirmar" class="btn btn-success w-full mt-3"><i data-lucide="check-circle-2"></i> Confirmar y enviar</button>
+          <button type="button" id="btnEditar" class="btn btn-ghost w-full mt-1">Editar</button>
+        </div>
+        <button type="button" id="btnCancelar" class="btn btn-ghost w-full">Cancelar</button>
+        <p id="msgForm" class="msg"></p>
+      </form>
+    </div>
+  </div>
+
+  <p id="toast" hidden></p>
+
+  <!-- ORB STACK flotante: Create=Reportar, Export=Compartir, Confirm=Perfil -->
+  <div class="button-stack orb-side">
+    <div class="btn-wrapper">
+      <button class="orb-btn btn-teal" id="orbCreate" aria-label="Reportar">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <line x1="12" y1="4" x2="12" y2="20"></line>
+          <line x1="4" y1="12" x2="20" y2="12"></line>
+        </svg>
+      </button>
+      <span class="btn-label">Reportar</span>
+    </div>
+    <div class="btn-wrapper">
+      <button class="orb-btn btn-silver" id="orbExport" aria-label="Compartir">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M7 17 L17 7 M17 7 L9 7 M17 7 L17 15"></path>
+        </svg>
+      </button>
+      <span class="btn-label">Compartir</span>
+    </div>
+    <div class="btn-wrapper">
+      <button class="orb-btn btn-mauve" id="orbConfirm" aria-label="Mi perfil">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M5 13 L10 17.5 L19 7"></path>
+        </svg>
+      </button>
+      <span class="btn-label">Perfil</span>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/app.js"></script>
+</body>
+</html>

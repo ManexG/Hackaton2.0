@@ -1,0 +1,67 @@
+{
+  "zona": {
+    "nombre": "Zona piloto - Centro",
+    "lat": 17.958,
+    "lng": -102.205,
+    "radio_m": 1500,
+    "descripcion": "Centro de Lazaro Cardenas. Zona de prueba; reemplazar con el area real que decidan."
+  },
+  "rutas": [
+    {
+      "nombre": "Ruta Centro - Ida",
+      "color": "#238361",
+      "fuente": "EJEMPLO: paradas ubicadas sobre calles reales del centro (verificadas con OSM). Reemplazar con los recorridos reales antes de presentar.",
+      "paradas": [
+        {
+          "orden": 1,
+          "nombre": "Parada del centro",
+          "lat": 17.957841,
+          "lng": -102.2065,
+          "qr": "LC-CEN-001"
+        },
+        {
+          "orden": 2,
+          "nombre": "Parada del mercado",
+          "lat": 17.961401,
+          "lng": -102.209801,
+          "qr": "LC-CEN-002"
+        },
+        {
+          "orden": 3,
+          "nombre": "Parada Lazaro",
+          "lat": 17.964499,
+          "lng": -102.212518,
+          "qr": "LC-CEN-003"
+        }
+      ]
+    },
+    {
+      "nombre": "Ruta Centro - Vuelta",
+      "color": "#e58b38",
+      "fuente": "EJEMPLO: paradas inventadas, situadas sobre calles que si existen en el centro. Sirven solo para probar el funcionamiento; reemplazar por las reales.",
+      "paradas": [
+        {
+          "orden": 1,
+          "nombre": "Parada Melchor Ocampo",
+          "lat": 17.962321,
+          "lng": -102.213609,
+          "qr": "LC-VUE-001"
+        },
+        {
+          "orden": 2,
+          "nombre": "Parada Tulipanes",
+          "lat": 17.967158,
+          "lng": -102.214286,
+          "qr": "LC-VUE-002"
+        },
+        {
+          "orden": 3,
+          "nombre": "Parada Manuel Buendia",
+          "lat": 17.965657,
+          "lng": -102.205647,
+          "qr": "LC-VUE-003"
+        }
+      ]
+    }
+  ]
+}

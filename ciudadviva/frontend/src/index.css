@@ -1,0 +1,785 @@
+/* Manrope Variable: la tipografía que declara la app del equipo (Cerca).
+   El repo de ellos la referencia pero nunca la carga, así que aquí sí la
+   cargamos de verdad. Debe ir primero por CSS. */
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&display=swap');
+@import 'tailwindcss';
+@plugin 'daisyui' {
+  themes: false;
+}
+/* Tema propio: el "light" de daisyUI pinta los botones primarios de azul, lo
+   que rompía la paleta verde. Aquí se declara la marca del equipo. */
+@plugin 'daisyui/theme' {
+  name: 'ciudadviva';
+  default: true;
+  color-scheme: light;
+
+  --color-base-100: #ffffff;
+  --color-base-200: #f0f3ed;
+  --color-base-300: #e1e7d7;
+  --color-base-content: #294331;
+
+  --color-primary: #174b3b;
+  --color-primary-content: #ffffff;
+  --color-secondary: #6a876b;
+  --color-secondary-content: #ffffff;
+  --color-accent: #d5a245;
+  --color-accent-content: #294331;
+
+  --color-neutral: #294331;
+  --color-neutral-content: #ffffff;
+
+  --color-info: #329db1;
+  --color-info-content: #ffffff;
+  --color-success: #238361;
+  --color-success-content: #ffffff;
+  --color-warning: #e5ad49;
+  --color-warning-content: #294331;
+  --color-error: #b5443a;
+  --color-error-content: #ffffff;
+
+  --radius-selector: 0.75rem;
+  --radius-field: 0.5rem;
+  --radius-box: 1rem;
+}
+
+/* ============================================================
+   TOKENS DE DISEÑO
+   Todo el equipo debe usar estas variables, no valores sueltos,
+   para que las pantallas se vean como un solo sistema.
+   ============================================================ */
+:root {
+  /* Color: superficies */
+  --color-fondo: #fbfcf8;            /* paper: fondo general de la app */
+  --color-superficie: #ffffff;       /* cards y paneles */
+  --color-superficie-alta: #f0f3ed; /* elementos sobre cards (inputs, chips) */
+  --color-borde: #e1e7d7;            /* borde de cards y divisores */
+
+  /* Color: marca */
+  --color-marca: #174b3b;          /* verde bosque: acciones primarias */
+  --color-marca-claro: #256049;     /* estado hover del botón primario */
+  --color-exito: #238361;          /* verde: estado "arreglado" */
+  --color-alerta: #e5ad49;         /* dorado: advertencia / enviado */
+  --color-error: #b5443a;          /* terracota: rechazo / error */
+  --color-dorado: #d5a245;         /* acento de marca en titulares */
+  --color-lima: #e7edbd;           /* badge / etiqueta destacada */
+  --color-verde-tenue: #6a876b;    /* verde desaturado para subtítulos */
+
+  /* Color: texto */
+  --color-texto: #294331;          /* ink */
+  --color-texto-suave: #8e9786;    /* muted */
+
+  /* Categorías (coinciden con los colores de ruta del equipo:
+     #238361 verde, #e58b38 naranja, #7770cf morado, #329db1 turquesa) */
+  --color-cat-alumbrado: #e5ad49;
+  --color-cat-bache: #b5443a;
+  --color-cat-basura: #238361;
+  --color-cat-fuga: #329db1;
+  --color-cat-otro: #7770cf;
+
+  /* Forma */
+  --radio-card: 1rem;
+  --radio-control: 0.5rem;
+
+  /* Movimiento */
+  --duracion-rapida: 150ms;
+  --duracion-media: 300ms;
+  --curva-suave: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ============================================================
+   BASE
+   ============================================================ */
+body {
+  background: var(--color-fondo);
+  color: var(--color-texto);
+  font-family: 'Manrope', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Anillo de foco dorado: el acento que usa la app del equipo para navegación
+   por teclado. Antes el navegador ponía su azul por defecto sobre fondo claro. */
+:focus-visible {
+  outline: 3px solid #e6af43;
+  outline-offset: 3px;
+}
+
+main {
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: 0.75rem 1rem 7rem; /* espacio para la navegación inferior */
+}
+main h1 { font-size: 1.35rem; font-weight: 800; margin: 0.25rem 0; }
+main h2 { font-size: 1.1rem; font-weight: 800; display: flex; align-items: center; gap: 0.4rem; }
+main p { line-height: 1.5; }
+main section { margin-bottom: 1.25rem; }
+
+article,
+li,
+aside {
+  background: var(--color-superficie);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-card);
+  padding: 0.9rem;
+  margin-bottom: 0.75rem;
+  list-style: none;
+}
+main ul,
+main ol { padding: 0; }
+
+/* Leyenda de rutas: el color viaja en el punto para que el nombre de la ruta
+   no dependa del contraste de su propio color. */
+main ul[data-testid='leyenda-rutas'] li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--color-texto);
+}
+main ul[data-testid='leyenda-rutas'] li i {
+  width: 10px;
+  height: 10px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px var(--color-borde);
+}
+
+article img,
+.modal-lcalerta-carta img {
+  width: 100%;
+  border-radius: 0.75rem;
+  margin: 0.5rem 0;
+}
+aside[data-testid='nota-ayuntamiento'] {
+  border-left: 3px solid var(--color-marca);
+  display: flex;
+  gap: 0.4rem;
+}
+
+/* Botón base: sin esto un <button> sin clase se ve como texto plano y parece
+   un enlace. Las reglas más específicas (clases de daisyUI, selectores por
+   data-testid) mandan sobre esta. Medidas táctiles desde el inicio: 46px. */
+button {
+  font-family: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-height: 46px;
+  padding: 0.6rem 1rem;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: var(--color-marca);
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 700;
+  transition: background var(--duracion-rapida), transform var(--duracion-rapida);
+}
+button:hover:not(:disabled) { background: var(--color-marca-claro); }
+button:active:not(:disabled) { transform: translateY(1px); }
+button svg { width: 18px; height: 18px; flex-shrink: 0; }
+button:disabled { opacity: 0.6; cursor: not-allowed; }
+
+label { display: block; }
+
+/* Formularios sueltos (login, registro, acciones de perfil). Solo la tarjeta de
+   reporte tenía estilos propios; aquí los campos salían como texto sin caja y
+   se acomodaban en una sola línea. */
+main form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+main form h2 { margin-bottom: 0.2rem; }
+main form input {
+  width: 100%;
+  min-height: 46px;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-control);
+  background: var(--color-superficie);
+  color: var(--color-texto);
+  font: inherit;
+}
+main form input::placeholder { color: var(--color-texto-suave); }
+main form input:focus-visible { border-color: var(--color-marca); outline-offset: 1px; }
+
+/* Acción que acompaña al formulario pero no compite con el botón de envío. */
+.boton-enlace {
+  justify-content: flex-start;
+  background: none;
+  border-color: transparent;
+  color: var(--color-marca);
+}
+.boton-enlace:hover:not(:disabled) {
+  background: none;
+  color: var(--color-marca-claro);
+  text-decoration: underline;
+}
+
+/* Acción secundaria: existe, pero no es la principal de la pantalla. */
+.boton-secundario {
+  background: var(--color-superficie);
+  border-color: var(--color-borde);
+  color: var(--color-texto);
+}
+.boton-secundario:hover:not(:disabled) { background: var(--color-superficie-alta); }
+
+/* ============================================================
+   /chofer — quien la usa va conduciendo.
+   Por eso los botones son enormes y las decisiones se toman con un dedo,
+   sin menús ni precisión. Criterio: nada por debajo de 56px de alto.
+   ============================================================ */
+main section[data-testid^='chofer'] {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+main section[data-testid^='chofer'] h2 {
+  font-size: 1.35rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+main section[data-testid^='chofer'] p { color: var(--color-texto-suave); }
+
+.acciones-chofer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+/* Botón principal del chofer: ocupa el ancho y se puede pulsar sin mirar. */
+.acciones-chofer > button,
+main form button[type='submit'] {
+  min-height: 62px;
+  font-size: 1.05rem;
+}
+.enlace-suave {
+  display: inline-block;
+  min-height: 48px;
+  line-height: 48px;
+  text-align: center;
+  color: var(--color-marca);
+  font-weight: 700;
+  text-decoration: none;
+}
+.enlace-suave:hover { color: var(--color-marca-claro); text-decoration: underline; }
+
+/* Acceso destacado dentro del panel de perfil (apartado del chofer). */
+.enlace-panel {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: 56px;
+  padding: 0.8rem 1rem;
+  margin-bottom: 0.8rem;
+  border: 2px solid var(--color-borde);
+  border-left: 6px solid var(--color-marca);
+  border-radius: var(--radio-card);
+  background: var(--color-superficie);
+  color: var(--color-marca);
+  font-weight: 800;
+  text-decoration: none;
+}
+.enlace-panel:hover { background: var(--color-superficie-alta); }
+
+.pregunta-ruta { font-weight: 800; margin-top: 0.4rem; }
+
+/* Tarjetas de ruta: un toque y ya está. El color de la ruta va en el punto
+   y en el borde, nunca en el texto, para que el nombre siempre se lea. */
+.tarjetas-ruta {
+  display: grid;
+  gap: 0.7rem;
+}
+.tarjeta-ruta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  min-height: 72px;
+  padding: 0.9rem 1rem;
+  text-align: left;
+  background: var(--color-superficie);
+  border: 2px solid var(--color-borde);
+  border-left: 6px solid var(--ruta-color, var(--color-marca));
+  color: var(--color-texto);
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+.tarjeta-ruta:hover:not(:disabled) { background: var(--color-superficie-alta); }
+/* La elegida se marca con relleno suave, para que se vea de reojo. */
+.tarjeta-ruta.elegida {
+  background: color-mix(in srgb, var(--ruta-color, var(--color-marca)) 12%, white);
+  border-color: var(--ruta-color, var(--color-marca));
+}
+.tarjeta-ruta .punto-ruta {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--ruta-color, var(--color-marca));
+  box-shadow: 0 0 0 3px #fff, 0 0 0 4px var(--color-borde);
+}
+.tarjeta-ruta .nombre-ruta { flex: 1; min-width: 0; }
+/* Texto auxiliar de la tarjeta: explica la opción en una frase corta. */
+.tarjeta-ruta .detalle-opcion {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--color-texto-suave);
+  margin-top: 0.15rem;
+}
+.tarjeta-ruta .palomita {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--ruta-color, var(--color-marca));
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.aviso {
+  padding: 0.75rem 0.9rem;
+  background: var(--color-superficie-alta);
+  border-radius: var(--radio-control);
+  font-size: 0.9rem;
+  color: var(--color-texto-suave);
+}
+
+/* Zona segura en iPhone con notch y barra de gestos. */
+.safe-bottom { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0.5rem); }
+.safe-top { padding-top: env(safe-area-inset-top, 0px); }
+
+/* Navegación inferior tipo app: los dedos llegan aquí, no arriba. */
+[data-testid='navegacion'] {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-around;
+  background: color-mix(in srgb, var(--color-superficie) 92%, transparent);
+  backdrop-filter: blur(12px);
+  border-top: 1px solid var(--color-borde);
+  z-index: 50;
+}
+[data-testid='navegacion'] a {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  padding: 0.5rem 0;
+  font-size: 0.7rem;
+  color: var(--color-texto-suave);
+  text-decoration: none;
+}
+[data-testid='navegacion'] a[aria-current='page'] { color: var(--color-marca); }
+[data-testid='navegacion'] svg { width: 1.35rem; height: 1.35rem; }
+
+/* Indicador de conexión: pequeño, arriba, nunca estorba. */
+[data-testid='indicador-conexion'] {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.8rem;
+  color: var(--color-texto-suave);
+}
+[data-testid='indicador-conexion'][data-linea='true'] svg { color: var(--color-exito); }
+[data-testid='indicador-conexion'][data-linea='false'] svg { color: var(--color-alerta); }
+
+/* Estados: vacío, error y cargando. */
+[data-testid='vacio'] { color: var(--color-texto-suave); padding: 1.5rem 1rem; }
+[data-testid='error'] {
+  border: 1px solid var(--color-error);
+  color: var(--color-error);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: flex-start;
+}
+[data-testid='error'] button {
+  background: var(--color-superficie-alta);
+  border: 0;
+  color: var(--color-texto);
+  padding: 0.5rem 0.9rem;
+  border-radius: 999px;
+  display: inline-flex;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+/* Tarjeta de reporte: la acción de apoyar es la principal. */
+[data-testid='tarjeta-reporte'] h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 800;
+  margin: 0;
+}
+[data-testid='tarjeta-reporte'] footer {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 0.6rem;
+}
+[data-testid='tarjeta-reporte'] footer button,
+[data-testid='tarjeta-reporte'] footer a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.55rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid var(--color-borde);
+  background: var(--color-fondo);
+  color: var(--color-texto);
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+[data-testid='tarjeta-reporte'] footer button:first-child {
+  flex: 1;
+  justify-content: center;
+  background: color-mix(in srgb, var(--color-marca) 18%, transparent);
+  border-color: var(--color-marca);
+  color: var(--color-marca);
+}
+[data-testid='tarjeta-reporte'] summary { cursor: pointer; font-weight: 600; }
+
+/* Badge de estado: color + ícono, para leerlo de un vistazo. */
+span[data-estado] {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  background: var(--color-fondo);
+  border: 1px solid var(--color-borde);
+}
+span[data-estado='enviado'] { color: var(--color-alerta); border-color: var(--color-alerta); }
+span[data-estado='recibido'] { color: var(--color-marca); border-color: var(--color-marca); }
+span[data-estado='aprobado'] {
+  color: var(--color-exito);
+  border-color: var(--color-exito);
+  background: color-mix(in srgb, var(--color-exito) 15%, transparent);
+}
+span[data-estado='no_aprobado'] { color: var(--color-error); border-color: var(--color-error); }
+span[data-estado] svg { width: 1rem; height: 1rem; }
+
+/* Barra de progreso del estado: los tres pasos del ciclo. */
+ol[data-estado] {
+  display: flex;
+  gap: 0.35rem;
+  list-style: none;
+  padding: 0;
+  margin: 0.4rem 0 0;
+}
+ol[data-estado] li {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  font-size: 0.7rem;
+  padding: 0.3rem 0.2rem;
+  border-radius: 999px;
+  background: var(--color-fondo);
+  color: var(--color-texto-suave);
+  border: 1px solid var(--color-borde);
+}
+ol[data-estado] li[data-hecho='true'] {
+  background: color-mix(in srgb, var(--color-marca) 22%, transparent);
+  color: var(--color-texto);
+  border-color: var(--color-marca);
+}
+ol[data-estado] li:last-child[data-hecho='true'] {
+  background: color-mix(in srgb, var(--color-exito) 22%, transparent);
+  border-color: var(--color-exito);
+}
+ol[data-estado][data-rechazado='true'] li {
+  border-color: var(--color-error);
+  color: var(--color-error);
+}
+
+/* Modal de reporte.
+   IMPORTANTE: la clase NO puede llamarse `.modal`. DaisyUI 5 ya define esa clase
+   con `visibility: hidden`, y el diálogo queda invisible e incunable aunque esté
+   "abierto". Por eso aquí se llama `.modal-lcalerta`. */
+.modal-lcalerta {
+  position: fixed;
+  inset: 0;
+  background: rgba(2, 6, 23, 0.75);
+  backdrop-filter: blur(4px);
+  display: grid;
+  place-items: center;
+  z-index: 60;
+  padding: 1rem;
+  visibility: visible;
+  pointer-events: auto;
+}
+.modal-lcalerta-carta {
+  background: var(--color-superficie);
+  border: 1px solid var(--color-borde);
+  border-radius: 1.25rem;
+  padding: 1.25rem;
+  width: min(100%, 26rem);
+  max-height: 90vh;
+  overflow: auto;
+}
+.modal-lcalerta-carta form,
+.modal-lcalerta-carta > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+.modal-lcalerta-carta label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.9rem;
+  color: var(--color-texto-suave);
+}
+.modal-lcalerta-carta input,
+.modal-lcalerta-carta select {
+  padding: 0.7rem;
+  border-radius: var(--radio-control);
+  border: 1px solid var(--color-borde);
+  background: var(--color-fondo);
+  color: var(--color-texto);
+  font-size: 1rem;
+}
+.modal-lcalerta-carta button {
+  padding: 0.8rem;
+  border-radius: 999px;
+  border: 0;
+  font-weight: 700;
+  font-size: 1rem;
+  background: var(--color-marca);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+}
+
+/* ============================================================
+   ANIMACIONES (resueltas: no rehacerlas)
+   ============================================================ */
+
+/* Entrada suave de las tarjetas del feed */
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: none; }
+}
+.animate-card-in { animation: cardIn 350ms var(--curva-suave) both; }
+
+/* Esqueleto de carga */
+@keyframes shimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+.esqueleto {
+  background: linear-gradient(90deg, #f0f3ed 25%, #fbfcf8 50%, #f0f3ed 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.4s infinite linear;
+  border-radius: var(--radio-control);
+}
+
+/* Latido del punto en el mapa */
+@keyframes radar {
+  0% { transform: scale(0.6); opacity: 0.8; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+/* display:block es obligatorio: los marcadores se inyectan como <span> y un
+   inline ignora width/height, así que colapsaban a una barra vertical. */
+.punto-radar {
+  display: block;
+  position: relative;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--color-marca);
+}
+.punto-radar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: inherit;
+  animation: radar 1.6s infinite;
+}
+
+/* Leaflet en móvil: los controles por defecto traen los signos + y − como texto.
+   Solo se agrandan para que se puedan pulsar con el dedo. */
+.leaflet-control-zoom a {
+  font-size: 1.6rem !important;
+  width: 44px !important;
+  height: 44px !important;
+  line-height: 42px !important;
+  background: color-mix(in srgb, var(--color-superficie) 92%, transparent) !important;
+  backdrop-filter: blur(8px);
+  color: var(--color-texto) !important;
+  border: 1px solid var(--color-borde) !important;
+}
+.leaflet-bar a:hover { background: var(--color-superficie-alta) !important; }
+/* Los controles de Leaflet van sobre un fondo translúcido para que se lean
+   sobre el mapa sin taparlo. */
+.leaflet-top.leaflet-left { z-index: 500; }
+/* Sombras suaves de papel, no las negras duras que dejaba el tema oscuro. */
+.leaflet-bar { border: none !important; box-shadow: 0 3px 18px rgba(38, 71, 47, 0.1) !important; }
+.leaflet-control-attribution {
+  font-size: 9px;
+  background: rgba(255, 255, 255, 0.88) !important;
+  color: var(--color-texto-suave) !important;
+  padding: 3px 7px !important;
+}
+.leaflet-control-attribution a { color: var(--color-verde-tenue) !important; }
+
+/* Desaturamos las teselas de OpenStreetMap para que las rutas, paradas y
+   combis —que sí usan color— resalten sobre un fondo casi monocromo.
+   Es el truco que usa la app del equipo en su mapa. */
+.leaflet-tile-pane { filter: saturate(0.24) brightness(1.045) contrast(0.91); }
+
+/* Popups y tooltips con la paleta de papel. */
+.leaflet-popup-content-wrapper, .leaflet-popup-tip {
+  background: var(--color-superficie) !important;
+  color: var(--color-texto) !important;
+  border: 1px solid var(--color-borde) !important;
+  box-shadow: 0 8px 24px rgba(38, 71, 47, 0.12) !important;
+}
+.leaflet-popup-content { margin: 0.7rem 0.9rem; line-height: 1.4; color: var(--color-texto); }
+/* Tooltips de Leaflet (nombre de la parada al tocar el marcador). */
+.leaflet-tooltip {
+  background: var(--color-superficie) !important;
+  border: 1px solid var(--color-borde) !important;
+  color: var(--color-verde-tenue) !important;
+  font-weight: 700;
+  box-shadow: 0 2px 7px rgba(38, 71, 47, 0.12) !important;
+}
+.leaflet-tooltip-top::before { border-top-color: var(--color-superficie) !important; }
+
+.leaflet-popup-content b { color: var(--color-texto); }
+.leaflet-popup-close-button {
+  color: var(--color-texto-suave) !important;
+  width: 28px !important;
+  height: 28px !important;
+  font-size: 20px !important;
+  padding: 6px 0 0 0 !important;
+}
+.leaflet-container { background: var(--color-fondo); }
+
+/* Vehículo en movimiento: la combi se distingue del resto y deja rastro. */
+@keyframes moverRastro {
+  0% { transform: scale(1); opacity: 0.9; }
+  100% { transform: scale(2.6); opacity: 0; }
+}
+/* Combi en vivo: burbuja con el número de ruta, para identificarla sin tocarla.
+   El halo pulsante mantiene la señal de "está en movimiento". */
+.marker-combi { background: none; border: 0; }
+.burbuja-combi {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 126px;
+  max-width: 126px;
+  height: 38px;
+  padding: 4px 9px 4px 5px;
+  background: var(--combi-color);
+  border: 2px solid #fff;
+  border-radius: 11px;
+  box-shadow: 0 3px 9px rgba(25, 52, 38, 0.15);
+  transform: rotate(-6deg);
+  transition: transform 0.2s var(--curva-suave), box-shadow 0.2s var(--curva-suave);
+}
+.burbuja-combi svg { width: 26px; height: 26px; flex-shrink: 0; }
+.burbuja-combi b {
+  color: #fff;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  line-height: 1.15;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* Al tocarlo se endereza y se separa del resto. */
+.marker-combi:hover .burbuja-combi {
+  transform: rotate(0deg) scale(1.06);
+  box-shadow: 0 4px 14px rgba(25, 52, 38, 0.25), 0 0 0 5px rgba(255, 255, 255, 0.45);
+}
+.burbuja-combi::after {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  border-radius: 9px;
+  border: 2px solid var(--combi-color);
+  animation: pulso-combi 2.2s ease-out infinite;
+  pointer-events: none;
+}
+@keyframes pulso-combi {
+  0% { transform: scale(1); opacity: 0.7; }
+  100% { transform: scale(1.35); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .burbuja-combi::after { animation: none; opacity: 0; }
+}
+
+/* Parada con QR: aro fijo para que el vecino la ubique rápido. */
+.marker-parada {
+  display: block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  border: 3px solid var(--color-marca);
+  box-shadow: 0 1px 4px rgba(25, 52, 38, 0.2);
+}
+
+/* Etiqueta imprimible de una parada. */
+.qr-actual {
+  background: #fff;
+  padding: 12px;
+  border-radius: 12px;
+  width: max-content;
+  margin: 8px 0;
+}
+.qr-actual svg { display: block; width: 100%; max-width: 220px; height: auto; }
+
+@media print {
+  /* Al imprimir solo debe verse la etiqueta del QR: nombre + código + imagen. */
+  body * { visibility: hidden; }
+  .qr-actual,
+  .qr-actual * { visibility: visible; }
+  .qr-actual {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    page-break-after: always;
+    display: grid;
+    place-content: center;
+    gap: 8px;
+  }
+  /* Con `imprimir-una` en el body (botón "Imprimir esta") solo sale esa etiqueta.
+     Sin esta clase se mantiene el comportamiento de imprimir el lote completo. */
+  body.imprimir-una .qr-actual:not(.qr-actual--unica) { display: none; }
+  body.imprimir-una .qr-actual--unica { page-break-after: auto; }
+  [data-nombre]::after { content: attr(data-nombre); font-weight: 800; font-size: 14pt; }
+  [data-codigo]::after { content: attr(data-codigo); font-size: 10pt; color: #444; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
